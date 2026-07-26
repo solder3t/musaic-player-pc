@@ -1,0 +1,33 @@
+# pi-gen config for Parallax OS — the flashable Raspberry Pi appliance image for the Astra
+# Parallax receiver. Sourced by pi-gen's build.sh (the CI workflow copies this file plus
+# stage-parallax/ into a pinned pi-gen checkout; see .github/workflows/parallax-os-release.yml).
+#
+# User story: a `parallax` UID-1000 user is baked with a throwaway password (FIRST_USER_PASS is
+# injected per-build by the workflow) and then LOCKED by the appliance stage, so an uncustomized
+# image ships no usable login. Raspberry Pi OS cloud-init can retain or rename that account from
+# boot/firmware/user-data. Wi-Fi normally arrives through the daemon's captive-portal AP setup
+# ("Parallax-Setup"), or power users can preconfigure boot/firmware/network-config.
+# ENABLE_SSH stays off; user-data must explicitly enable it when remote access is requested.
+
+IMG_NAME="ParallaxOS"
+FIRST_USER_NAME="parallax"
+DISABLE_FIRST_BOOT_USER_RENAME=1
+# CRITICAL for AP onboarding: without a Wi-Fi country, raspberrypi-sys-mods ships the radio
+# rfkill-blocked AND pi-gen writes WirelessEnabled=false into NetworkManager's state — the
+# setup hotspot can never start (found the hard way on the first flash). US is the pragmatic
+# default; AP channels 1–11 are legal nearly everywhere, and a future portal version can
+# re-set the domain per user.
+WPA_COUNTRY="US"
+# The pinned pi-gen arm64 ref defaults to trixie (current Pi OS); stated here for determinism.
+RELEASE="trixie"
+# Pin the provisioning contract explicitly instead of relying on pi-gen's current default.
+ENABLE_CLOUD_INIT=1
+# The workflow verifies the raw .img (loop-mount asserts) and xz's it afterwards.
+DEPLOY_COMPRESSION="none"
+# Stock avahi advertises the hostname → http://parallax.local/ (auto-renames on conflict).
+# A cloud-init hostname override in user-data runs at first boot and wins when supplied.
+TARGET_HOSTNAME="parallax"
+TIMEZONE_DEFAULT="UTC"
+# Lite base (stage0-2) + the appliance stage. CI touches stage2/SKIP_IMAGES so only
+# stage-parallax exports an image.
+STAGE_LIST="stage0 stage1 stage2 stage-parallax"

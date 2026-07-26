@@ -1,0 +1,593 @@
+name: Publish Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to publish packages from (e.g. v0.5.0-beta)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate-aur:
+    name: Validate AUR package
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    env:
+      AUR_WORKDIR: /home/builder/aur
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Arch validation dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pacman -Syu --noconfirm --needed curl git sudo
+
+      - name: Compute version strings
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}"
+          VER="${TAG#v}"
+          AUR_VER="${VER//-/.}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          echo "aur_ver=$AUR_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Compute AppImage SHA256
+        id: sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/Boof2015/astra/releases/download/${{ steps.ver.outputs.tag }}/Astra-${{ steps.ver.outputs.ver }}-Linux.AppImage"
+          TMP_FILE="$(mktemp)"
+          trap 'rm -f "$TMP_FILE"' EXIT
+          curl -fsSL "$URL" -o "$TMP_FILE"
+          SHA="$(sha256sum "$TMP_FILE" | cut -d' ' -f1)"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Rewrite PKGBUILD
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          VER="${{ steps.ver.outputs.ver }}"
+          AUR_VER="${{ steps.ver.outputs.aur_ver }}"
+          URL="https://github.com/Boof2015/astra/releases/download/${TAG}/Astra-${VER}-Linux.AppImage"
+          bash ./scripts/release/update-aur-pkgbuild.sh \
+            "$TAG" \
+            "$AUR_VER" \
+            "$URL" \
+            "${{ steps.sha256.outputs.sha256 }}"
+
+      - name: Create Arch build user
+        shell: bash
+        run: |
+          set -euo pipefail
+          useradd --create-home --shell /bin/bash builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          chmod 0440 /etc/sudoers.d/builder
+
+      - name: Stage AUR files for builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$AUR_WORKDIR"
+          install -d -o builder -g builder "$AUR_WORKDIR"
+          cp -R .github/aur/. "$AUR_WORKDIR/"
+          chown -R builder:builder "$AUR_WORKDIR"
+
+      - name: Generate .SRCINFO
+        shell: bash
+        run: |
+          set -euo pipefail
+          su builder -c "cd \"$AUR_WORKDIR\" && makepkg --printsrcinfo > .SRCINFO"
+
+      - name: Build AUR package
+        shell: bash
+        run: |
+          set -euo pipefail
+          su builder -c "cd \"$AUR_WORKDIR\" && makepkg --syncdeps --noconfirm --cleanbuild"
+
+      - name: Verify package contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Eq '^[[:space:]]*depends = fuse2$' "$AUR_WORKDIR/.SRCINFO"
+          PKG_FILE="$(find "$AUR_WORKDIR" -maxdepth 1 -type f -name '*.pkg.tar.*' | head -n 1)"
+          if [ -z "$PKG_FILE" ]; then
+            echo "Built package archive not found." >&2
+            exit 1
+          fi
+          bsdtar -tf "$PKG_FILE" | grep -Fx 'usr/bin/astra'
+          bsdtar -tf "$PKG_FILE" | grep -Fx 'opt/astra/astra.AppImage'
+          bsdtar -tf "$PKG_FILE" | grep -Fx 'usr/share/applications/astra.desktop'
+          bsdtar -tf "$PKG_FILE" | grep -Eq '^usr/share/icons/hicolor/.+/apps/astra\.(png|svg)$'
+          if bsdtar -tf "$PKG_FILE" | grep -Fxq 'opt/astra/AppRun'; then
+            echo "Legacy extracted AppRun payload is still present in the package." >&2
+            exit 1
+          fi
+
+      - name: Install and smoke test AUR package
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG_FILE="$(find "$AUR_WORKDIR" -maxdepth 1 -type f -name '*.pkg.tar.*' | head -n 1)"
+          if [ -z "$PKG_FILE" ]; then
+            echo "Built package archive not found." >&2
+            exit 1
+          fi
+
+          pacman -U --noconfirm "$PKG_FILE"
+
+          su builder -c 'test -x /usr/bin/astra'
+          su builder -c 'test -x /opt/astra/astra.AppImage'
+          stat -c '%a %n' /usr/bin/astra /opt/astra/astra.AppImage
+          grep -Fx 'exec /opt/astra/astra.AppImage --no-sandbox "$@"' /usr/bin/astra
+
+          grep -Fx 'Exec=astra %U' /usr/share/applications/astra.desktop
+          grep -Fx 'TryExec=astra' /usr/share/applications/astra.desktop
+          grep -Fx 'Icon=astra' /usr/share/applications/astra.desktop
+
+          su builder -c '
+            tmpdir="$(mktemp -d)"
+            trap "rm -rf \"$tmpdir\"" EXIT
+            cd "$tmpdir"
+            /opt/astra/astra.AppImage --appimage-extract >/dev/null
+            test -x "$tmpdir/squashfs-root/AppRun"
+            test -x "$tmpdir/squashfs-root/astra"
+            test -f "$tmpdir/squashfs-root/astra.desktop"
+          '
+
+  publish-aur:
+    name: Publish to AUR
+    needs: validate-aur
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    env:
+      AUR_WORKDIR: /home/builder/aur
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install AUR publishing dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pacman -Syu --noconfirm --needed curl git openssh
+
+      - name: Create Arch packaging user
+        shell: bash
+        run: |
+          set -euo pipefail
+          useradd --create-home --shell /bin/bash builder
+
+      - name: Compute version strings
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}"
+          VER="${TAG#v}"
+          AUR_VER="${VER//-/.}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          echo "aur_ver=$AUR_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Compute AppImage SHA256
+        id: sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/Boof2015/astra/releases/download/${{ steps.ver.outputs.tag }}/Astra-${{ steps.ver.outputs.ver }}-Linux.AppImage"
+          TMP_FILE="$(mktemp)"
+          trap 'rm -f "$TMP_FILE"' EXIT
+          curl -fsSL "$URL" -o "$TMP_FILE"
+          SHA="$(sha256sum "$TMP_FILE" | cut -d' ' -f1)"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Rewrite PKGBUILD
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          VER="${{ steps.ver.outputs.ver }}"
+          AUR_VER="${{ steps.ver.outputs.aur_ver }}"
+          URL="https://github.com/Boof2015/astra/releases/download/${TAG}/Astra-${VER}-Linux.AppImage"
+          bash ./scripts/release/update-aur-pkgbuild.sh \
+            "$TAG" \
+            "$AUR_VER" \
+            "$URL" \
+            "${{ steps.sha256.outputs.sha256 }}"
+
+      - name: Stage AUR files for builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$AUR_WORKDIR"
+          install -d -o builder -g builder "$AUR_WORKDIR"
+          cp -R .github/aur/. "$AUR_WORKDIR/"
+          chown -R builder:builder "$AUR_WORKDIR"
+
+      - name: Generate .SRCINFO
+        shell: bash
+        run: |
+          set -euo pipefail
+          su builder -c "cd \"$AUR_WORKDIR\" && makepkg --printsrcinfo > .SRCINFO"
+          install -Dm644 "$AUR_WORKDIR/.SRCINFO" "$GITHUB_WORKSPACE/.github/aur/.SRCINFO"
+
+      - name: Normalize AUR SSH key
+        id: aur_key
+        shell: bash
+        env:
+          RAW_AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RAW_AUR_SSH_KEY:-}" ]; then
+            echo "AUR_SSH_KEY is empty or missing." >&2
+            exit 1
+          fi
+          TMP_KEY="$(mktemp)"
+          TMP_ALT="$(mktemp)"
+          trap 'rm -f "$TMP_KEY" "$TMP_ALT"' EXIT
+
+          normalize_to_file() {
+            local source_value="$1"
+            local target_file="$2"
+            local unwrapped="$source_value"
+            case "$unwrapped" in
+              \"*\") unwrapped="${unwrapped:1:${#unwrapped}-2}" ;;
+              \'*\') unwrapped="${unwrapped:1:${#unwrapped}-2}" ;;
+            esac
+            printf '%b' "$unwrapped" | tr -d '\r' > "$target_file"
+          }
+
+          key_is_usable() {
+            local candidate_file="$1"
+            if ! grep -Eq '^-----BEGIN ((OPENSSH|RSA|EC|DSA) PRIVATE KEY|PRIVATE KEY)-----$' "$candidate_file"; then
+              return 1
+            fi
+            ssh-keygen -y -f "$candidate_file" >/dev/null 2>&1
+          }
+
+          normalize_to_file "$RAW_AUR_SSH_KEY" "$TMP_KEY"
+
+          if ! key_is_usable "$TMP_KEY"; then
+            if printf '%s' "$RAW_AUR_SSH_KEY" | tr -d '\r\n\t ' | base64 --decode > "$TMP_ALT" 2>/dev/null; then
+              if key_is_usable "$TMP_ALT"; then
+                mv "$TMP_ALT" "$TMP_KEY"
+                TMP_ALT="$(mktemp)"
+              fi
+            fi
+          fi
+
+          if ! key_is_usable "$TMP_KEY"; then
+            echo "AUR_SSH_KEY is not a usable private key. Supported inputs include raw multi-line keys, escaped newline keys, or base64-encoded keys." >&2
+            exit 1
+          fi
+
+          {
+            echo 'key<<EOF'
+            cat "$TMP_KEY"
+            echo
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: KSXGitHub/github-actions-deploy-aur@v4.1.2
+        with:
+          pkgname: astra-music-bin
+          pkgbuild: .github/aur/PKGBUILD
+          commit_username: Boof2015
+          commit_email: contact@novaml.ai
+          ssh_private_key: ${{ steps.aur_key.outputs.key }}
+          commit_message: "Update to ${{ steps.ver.outputs.ver }}"
+
+  publish-homebrew:
+    name: Publish to Homebrew Cask
+    # Intentionally hard-disabled. Re-enable only when Homebrew publishing is explicitly wanted.
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute version string
+        id: ver
+        run: |
+          TAG="${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}"
+          ASSET_VER="${TAG#v}"
+          CASK_VER="${ASSET_VER%-beta}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "asset_ver=$ASSET_VER" >> $GITHUB_OUTPUT
+          echo "cask_ver=$CASK_VER" >> $GITHUB_OUTPUT
+
+      - name: Compute DMG SHA256
+        id: sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/Boof2015/astra/releases/download/${{ steps.ver.outputs.tag }}/Astra-${{ steps.ver.outputs.asset_ver }}-Mac-arm64.dmg"
+          TMP_FILE="$(mktemp)"
+          trap 'rm -f "$TMP_FILE"' EXIT
+          curl -fsSL "$URL" -o "$TMP_FILE"
+          SHA=$(sha256sum "$TMP_FILE" | cut -d' ' -f1)
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Update cask file
+        run: |
+          VER="${{ steps.ver.outputs.cask_ver }}"
+          SHA="${{ steps.sha256.outputs.sha256 }}"
+          sed -i "s/version \".*\"/version \"${VER}\"/" .github/homebrew/astra-music.rb
+          sed -i "s/sha256 \".*\"/sha256 \"${SHA}\"/" .github/homebrew/astra-music.rb
+
+      - name: Submit PR to homebrew-cask
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
+        run: |
+          VER="${{ steps.ver.outputs.cask_ver }}"
+          gh repo fork homebrew/homebrew-cask --clone
+          cd homebrew-cask
+          git checkout -b "astra-music-${VER}"
+          cp ../.github/homebrew/astra-music.rb Casks/a/astra-music.rb
+          git config user.name "Boof2015"
+          git config user.email "contact@novaml.ai"
+          git add Casks/a/astra-music.rb
+          git commit -m "astra-music ${VER}"
+          git push origin "astra-music-${VER}"
+          {
+            echo "Add Astra, a GPL-3.0 music player with gapless playback, parametric EQ, and real-time DSP visualizers."
+            echo
+            echo "Astra currently has 233 GitHub stars, above Homebrew's 225-star self-submission threshold."
+            echo
+            echo "Disclosure: Codex/ChatGPT helped prepare and review this cask. I reviewed the final cask and PR text myself and can address maintainer feedback manually."
+          } > pr-body.md
+          gh pr create \
+            --repo homebrew/homebrew-cask \
+            --title "astra-music ${VER} (new cask)" \
+            --body-file pr-body.md \
+            --head "Boof2015:astra-music-${VER}"
+
+  publish-winget:
+    name: Publish to winget
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      WINGET_INSTALLERS_REGEX: 'Astra\.Setup\..+\.Windows\.exe$'
+    steps:
+      - name: Preflight winget release
+        id: winget-preflight
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          TAG="${RELEASE_TAG:-}"
+          if [ -z "$TAG" ]; then
+            echo "::error::Release tag could not be resolved from the workflow event." >&2
+            exit 1
+          fi
+
+          VER="${TAG#v}"
+          if [ -z "$VER" ]; then
+            echo "::error::Release tag '$TAG' does not contain a package version." >&2
+            exit 1
+          fi
+
+          RELEASE_JSON="$(mktemp)"
+          WINGET_RESPONSE="$(mktemp)"
+          trap 'rm -f "$RELEASE_JSON" "$WINGET_RESPONSE"' EXIT
+
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+            -o "$RELEASE_JSON"
+
+          MATCH_COUNT="$(jq -r --arg pattern "$WINGET_INSTALLERS_REGEX" '[.assets[]? | select(.name | test($pattern))] | length' "$RELEASE_JSON")"
+          if [ "$MATCH_COUNT" -ne 1 ]; then
+            echo "::error::Expected exactly one winget installer asset matching '$WINGET_INSTALLERS_REGEX' for $TAG, found $MATCH_COUNT." >&2
+            echo "Release assets:" >&2
+            jq -r '.assets[]?.name // empty' "$RELEASE_JSON" >&2
+            exit 1
+          fi
+
+          MATCH_NAME="$(jq -r --arg pattern "$WINGET_INSTALLERS_REGEX" '[.assets[]? | select(.name | test($pattern))][0].name' "$RELEASE_JSON")"
+          MATCH_URL="$(jq -r --arg pattern "$WINGET_INSTALLERS_REGEX" '[.assets[]? | select(.name | test($pattern))][0].browser_download_url' "$RELEASE_JSON")"
+          echo "Validated winget installer asset: $MATCH_NAME"
+          echo "Installer URL: $MATCH_URL"
+
+          WINGET_STATUS="$(curl -sS \
+            -o "$WINGET_RESPONSE" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/b/Boof2015/Astra/${VER}?ref=master")"
+
+          if [ "$WINGET_STATUS" = "200" ]; then
+            echo "Boof2015.Astra $VER already exists in winget-pkgs; skipping winget PR submission."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          elif [ "$WINGET_STATUS" = "404" ]; then
+            echo "Boof2015.Astra $VER is not in winget-pkgs yet; winget PR submission will run."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Could not check existing winget-pkgs manifest for Boof2015.Astra $VER. GitHub API returned HTTP $WINGET_STATUS." >&2
+            cat "$WINGET_RESPONSE" >&2
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Verify winget token
+        if: ${{ steps.winget-preflight.outputs.should_publish == 'true' }}
+        shell: bash
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WINGET_TOKEN:-}" ]; then
+            echo "::error::WINGET_TOKEN is empty or missing. Add a classic GitHub PAT with public_repo scope that can push to Boof2015/winget-pkgs and open PRs against microsoft/winget-pkgs." >&2
+            exit 1
+          fi
+
+          TOKEN_HEADERS="$(mktemp)"
+          USER_RESPONSE="$(mktemp)"
+          FORK_JSON="$(mktemp)"
+          BASE_REF_JSON="$(mktemp)"
+          CREATE_REF_RESPONSE="$(mktemp)"
+          DELETE_REF_RESPONSE="$(mktemp)"
+          CREATED_CHECK_REF=false
+          CHECK_BRANCH="astra-winget-token-check-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          CHECK_REF="refs/heads/${CHECK_BRANCH}"
+
+          cleanup() {
+            if [ "$CREATED_CHECK_REF" = "true" ]; then
+              curl -sS \
+                -X DELETE \
+                -o "$DELETE_REF_RESPONSE" \
+                -H "Authorization: Bearer ${WINGET_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/Boof2015/winget-pkgs/git/refs/heads/${CHECK_BRANCH}" >/dev/null || true
+            fi
+            rm -f "$TOKEN_HEADERS" "$USER_RESPONSE" "$FORK_JSON" "$BASE_REF_JSON" "$CREATE_REF_RESPONSE" "$DELETE_REF_RESPONSE"
+          }
+          trap cleanup EXIT
+
+          USER_STATUS="$(curl -sS \
+            -D "$TOKEN_HEADERS" \
+            -o "$USER_RESPONSE" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${WINGET_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/user")"
+
+          if [ "$USER_STATUS" != "200" ]; then
+            echo "::error::WINGET_TOKEN could not authenticate with GitHub. GitHub API returned HTTP $USER_STATUS." >&2
+            cat "$USER_RESPONSE" >&2
+            exit 1
+          fi
+
+          OAUTH_SCOPES="$(tr -d '\r' < "$TOKEN_HEADERS" | awk -F':[[:space:]]*' 'tolower($1) == "x-oauth-scopes" { print $2; exit }')"
+          SCOPE_LIST="$(printf '%s' "$OAUTH_SCOPES" | tr -d '[:space:]')"
+          case ",$SCOPE_LIST," in
+            *,public_repo,*|*,repo,*)
+              echo "WINGET_TOKEN is a classic PAT with repo/public_repo scope."
+              ;;
+            *)
+              echo "::error::WINGET_TOKEN must be a classic GitHub PAT with public_repo scope. A classic PAT with repo scope also works, but vedantmgoyal9/winget-releaser does not support fine-grained PATs." >&2
+              if [ -n "$OAUTH_SCOPES" ]; then
+                echo "Current token scopes: $OAUTH_SCOPES" >&2
+              else
+                echo "GitHub did not report OAuth scopes for WINGET_TOKEN; this usually means the secret is not a classic PAT." >&2
+              fi
+              exit 1
+              ;;
+          esac
+
+          FORK_STATUS="$(curl -sS \
+            -o "$FORK_JSON" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${WINGET_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/Boof2015/winget-pkgs")"
+
+          if [ "$FORK_STATUS" != "200" ]; then
+            echo "::error::WINGET_TOKEN could not access Boof2015/winget-pkgs. GitHub API returned HTTP $FORK_STATUS." >&2
+            cat "$FORK_JSON" >&2
+            exit 1
+          fi
+
+          IS_FORK="$(jq -r '.fork // false' "$FORK_JSON")"
+          PARENT_REPO="$(jq -r '.parent.full_name // empty' "$FORK_JSON")"
+          if [ "$IS_FORK" != "true" ] || [ "$PARENT_REPO" != "microsoft/winget-pkgs" ]; then
+            echo "::error::Boof2015/winget-pkgs must be a fork of microsoft/winget-pkgs for winget-releaser." >&2
+            exit 1
+          fi
+
+          DEFAULT_BRANCH="$(jq -r '.default_branch // empty' "$FORK_JSON")"
+          if [ -z "$DEFAULT_BRANCH" ]; then
+            echo "::error::Could not resolve the default branch for Boof2015/winget-pkgs." >&2
+            exit 1
+          fi
+
+          BASE_REF_STATUS="$(curl -sS \
+            -o "$BASE_REF_JSON" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${WINGET_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/Boof2015/winget-pkgs/git/ref/heads/${DEFAULT_BRANCH}")"
+
+          if [ "$BASE_REF_STATUS" != "200" ]; then
+            echo "::error::WINGET_TOKEN could not read Boof2015/winget-pkgs default branch ref '${DEFAULT_BRANCH}'. GitHub API returned HTTP $BASE_REF_STATUS." >&2
+            cat "$BASE_REF_JSON" >&2
+            exit 1
+          fi
+
+          BASE_SHA="$(jq -r '.object.sha // empty' "$BASE_REF_JSON")"
+          if [ -z "$BASE_SHA" ]; then
+            echo "::error::Could not resolve a commit SHA for Boof2015/winget-pkgs default branch '${DEFAULT_BRANCH}'." >&2
+            cat "$BASE_REF_JSON" >&2
+            exit 1
+          fi
+
+          CREATE_REF_STATUS="$(curl -sS \
+            -X POST \
+            -o "$CREATE_REF_RESPONSE" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${WINGET_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/Boof2015/winget-pkgs/git/refs" \
+            -d "$(jq -cn --arg ref "$CHECK_REF" --arg sha "$BASE_SHA" '{ref: $ref, sha: $sha}')")"
+
+          if [ "$CREATE_REF_STATUS" != "201" ]; then
+            echo "::error::WINGET_TOKEN could not create a branch in Boof2015/winget-pkgs. GitHub API returned HTTP $CREATE_REF_STATUS." >&2
+            cat "$CREATE_REF_RESPONSE" >&2
+            exit 1
+          fi
+          CREATED_CHECK_REF=true
+
+          DELETE_REF_STATUS="$(curl -sS \
+            -X DELETE \
+            -o "$DELETE_REF_RESPONSE" \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${WINGET_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/Boof2015/winget-pkgs/git/refs/heads/${CHECK_BRANCH}")"
+
+          if [ "$DELETE_REF_STATUS" != "204" ]; then
+            echo "::error::WINGET_TOKEN created the test branch but could not delete it. GitHub API returned HTTP $DELETE_REF_STATUS." >&2
+            cat "$DELETE_REF_RESPONSE" >&2
+            exit 1
+          fi
+          CREATED_CHECK_REF=false
+
+          echo "WINGET_TOKEN can create and delete branches in Boof2015/winget-pkgs."
+
+      - uses: vedantmgoyal9/winget-releaser@v2
+        if: ${{ steps.winget-preflight.outputs.should_publish == 'true' }}
+        with:
+          identifier: Boof2015.Astra
+          version: ${{ steps.winget-preflight.outputs.version }}
+          release-tag: ${{ steps.winget-preflight.outputs.tag }}
+          release-repository: astra
+          fork-user: Boof2015
+          token: ${{ secrets.WINGET_TOKEN }}
+          installers-regex: ${{ env.WINGET_INSTALLERS_REGEX }}

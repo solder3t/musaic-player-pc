@@ -1,0 +1,199 @@
+export type AiProviderType = 'gemini' | 'openai' | 'claude' | 'deepseek' | 'groq' | 'ollama' | 'none';
+
+export interface AiResponse {
+  text: string;
+  tokens?: number;
+  error?: string;
+}
+
+export interface AiRequestOptions {
+  provider: AiProviderType;
+  apiKey?: string;
+  serverUrl?: string; // e.g. 'http://localhost:11434' for Ollama
+  model?: string;
+}
+
+const DEFAULT_MODELS: Record<AiProviderType, string> = {
+  gemini: 'gemini-2.5-flash',
+  openai: 'gpt-4o-mini',
+  claude: 'claude-3-5-haiku-latest',
+  deepseek: 'deepseek-chat',
+  groq: 'llama-3.3-70b-versatile',
+  ollama: 'llama3.2',
+  none: ''
+};
+
+/**
+ * Sends a prompt to the designated AI provider using standard fetch.
+ */
+export async function sendAiPrompt(
+  systemPrompt: string,
+  userPrompt: string,
+  options: AiRequestOptions
+): Promise<AiResponse> {
+  const { provider, apiKey = '', serverUrl = 'http://localhost:11434' } = options;
+  if (provider === 'none') return { text: '' };
+  if (provider !== 'ollama' && !apiKey.trim()) {
+    return { text: '', error: 'API Key required for provider: ' + provider };
+  }
+
+  const model = options.model || DEFAULT_MODELS[provider];
+
+  try {
+    switch (provider) {
+      case 'gemini':
+        return await callGemini(systemPrompt, userPrompt, apiKey, model);
+      case 'openai':
+        return await callOpenAiCompatible(
+          systemPrompt,
+          userPrompt,
+          apiKey,
+          'https://api.openai.com/v1/chat/completions',
+          model
+        );
+      case 'claude':
+        return await callClaude(systemPrompt, userPrompt, apiKey, model);
+      case 'deepseek':
+        return await callOpenAiCompatible(
+          systemPrompt,
+          userPrompt,
+          apiKey,
+          'https://api.deepseek.com/chat/completions',
+          model
+        );
+      case 'groq':
+        return await callOpenAiCompatible(
+          systemPrompt,
+          userPrompt,
+          apiKey,
+          'https://api.groq.com/openai/v1/chat/completions',
+          model
+        );
+      case 'ollama': {
+        const baseUrl = serverUrl.replace(/\/+$/, '') || 'http://localhost:11434';
+        return await callOpenAiCompatible(
+          systemPrompt,
+          userPrompt,
+          apiKey,
+          `${baseUrl}/v1/chat/completions`,
+          model
+        );
+      }
+      default:
+        return { text: '' };
+    }
+  } catch (err: any) {
+    console.error(`[AiClient] Error calling ${provider}:`, err);
+    return { text: '', error: err?.message || String(err) };
+  }
+}
+
+async function callGemini(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string,
+  model: string
+): Promise<AiResponse> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [
+      {
+        parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.3
+    }
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gemini API error (${res.status}): ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const tokens = data?.usageMetadata?.totalTokenCount || 0;
+  return { text: text.trim(), tokens };
+}
+
+async function callOpenAiCompatible(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string,
+  url: string,
+  model: string
+): Promise<AiResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.3
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    throw new Error(`OpenAI-compatible API error (${res.status}): ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content || '';
+  const tokens = data?.usage?.total_tokens || 0;
+  return { text: text.trim(), tokens };
+}
+
+async function callClaude(
+  systemPrompt: string,
+  userPrompt: string,
+  apiKey: string,
+  model: string
+): Promise<AiResponse> {
+  const url = 'https://api.anthropic.com/v1/messages';
+  const body = {
+    model,
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: [
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.3
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Claude API error (${res.status}): ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const text = data?.content?.[0]?.text || '';
+  const tokens = (data?.usage?.input_tokens || 0) + (data?.usage?.output_tokens || 0);
+  return { text: text.trim(), tokens };
+}
