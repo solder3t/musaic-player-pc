@@ -319,7 +319,7 @@ try {
   copyFileSync(masterPngPath, resourcePngPath)
   restoreIconBackgroundAlpha(resourcePngPath)
 
-  const iconsetDir = join(tempDir, 'Musaic.iconset')
+  const iconsetDir = join(tempDir, 'Astra.iconset')
   mkdirSync(iconsetDir)
   const iconsetEntries = [
     ['icon_16x16.png', 16],

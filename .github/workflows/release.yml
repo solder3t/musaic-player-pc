@@ -1,4 +1,4 @@
-name: Musaic Linux Release
+name: Build Release
 
 on:
   workflow_dispatch:
@@ -13,20 +13,32 @@ permissions:
 
 jobs:
   build:
-    name: Build Release (Linux)
-    runs-on: ubuntu-latest
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            dist_cmd: dist:linux
+          - os: macos-latest
+            dist_cmd: dist:mac
+          # Pin Windows to VS 2022; windows-latest can roll to VS 2026 before
+          # Electron's node-gyp stack recognizes the new Visual Studio version.
+          - os: windows-2022
+            dist_cmd: dist:win
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.x
           cache: 'npm'
 
       - name: Cache Electron
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/electron
@@ -39,7 +51,8 @@ jobs:
         run: npm ci
 
       - name: Install Linux native build tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential python3 libasound2-dev rpm
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3 libasound2-dev
 
       - name: Build native DSP module
         run: npm run rebuild:native
@@ -62,16 +75,19 @@ jobs:
           node -e 'const fs=require("fs"); const key=process.env.LASTFM_API_KEY ?? ""; const secret=process.env.LASTFM_SHARED_SECRET ?? ""; fs.writeFileSync(".env.local", `LASTFM_API_KEY=${key}\nLASTFM_SHARED_SECRET=${secret}\n`, "utf8")'
 
       - name: Build distributable
-        run: npm run dist:linux
+        run: npm run ${{ matrix.dist_cmd }}
 
       - name: Verify release artifact names
         run: node scripts/release/verify-release-artifacts.cjs
 
-      - name: Upload Linux artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: musaic-linux-${{ inputs.version_tag && format('-{0}', inputs.version_tag) || 'latest' }}
+          name: musaic-${{ runner.os }}${{ inputs.version_tag && format('-{0}', inputs.version_tag) || '' }}
           path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
             dist/*.AppImage
             dist/*.deb
             dist/*.rpm

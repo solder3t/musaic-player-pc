@@ -81,10 +81,10 @@ function listDistFiles(distDir) {
 function main() {
   const args = parseArgs(process.argv.slice(2))
   const packageJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'))
-  const platform = normalizePlatform(args.platform || process.env.ASTRA_RELEASE_PLATFORM || process.platform)
-  const arch = args.arch || process.env.ASTRA_RELEASE_ARCH || process.arch
-  const version = args.version || process.env.ASTRA_RELEASE_VERSION || packageJson.version
-  const distDir = path.resolve(repoRoot, args['dist-dir'] || process.env.ASTRA_RELEASE_DIST_DIR || 'dist')
+  const platform = normalizePlatform(args.platform || process.env.MUSAIC_RELEASE_PLATFORM || process.env.ASTRA_RELEASE_PLATFORM || process.platform)
+  const arch = args.arch || process.env.MUSAIC_RELEASE_ARCH || process.env.ASTRA_RELEASE_ARCH || process.arch
+  const version = args.version || process.env.MUSAIC_RELEASE_VERSION || process.env.ASTRA_RELEASE_VERSION || packageJson.version
+  const distDir = path.resolve(repoRoot, args['dist-dir'] || process.env.MUSAIC_RELEASE_DIST_DIR || process.env.ASTRA_RELEASE_DIST_DIR || 'dist')
   const expectedNames = expectedArtifactNames({ platform, arch, version })
   const missingNames = expectedNames.filter((name) => {
     const filePath = path.join(distDir, name)

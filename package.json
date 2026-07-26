@@ -4,10 +4,10 @@
   "description": "Beautiful offline music player for Linux with lyrics, Listen Together, AI romanization & Last.fm",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "node ./scripts/build/writeAppBuildMetadata.cjs && NODE_OPTIONS=\"--require ./scripts/node/polyfill-node18.cjs\" electron-vite dev",
-    "build": "NODE_OPTIONS=\"--require ./scripts/node/polyfill-node18.cjs\" electron-vite build && node ./scripts/build/writeAppBuildMetadata.cjs",
+    "dev": "node ./scripts/build/writeAppBuildMetadata.cjs && cross-env NODE_OPTIONS=\"--require ./scripts/node/polyfill-node18.cjs\" electron-vite dev",
+    "build": "cross-env NODE_OPTIONS=\"--require ./scripts/node/polyfill-node18.cjs\" electron-vite build && node ./scripts/build/writeAppBuildMetadata.cjs",
     "build:icons": "node scripts/build/generate-musaic-icons.mjs",
-    "preview": "NODE_OPTIONS=\"--require ./scripts/node/polyfill-node18.cjs\" electron-vite preview",
+    "preview": "cross-env NODE_OPTIONS=\"--require ./scripts/node/polyfill-node18.cjs\" electron-vite preview",
     "check:packaging-config": "node ./scripts/electron-builder/validate-config.cjs",
     "test": "node ./scripts/node/run-tests.cjs",
     "test:node": "node ./scripts/node/run-tests.cjs --node",
@@ -16,7 +16,7 @@
     "test:album-grouping": "node --experimental-strip-types --experimental-default-type=module --test src/shared/library/albumGrouping.test.ts",
     "test:artist-images": "node --experimental-strip-types --experimental-default-type=module --test src/shared/library/artistImages.test.ts",
     "test:library-latest-sync": "node --experimental-strip-types --experimental-default-type=module --test src/main/services/libraryLatestSync.test.ts",
-    "test:library-sqlite": "ELECTRON_RUN_AS_NODE=1 electron --experimental-strip-types --loader ./scripts/node/electron-test-loader.mjs --test src/main/services/library.test.ts",
+    "test:library-sqlite": "cross-env ELECTRON_RUN_AS_NODE=1 electron --experimental-strip-types --loader ./scripts/node/electron-test-loader.mjs --test src/main/services/library.test.ts",
     "test:track-rating": "node --experimental-strip-types --test src/shared/ratings/trackRating.test.ts",
     "test:rating-calibration": "node --experimental-strip-types --test src/renderer/utils/ratingCalibration.test.ts",
     "test:library-integrity": "node --experimental-strip-types --experimental-default-type=module --loader ./scripts/node/resolve-ts-loader.mjs --test src/main/services/libraryIntegrity.test.ts",
@@ -89,6 +89,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "autoprefixer": "^10.5.0",
+    "cross-env": "^10.1.0",
     "electron": "^40.10.0",
     "electron-builder": "^26.8.1",
     "electron-vite": "^5.0.0",
@@ -285,8 +286,17 @@
         "height": 440
       },
       "contents": [
-        { "x": 130, "y": 220, "type": "file" },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     },
     "nsis": {
