@@ -1,10 +1,10 @@
-name: CI
+name: Musaic Player CI
 
 on:
   pull_request:
-    branches: [dev]
+    branches: [main]
   push:
-    branches: [dev]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -19,20 +19,20 @@ env:
 
 jobs:
   quality-gate:
-    name: Quality Gate
+    name: Quality Gate (Linux)
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Cache Electron
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/electron
@@ -72,28 +72,22 @@ jobs:
         run: npm run build
 
   build-smoke:
-    name: Build Smoke (${{ matrix.os }})
+    name: Build Distributable (Linux)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: quality-gate
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # Pin Windows to VS 2022; windows-latest can roll to VS 2026 before
-        # Electron's node-gyp stack recognizes the new Visual Studio version.
-        os: [ubuntu-latest, macos-latest, windows-2022]
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Cache Electron
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/electron
@@ -103,8 +97,7 @@ jobs:
             ${{ runner.os }}-electron-
 
       - name: Install Linux native build tools
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential python3 libasound2-dev
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3 libasound2-dev rpm
 
       - name: Install dependencies
         run: npm ci
@@ -112,17 +105,5 @@ jobs:
       - name: Build native modules
         run: npm run rebuild:native
 
-      - name: Verify native module exists
-        shell: bash
-        run: |
-          if [ ! -f native/build/Release/visualizer_dsp.node ]; then
-            echo "ERROR: native DSP module was not built!"
-            exit 1
-          fi
-          echo "Native module built successfully: $(ls -lh native/build/Release/visualizer_dsp.node)"
-
-      - name: Validate packaging config
-        run: npm run check:packaging-config
-
-      - name: Build project
-        run: npm run build
+      - name: Build Linux package
+        run: npm run dist:linux

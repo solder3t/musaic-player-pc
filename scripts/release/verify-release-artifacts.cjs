@@ -45,24 +45,24 @@ function toRpmArch(arch) {
 function expectedArtifactNames({ platform, arch, version }) {
   if (platform === 'linux') {
     return [
-      `Astra-${version}-Linux.AppImage`,
-      `Astra-${version}-Linux-${toDebArch(arch)}.deb`,
-      `Astra-${version}-Linux-${toRpmArch(arch)}.rpm`,
-      `Astra-${version}-Linux-${arch}.tar.gz`,
+      `Musaic-${version}-Linux.AppImage`,
+      `Musaic-${version}-Linux-${toDebArch(arch)}.deb`,
+      `Musaic-${version}-Linux-${toRpmArch(arch)}.rpm`,
+      `Musaic-${version}-Linux-${arch}.tar.gz`,
     ]
   }
 
   if (platform === 'darwin') {
     return [
-      `Astra-${version}-Mac-${arch}.dmg`,
-      `Astra-${version}-Mac-${arch}.zip`,
+      `Musaic-${version}-Mac-${arch}.dmg`,
+      `Musaic-${version}-Mac-${arch}.zip`,
     ]
   }
 
   if (platform === 'win32') {
     return [
-      `Astra.Setup.${version}.Windows.exe`,
-      `Astra.Portable.${version}.Windows.exe`,
+      `Musaic.Setup.${version}.Windows.exe`,
+      `Musaic.Portable.${version}.Windows.exe`,
     ]
   }
 
