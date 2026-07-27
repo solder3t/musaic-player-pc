@@ -1,6 +1,6 @@
 # Maintainer: solder3t <adityasikarwar573@gmail.com>
 pkgname=musaic-player-bin
-pkgver=0.4.0.beta
+pkgver=0.5.1
 pkgrel=1
 pkgdesc="Audiophile music player with advanced visualization"
 arch=('x86_64')
@@ -10,7 +10,7 @@ provides=('musaic')
 conflicts=('musaic')
 depends=('fuse2')
 options=(!strip !debug)
-source=("musaic-0.4.0.beta.AppImage::https://github.com/solder3t/musaic-player-linux/releases/download/v0.4.0-beta/Musaic-0.4.0-beta-Linux.AppImage")
+source=("musaic-${pkgver}.AppImage::https://github.com/solder3t/musaic-player-linux/releases/download/v${pkgver}/Musaic-${pkgver}-Linux.AppImage")
 noextract=("musaic-${pkgver}.AppImage")
 sha256sums=('SKIP')
 
