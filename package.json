@@ -45,7 +45,9 @@
     "dist": "npm run build && electron-builder --publish never",
     "dist:win": "npm run build && electron-builder --win --publish never",
     "dist:mac": "npm run build && electron-builder --mac --publish never",
-    "dist:linux": "npm run build && electron-builder --linux --publish never"
+    "dist:linux": "npm run build && electron-builder --linux --publish never",
+    "version:sync": "node ./scripts/build/sync-version.cjs",
+    "version": "node ./scripts/build/sync-version.cjs && git add .github/aur/PKGBUILD .github/homebrew/musaic-player.rb package-lock.json"
   },
   "repository": {
     "type": "git",

@@ -4,6 +4,12 @@ const fs = require('fs')
 const path = require('path')
 const { execFileSync } = require('child_process')
 
+try {
+  require('./sync-version.cjs').syncVersion(true)
+} catch {
+  // Ignore sync errors during metadata generation
+}
+
 const outputPath = path.resolve(__dirname, '../../out/build-metadata.json')
 const repoRoot = path.resolve(__dirname, '../..')
 
