@@ -19,7 +19,7 @@ test('builds a private web resolver URL from rounded, database-free metadata', (
     title: 'Replay!',
     durationSec: 214
   })
-  assert.equal(model.webUrl, `https://github.com/solder3t/musaic-player-linuxsignal/#${model.nativeLink}`)
+  assert.equal(model.webUrl, `https://github.com/solder3t/musaic-player-linux/#${model.nativeLink}`)
   assert.deepEqual(decodeSignalLink(model.nativeLink), {
     version: 3,
     type: 'metadata',

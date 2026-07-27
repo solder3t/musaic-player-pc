@@ -1,12 +1,12 @@
-cask "astra-music" do
+cask "musaic-player" do
   version "0.5.2"
   sha256 "53df4c78c0779c2edc7555cec83400bd61347a5ffd20399e09cb21bc2b4c5f11"
 
-  url "https://github.com/Boof2015/astra/releases/download/v#{version}-beta/Astra-#{version}-beta-Mac-arm64.dmg",
-      verified: "github.com/Boof2015/astra/"
-  name "Astra"
+  url "https://github.com/solder3t/musaic-player-linux/releases/download/v#{version}-beta/Musaic-#{version}-beta-Mac-arm64.dmg",
+      verified: "github.com/solder3t/musaic-player-linux/"
+  name "Musaic"
   desc "Music player with gapless playback, parametric EQ, and real-time DSP visualizers"
-  homepage "https://astramusic.dev/"
+  homepage "https://github.com/solder3t/musaic-player-linux"
 
   livecheck do
     url :url
@@ -15,12 +15,12 @@ cask "astra-music" do
 
   depends_on arch: :arm64
 
-  app "Astra.app"
+  app "Musaic.app"
 
   zap trash: [
-    "~/Library/Application Support/Astra",
-    "~/Library/Caches/com.astra.musicplayer",
-    "~/Library/Logs/Astra",
-    "~/Library/Preferences/com.astra.musicplayer.plist",
+    "~/Library/Application Support/Musaic",
+    "~/Library/Caches/com.musaic.musicplayer",
+    "~/Library/Logs/Musaic",
+    "~/Library/Preferences/com.musaic.musicplayer.plist",
   ]
 end
