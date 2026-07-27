@@ -4,6 +4,8 @@ A premium, local-first audiophile music player for Linux desktops — built for 
 
 ![Musaic Player for Linux](assets/musaic-logo.svg)
 
+> **Note**: Musaic Player is a personal fork of **[Astra](https://github.com/boof2015/Astra)**. Full credits go to Aastra / [@boof2015](https://github.com/boof2015) and its original developers for creating the underlying high-performance audio engine and architecture.
+
 Musaic Player combines a bit-perfect Linux audio engine with cutting-edge AI features, social LAN listening, and stunning AMOLED and Glassmorphism design aesthetics.
 
 ## Key Features
@@ -51,3 +53,8 @@ npm test
 # Build Linux AppImage / DEB / RPM package
 npm run dist:linux
 ```
+
+## Credits & Attribution
+
+Musaic Player is created and maintained by **solder3t** (`sold3vs@gmail.com`) as a personal fork of **Astra**.
+We extend our deepest gratitude and full credits to **Aastra / boof2015** and the original Astra development team for building such an exceptional, local-first audiophile music player foundation.

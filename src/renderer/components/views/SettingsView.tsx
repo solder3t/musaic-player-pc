@@ -2987,7 +2987,8 @@ export default function SettingsView() {
               <div className="settings-info-panel">
                 <h4>Attribution</h4>
                 <p>Musaic is created and maintained by solder3t.</p>
-                <p className="settings-info-meta">Contact: adityasikarwar573@gmail.com</p>
+                <p className="settings-info-meta">Contact: sold3vs@gmail.com</p>
+                <p className="settings-note">Musaic is a personal fork of Astra. Full credits to the original Astra developers.</p>
                 <div className="settings-info-links">
                   <button
                     type="button"
