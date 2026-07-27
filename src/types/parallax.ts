@@ -561,7 +561,7 @@ export interface ParallaxIncomingPairRequest {
 }
 
 export interface ParallaxIdentity {
-  // §20.19(c). Role-neutral persisted UUID per Astra install. Advertised over mDNS when sink
+  // §20.19(c). Role-neutral persisted UUID per Musaic install. Advertised over mDNS when sink
   // is enabled; sent in pair-request when acting as host. Discovery memory only — auth
   // identity is still the host-issued `sinkId`.
   endpointUuid: string
@@ -570,7 +570,7 @@ export interface ParallaxIdentity {
 // §20 Commit 2. Discovery wire shape — the renderer wizard renders rows from this. Built from
 // bonjour-service's `Service` payload by the parallaxDiscovery wrapper, never carries
 // credentials. `endpointUuid` lets the host UI match against its `pairedSinks` to render
-// "Already paired" badges; absent uuid (older sink or non-Astra advert spoofing the type) is a
+// "Already paired" badges; absent uuid (older sink or non-Musaic advert spoofing the type) is a
 // valid but degraded state — the row stays selectable, just without paired-status memory.
 export interface ParallaxDiscoveredSink {
   endpointUuid: string | null

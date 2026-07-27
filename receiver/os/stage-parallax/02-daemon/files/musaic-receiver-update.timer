@@ -3,7 +3,7 @@
 # overnight; the randomized delay avoids a fleet stampeding the release API at 03:30 sharp.
 
 [Unit]
-Description=Daily Astra receiver update check
+Description=Daily Musaic receiver update check
 
 [Timer]
 OnBootSec=10min

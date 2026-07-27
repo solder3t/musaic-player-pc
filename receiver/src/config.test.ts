@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { ConfigStore } from './config'
 
 function withTempDir<T>(run: (dir: string) => T): T {
-  const dir = mkdtempSync(join(tmpdir(), 'astra-receiver-test-'))
+  const dir = mkdtempSync(join(tmpdir(), 'musaic-receiver-test-'))
   try {
     return run(dir)
   } finally {

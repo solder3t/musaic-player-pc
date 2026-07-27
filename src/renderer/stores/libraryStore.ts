@@ -153,7 +153,7 @@ export interface ArtworkRequestOptions {
   format?: ArtworkResponseFormat
 }
 
-// Displayable artwork URLs are deterministic astra-artwork:// protocol URLs
+// Displayable artwork URLs are deterministic musaic-artwork:// protocol URLs
 // served by the main process; Chromium owns image caching and eviction, so
 // the renderer keeps no artwork byte caches.
 const ARTWORK_PROTOCOL_VARIANT_SEGMENTS: Record<ArtworkVariant, string> = {
@@ -163,7 +163,7 @@ const ARTWORK_PROTOCOL_VARIANT_SEGMENTS: Record<ArtworkVariant, string> = {
 }
 
 function buildArtworkProtocolUrl(hash: string, variant: ArtworkVariant): string {
-  return `astra-artwork://art/${ARTWORK_PROTOCOL_VARIANT_SEGMENTS[variant]}/${encodeURIComponent(hash)}`
+  return `musaic-artwork://art/${ARTWORK_PROTOCOL_VARIANT_SEGMENTS[variant]}/${encodeURIComponent(hash)}`
 }
 
 type ScanStage = 'scanning' | 'backfill' | 'cleanup'
@@ -334,7 +334,7 @@ let fullTracksRequestId = 0
 // and is never released on its own. Once the user has been away from all of
 // them for a while, ask Blink to drop it — but only when the image cache is
 // actually holding enough to be worth clearing. A wasted clear is cheap
-// (artwork re-serves from the disk-backed astra-artwork protocol), so the
+// (artwork re-serves from the disk-backed musaic-artwork protocol), so the
 // delay is just a debounce against quick bounce-backs.
 const BLINK_CACHE_CLEAR_DELAY_MS = 45_000
 const BLINK_CACHE_CLEAR_MIN_IMAGE_BYTES = 24 * 1024 * 1024
@@ -1956,7 +1956,7 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     const variant: ArtworkVariant = options?.variant ?? 'card'
     const format: ArtworkResponseFormat = options?.format ?? 'object-url'
 
-    // Displayable URLs are deterministic; the astra-artwork protocol serves
+    // Displayable URLs are deterministic; the musaic-artwork protocol serves
     // the bytes and Chromium handles caching. May 404 for missing art, so
     // consumers need an error fallback.
     if (format === 'object-url') {
@@ -2466,7 +2466,7 @@ export function getLibraryDiagnosticsSnapshot(): {
     selectedDetailTrackCount: state.selectedAlbum || state.selectedArtist || state.selectedGenre ? state.trackPaths.length : 0,
     scanInProgress: state.isScanning,
     caches: {
-      // Renderer artwork byte caches were removed with the astra-artwork
+      // Renderer artwork byte caches were removed with the musaic-artwork
       // protocol migration; Chromium owns image caching now. Shape kept for
       // the memory diagnostics CSV.
       artworkFullEntries: 0,

@@ -1,5 +1,5 @@
 /*
- * Astra spatial renderer AudioWorklet.
+ * Musaic spatial renderer AudioWorklet.
  *
  * Hosts the libspatialaudio-based binaural renderer (spatial-renderer.wasm,
  * built by scripts/build/build-spatial-wasm.sh). Takes an N-channel virtual

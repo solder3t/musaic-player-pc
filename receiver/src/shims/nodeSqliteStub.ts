@@ -6,7 +6,7 @@
 // use the cache store — fail loudly rather than pretend.
 export class DatabaseSync {
   constructor() {
-    throw new Error('node:sqlite is stubbed out of the astra-receiver bundle.')
+    throw new Error('node:sqlite is stubbed out of the musaic-receiver bundle.')
   }
 }
 

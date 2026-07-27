@@ -2366,7 +2366,7 @@ export default function TrackList({
                   <path d="M3 12h3l2-6 4 12 3-9 2 3h4" />
                 </svg>
               </span>
-              Create Astra Signal...
+              Create Musaic Signal...
             </button>
           )}
           {ratingsEnabled && !contextMenuContainsMissingPlaylistEntry && (

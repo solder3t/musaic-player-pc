@@ -46,7 +46,7 @@ export function createOutputBackend(
   }
 
   const createAlsaOutput = options.createAlsaOutput ?? ((device: string) => new AlsaOutput(device))
-  const log = options.log ?? ((message: string) => console.log(`[astra-receiver] ${message}`))
+  const log = options.log ?? ((message: string) => console.log(`[musaic-receiver] ${message}`))
   const candidates = [config.audioDevice, ...ALSA_FALLBACK_DEVICES]
     .filter((device, index, list) => list.indexOf(device) === index)
   for (const device of candidates) {

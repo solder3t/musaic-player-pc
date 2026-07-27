@@ -660,7 +660,7 @@ export const useParallaxStore = create<ParallaxSettingsStore>((set, get) => {
         streamId,
         trackId: 'parallax-test-tone',
         title: 'Parallax test tone',
-        artist: 'Astra',
+        artist: 'Musaic',
         album: 'Setup',
         sampleRate: specs.sampleRate,
         channels: specs.channels,

@@ -711,7 +711,7 @@ const MAX_LIBRARY_TRACK_PAGE_LIMIT = 2000
 const PLAYLIST_COVER_HASH_PREFIX = 'plc:'
 const ARTIST_IMAGE_HASH_PREFIX = 'ari:'
 const LATEST_LIBRARY_SYNC_SUMMARY_META_KEY = 'library_latest_sync_summary_v1'
-const LIBRARY_QUERY_METRICS_ENV = 'ASTRA_LIBRARY_QUERY_METRICS'
+const LIBRARY_QUERY_METRICS_ENV = 'MUSAIC_LIBRARY_QUERY_METRICS'
 const EFFECTIVE_TRACK_SELECT_COLUMNS = `
   t.id AS id,
   t.path AS path,
@@ -1051,7 +1051,7 @@ function readAlbumIdentityRowsByAlbumKeys(albumKeys: Iterable<string>): DbTrackR
     rows.push(...readEffectiveTrackRows(`
       SELECT ${EFFECTIVE_TRACK_SELECT_COLUMNS}
       ${EFFECTIVE_TRACK_FROM_CLAUSE}
-      WHERE astra_normalize_album_key(COALESCE(o.album, t.album)) IN (${placeholders})
+      WHERE musaic_normalize_album_key(COALESCE(o.album, t.album)) IN (${placeholders})
     `, chunk))
   }
   return rows
@@ -1064,7 +1064,7 @@ function readAlbumIdentityRowsForTracks(tracks: readonly DbTrackRow[]): DbTrackR
 
 // Cached, library-wide derived state for hot read paths. Album identity keys
 // depend on grouping context from the whole library, so computing them per
-// query forces full-table scans through the astra_normalize_album_key JS UDF;
+// query forces full-table scans through the musaic_normalize_album_key JS UDF;
 // the snapshot computes them once per write generation instead.
 interface LibraryTrackSnapshot {
   generation: number
@@ -1163,7 +1163,7 @@ function readEffectiveTrackRowsByAlbumKey(albumKey: string): DbTrackRow[] {
   return readEffectiveTrackRows(`
     SELECT ${EFFECTIVE_TRACK_SELECT_COLUMNS}
     ${EFFECTIVE_TRACK_FROM_CLAUSE}
-    WHERE astra_normalize_album_key(COALESCE(o.album, t.album)) = ?
+    WHERE musaic_normalize_album_key(COALESCE(o.album, t.album)) = ?
   `, [normalizedAlbumKey])
 }
 
@@ -1935,7 +1935,7 @@ export async function initDatabase(): Promise<void> {
   db = new LibrarySqliteDatabase(new BetterSqliteDatabase(dbPath, { timeout: 5000 }))
   db.pragma('foreign_keys = ON')
   db.pragma('busy_timeout = 5000')
-  db.registerFunction('astra_normalize_album_key', { deterministic: true }, normalizeSqliteAlbumKey)
+  db.registerFunction('musaic_normalize_album_key', { deterministic: true }, normalizeSqliteAlbumKey)
 
   // Create tables
   db.run(`
@@ -7851,7 +7851,7 @@ async function writeTrackMetadataToFile(
   }
 
   const extension = extname(trackPath).toLowerCase()
-  const tempDir = await mkdtemp(join(tmpdir(), 'astra-tag-write-'))
+  const tempDir = await mkdtemp(join(tmpdir(), 'musaic-tag-write-'))
   const outputPath = join(tempDir, `updated${extension || '.media'}`)
 
   try {
@@ -9338,10 +9338,10 @@ function buildStatsTransferTrackResolver(): StatsTransferResolver {
 
 // ── External listening imports ───────────────────────────
 //
-// Data from outside Astra (a Last.fm history, another player) arrives in the public format
+// Data from outside Musaic (a Last.fm history, another player) arrives in the public format
 // in shared/stats/listeningImportFile.ts and is translated here into the internal payloads.
 // The translation is where provenance is enforced rather than trusted: the file supplies the
-// listening data, Astra supplies the origin id, the source type and the session-key prefix.
+// listening data, Musaic supplies the origin id, the source type and the session-key prefix.
 // A file therefore cannot attribute plays to another install, and cannot collide with a
 // session this machine recorded itself.
 
@@ -9366,7 +9366,7 @@ export async function applyExternalListeningImport(
     plays: file.plays.map(([trackIndex, playCount, lastPlayedAt]) => [
       trackIndex, 0, playCount, lastPlayedAt
     ]),
-    // Ratings and favorites remain exclusive to Astra-to-Astra settings transfer. External
+    // Ratings and favorites remain exclusive to Musaic-to-Musaic settings transfer. External
     // listening imports carry only data that can be removed cleanly by source.
     ratings: [],
     favorites: []
@@ -9873,7 +9873,7 @@ function applyListeningHistorySection(
     // identifier the phone sync uses for unresolved entries rather than storing a hash that
     // reads like a real path.
     const trackPath = resolution.trackPath
-      ?? `astra-sync://unmatched/${buildTrackSyncKey(title, artist, album)}`
+      ?? `musaic-sync://unmatched/${buildTrackSyncKey(title, artist, album)}`
 
     const localRow = resolution.trackPath ? rowByPath.get(resolution.trackPath) : undefined
     sessionKeyByPayloadIndex[payloadIndex] = sessionKey
@@ -10938,7 +10938,7 @@ export async function reassociatePlaylistEntry(
   const normalizedTargetPath = typeof targetTrackPath === 'string' ? targetTrackPath.trim() : ''
   const targetTrack = normalizedTargetPath ? getTrackByPath(normalizedTargetPath) : null
   if (!targetTrack || targetTrack.source_type !== 'local' || targetTrack.is_available !== 1) {
-    throw new Error("That file isn't in your Astra library. Add or rescan its folder first.")
+    throw new Error("That file isn't in your Musaic library. Add or rescan its folder first.")
   }
 
   db.run(`
@@ -11361,7 +11361,7 @@ export async function exportPlaylistToM3u(playlistId: number, filePath: string):
   const warnings: string[] = []
   const nonPortableEntryCount = countPotentiallyNonPortableM3uEntries(entries)
   if (nonPortableEntryCount > 0) {
-    warnings.push(`${nonPortableEntryCount} entries reference remote or app-specific locations and may not work outside Astra.`)
+    warnings.push(`${nonPortableEntryCount} entries reference remote or app-specific locations and may not work outside Musaic.`)
   }
 
   await writeFile(exportFilePath, serializePlaylistEntriesToM3u(entries, exportFilePath), 'utf-8')
@@ -11973,7 +11973,7 @@ export function replaceSyncedPlaylist(
         matched = true
       } else {
         const sourcePath = typeof entry.sourcePath === 'string' ? entry.sourcePath.trim() : ''
-        trackPath = sourcePath || `astra-sync://unmatched/${buildTrackSyncKey(entry.title, entry.artist, entry.album)}`
+        trackPath = sourcePath || `musaic-sync://unmatched/${buildTrackSyncKey(entry.title, entry.artist, entry.album)}`
       }
       db.run(
         'INSERT INTO playlist_tracks (playlist_id, track_path, position, added_at, fallback_title, fallback_artist, fallback_album) VALUES (?, ?, ?, ?, ?, ?, ?)',

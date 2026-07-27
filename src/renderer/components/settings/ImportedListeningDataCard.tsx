@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ImportedListeningSource, ListeningImportPreview } from '../../../types/listeningStats'
 
-// Play counts and listening sessions brought in from outside Astra, and the means to take
+// Play counts and listening sessions brought in from outside Musaic, and the means to take
 // them back out again. Every import is tagged with its source, so removal never touches
-// ratings, favorites, or listening Astra recorded itself.
+// ratings, favorites, or listening Musaic recorded itself.
 
 function formatCount(value: number): string {
   return value.toLocaleString()
@@ -59,7 +59,7 @@ export default function ImportedListeningDataCard() {
     try {
       const filePath = await window.electronAPI.openFileDialog({
         title: 'Import Listening Data',
-        filters: [{ name: 'Astra Listening Import', extensions: ['json'] }],
+        filters: [{ name: 'Musaic Listening Import', extensions: ['json'] }],
       })
       if (!filePath) return
 
@@ -177,9 +177,9 @@ export default function ImportedListeningDataCard() {
       )}
 
       <p className="settings-note">
-        Astra reads the open <code>astra-listening-import</code> format, so third-party tools can bring in
+        Musaic reads the open <code>musaic-listening-import</code> format, so third-party tools can bring in
         play counts and listening history from other services. Each source can be removed again here without
-        touching ratings, favorites, or anything Astra recorded itself.
+        touching ratings, favorites, or anything Musaic recorded itself.
       </p>
     </div>
   )

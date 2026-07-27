@@ -600,7 +600,7 @@ export class CompanionApiV2 {
       }
     }
     if (!this.options.dispatchRendererCommand(command)) {
-      this.respondError(res, 503, 'renderer_unavailable', 'Astra is not ready to execute the intent.')
+      this.respondError(res, 503, 'renderer_unavailable', 'Musaic is not ready to execute the intent.')
       return
     }
     this.respondJson(res, 202, { accepted: true, action, targetRef: target.ref })
@@ -812,7 +812,7 @@ export class CompanionApiV2 {
 
   private dispatchOrUnavailable(res: ServerResponse<IncomingMessage>, command: CompanionApiRendererCommand): void {
     if (!this.options.dispatchRendererCommand(command)) {
-      this.respondError(res, 503, 'renderer_unavailable', 'Astra is not ready to execute the command.')
+      this.respondError(res, 503, 'renderer_unavailable', 'Musaic is not ready to execute the command.')
       return
     }
     this.respondJson(res, 202, { accepted: true })

@@ -59,8 +59,8 @@ interface ParallaxReadableResponse {
   } | null
 }
 
-const PAIRING_INFO = Buffer.from('astra-parallax-v2-pairing', 'utf8')
-const PAIRING_AAD_PREFIX = Buffer.from('astra-parallax-v2-confirm:', 'utf8')
+const PAIRING_INFO = Buffer.from('musaic-parallax-v2-pairing', 'utf8')
+const PAIRING_AAD_PREFIX = Buffer.from('musaic-parallax-v2-confirm:', 'utf8')
 
 function toPem(label: string, bytes: ArrayBuffer): string {
   const base64 = Buffer.from(bytes).toString('base64')
@@ -109,7 +109,7 @@ export async function createParallaxTlsIdentity(commonName: string): Promise<Par
   const now = Date.now()
   const certificate = await x509.X509CertificateGenerator.createSelfSigned({
     serialNumber: randomBytes(16).toString('hex'),
-    name: `CN=${commonName.replace(/[,+="<>#;]/g, '_').slice(0, 64) || 'Astra Parallax'}`,
+    name: `CN=${commonName.replace(/[,+="<>#;]/g, '_').slice(0, 64) || 'Listen Together'}`,
     notBefore: new Date(now - 24 * 60 * 60_000),
     notAfter: new Date(now + 10 * 365 * 24 * 60 * 60_000),
     signingAlgorithm: algorithm,
@@ -177,7 +177,7 @@ export function deriveParallaxPairingKey(
 export function deriveParallaxPairingCode(key: Buffer, transcript: ParallaxPairingTranscript): string {
   const digest = createHash('sha256')
     .update(key)
-    .update(Buffer.from('astra-parallax-v2-sas', 'utf8'))
+    .update(Buffer.from('musaic-parallax-v2-sas', 'utf8'))
     .update(transcriptBytes(transcript))
     .digest()
   return String(digest.readUInt32BE(0) % 1_000_000).padStart(6, '0')

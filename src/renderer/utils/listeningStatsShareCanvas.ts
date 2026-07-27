@@ -6,8 +6,8 @@ export const LISTENING_STATS_SHARE_HEIGHT = 1920
 export interface ListeningStatsShareCanvasAssets {
   accentColor: string
   artworkByHash: ReadonlyMap<string, HTMLImageElement>
-  astraLogo: HTMLImageElement | null
-  astraWordmark: HTMLImageElement | null
+  musaicLogo: HTMLImageElement | null
+  musaicWordmark: HTMLImageElement | null
 }
 
 const BACKGROUND = '#0f0f10'
@@ -146,11 +146,11 @@ function drawPlaceholder(
   gradient.addColorStop(1, '#121316')
   context.fillStyle = gradient
   context.fillRect(x, y, width, height)
-  if (!assets.astraLogo) return
+  if (!assets.musaicLogo) return
   const size = Math.min(width, height) * 0.28
   context.save()
   context.globalAlpha = 0.72
-  context.drawImage(assets.astraLogo, x + (width - size) / 2, y + (height - size) / 2, size, size)
+  context.drawImage(assets.musaicLogo, x + (width - size) / 2, y + (height - size) / 2, size, size)
   context.restore()
 }
 
@@ -430,11 +430,11 @@ function drawFooter(
   context.textAlign = 'right'
   context.fillText(label, logoX - 16, baseline)
   context.textAlign = 'left'
-  if (assets.astraLogo) context.drawImage(assets.astraLogo, logoX, 1846, logoSize, logoSize)
-  if (assets.astraWordmark) {
+  if (assets.musaicLogo) context.drawImage(assets.musaicLogo, logoX, 1846, logoSize, logoSize)
+  if (assets.musaicWordmark) {
     context.save()
     context.globalAlpha = 0.84
-    context.drawImage(assets.astraWordmark, wordmarkX, 1859, wordmarkWidth, wordmarkHeight)
+    context.drawImage(assets.musaicWordmark, wordmarkX, 1859, wordmarkWidth, wordmarkHeight)
     context.restore()
   }
 }

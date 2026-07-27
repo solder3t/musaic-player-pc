@@ -67,7 +67,7 @@ const defaultOptions: ResolvedVUMeterOptions = {
 }
 
 const defaultVUMeterDataSource: VUMeterDataSource = {
-  // Astra's engine yields multichannel chunks; the ported VU meter is stereo (L/R).
+  // Musaic's engine yields multichannel chunks; the ported VU meter is stereo (L/R).
   getPendingVUMeterSamples: () => audioEngine.flushPendingVUMeterSamples().map((chunk) => {
     const left = chunk.channels[0] ?? new Float32Array(0)
     return { left, right: chunk.channels[1] ?? left }

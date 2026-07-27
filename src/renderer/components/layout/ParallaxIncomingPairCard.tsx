@@ -8,7 +8,7 @@ import { useParallaxStore } from '../../stores/parallaxStore'
 // PIN, the request expires after 90s, sink returns to idle.
 //
 // Two variants:
-//   - 'modal' (default): centered modal over the normal Astra shell.
+//   - 'modal' (default): centered modal over the normal Musaic shell.
 //   - 'zone-display': inline overlay sized to fit inside the Zone Display surface.
 
 interface Props {

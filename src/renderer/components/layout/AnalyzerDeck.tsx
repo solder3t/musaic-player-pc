@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import type { ScopeKind } from '../../../types/scopePopout'
-import { useAstraActivity } from '../../hooks/useAstraActivity'
+import { useMusaicActivity } from '../../hooks/useMusaicActivity'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { DEFAULT_ANALYZER_HEIGHT_PX, normalizeAnalyzerHeightPx, useUIStore } from '../../stores/uiStore'
 import { useVisualizerSettingsStore } from '../../stores/visualizerSettingsStore'
-import AstraActivityIndicator from '../activity/AstraActivityIndicator'
+import MusaicActivityIndicator from '../activity/MusaicActivityIndicator'
 import VisualizerPanel from '../visualizers/VisualizerPanel'
 import AnalyzerEditOverlay from './AnalyzerEditOverlay'
 import { buildAnalyzerGridTemplateColumns } from './analyzerLayout'
@@ -36,10 +36,10 @@ function AnalyzerBrandActivity() {
 }
 
 function AnalyzerBrandActivityIndicator() {
-  const activity = useAstraActivity()
+  const activity = useMusaicActivity()
 
   return (
-    <AstraActivityIndicator
+    <MusaicActivityIndicator
       className="analyzer-brand-activity"
       state={activity.state}
       event={activity.event}

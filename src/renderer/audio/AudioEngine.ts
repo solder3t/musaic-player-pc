@@ -431,7 +431,7 @@ export class AudioEngine {
   private includeLfeInDownmix: boolean = false
   private stereoUpmixMode: StereoUpmixMode = 'off'
   private manualChannelRoutingMap: number[] | null = null
-  // Astra Spatial Engine (binaural render stage). The worklet node is lazy:
+  // Musaic Spatial Engine (binaural render stage). The worklet node is lazy:
   // created on first enable, then kept for the AudioContext's lifetime.
   private spatialMode: SpatialMode = 'off'
   private virtualSpeakers: VirtualSpeaker[] = []

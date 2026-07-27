@@ -289,7 +289,7 @@ export class SpectrumAnalyzer {
     this.frameLoop = new VisualizerFrameLoop({
       frameScheduler,
       // Spectrum DSP is native-only; stop the loop after one frame when native is
-      // unavailable (warned once) rather than spinning — preserves Astra fallback behavior.
+      // unavailable (warned once) rather than spinning — preserves Musaic fallback behavior.
       shouldRun: () => this.isNativeAvailable() && this.dataSource.isPlaying(),
       onFrame: this.drawFrame,
     })

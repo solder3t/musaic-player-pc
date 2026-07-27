@@ -1,7 +1,7 @@
 import Bonjour from 'bonjour-service'
 import type { Service } from 'bonjour-service/dist/lib/service'
 
-export const PHONE_REMOTE_DISCOVERY_SERVICE_TYPE = 'astra-remote'
+export const PHONE_REMOTE_DISCOVERY_SERVICE_TYPE = 'musaic-remote'
 export const PHONE_REMOTE_DISCOVERY_PROTOCOL: 'tcp' = 'tcp'
 
 interface BonjourLike {
@@ -40,7 +40,7 @@ export class PhoneRemoteDiscoveryService {
 
   startAdvertising(options: PhoneRemoteDiscoveryAdvertiseOptions): void {
     const normalized = {
-      name: options.name.trim() || 'Astra Desktop',
+      name: options.name.trim() || 'Musaic Desktop',
       port: options.port,
       endpointUuid: options.endpointUuid?.trim() || '',
       protocolVersion: Number.isFinite(options.protocolVersion)

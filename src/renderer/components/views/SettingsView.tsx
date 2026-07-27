@@ -248,13 +248,13 @@ const RESET_ACTION_IDS: ResetActionId[] = [
   'factory-reset',
 ]
 
-const ASTRA_REPOSITORY_URL = 'https://github.com/Boof2015/astra'
-const ASTRA_DISCORD_URL = 'https://discord.gg/hsKK8Kr9Nj'
-const ASTRA_SUPPORT_URL = 'https://ko-fi.com/boof2015'
-const ASTRA_LICENSE_URL = 'https://github.com/Boof2015/astra/blob/main/LICENSE'
+const MUSAIC_REPOSITORY_URL = 'https://github.com/solder3t/musaic-player-linux'
+const MUSAIC_DISCORD_URL = 'https://discord.gg/hsKK8Kr9Nj'
+const MUSAIC_SUPPORT_URL = 'https://github.com/solder3t/musaic-player-linux'
+const MUSAIC_LICENSE_URL = 'https://github.com/solder3t/musaic-player-linux/blob/main/LICENSE'
 const GPL_V3_URL = 'https://www.gnu.org/licenses/gpl-3.0.html'
-const BIT_PERFECT_WARNING_DISMISSED_STORAGE_KEY = 'astra-bitperfect-warning-dismissed-v1'
-const DEVELOPER_SETTINGS_VISIBILITY_STORAGE_KEY = 'astra-settings-developer-section-visible-v1'
+const BIT_PERFECT_WARNING_DISMISSED_STORAGE_KEY = 'musaic-bitperfect-warning-dismissed-v1'
+const DEVELOPER_SETTINGS_VISIBILITY_STORAGE_KEY = 'musaic-settings-developer-section-visible-v1'
 const DEVELOPER_SETTINGS_SECTION_ID: SettingsSectionId = 'developer'
 const DEVELOPER_SETTINGS_REVEAL_CLICK_TARGET = 7
 const DEVELOPER_SETTINGS_REVEAL_RESET_MS = 2500
@@ -807,7 +807,7 @@ export default function SettingsView() {
     {
       id: 'reset-theme',
       title: 'Reset Theme',
-      description: 'Restore the default Astra theme and accent.',
+      description: 'Restore the default Musaic theme and accent.',
       buttonLabel: 'Reset Theme',
       confirmTitle: 'Reset Theme to Default',
       confirmMessage: 'This will restore the default preset and accent color.',
@@ -915,7 +915,7 @@ export default function SettingsView() {
       title: 'Factory Reset',
       description: 'Wipe all settings and all library-side data including playlists and app metadata.',
       buttonLabel: 'Factory Reset',
-      confirmTitle: 'Factory Reset Astra',
+      confirmTitle: 'Factory Reset Musaic',
       confirmMessage: 'This removes all settings and all library data, then reloads the app.',
       confirmLabel: 'Factory Reset',
       destructive: true,
@@ -969,9 +969,9 @@ export default function SettingsView() {
   const phoneRemotePairedDeviceCount = phoneRemoteStatus?.pairedDeviceCount ?? phoneRemotePairedDevices.length
   const phoneRemotePendingPairingCount = phoneRemoteStatus?.pendingPairingCount ?? phoneRemotePendingPairingRequests.length
   const localApiPhoneRemoteSummary = !phoneRemoteEnabled
-    ? 'Phone remote is off. Turn it on when you want Astra to expose `/remote/` on your LAN.'
+    ? 'Phone remote is off. Turn it on when you want Musaic to expose `/remote/` on your LAN.'
     : phoneRemoteLanUrls.length === 0
-      ? 'Phone remote is enabled, but Astra has not found a usable `192.168.*` LAN address yet.'
+      ? 'Phone remote is enabled, but Musaic has not found a usable `192.168.*` LAN address yet.'
       : phoneRemotePendingPairingCount > 0
         ? `${phoneRemotePendingPairingCount} phone${phoneRemotePendingPairingCount === 1 ? '' : 's'} waiting for approval.`
         : phoneRemotePairedDeviceCount > 0
@@ -1851,9 +1851,9 @@ export default function SettingsView() {
                         className={`settings-toggle ${artistBrowseMode === 'canonical' ? 'active' : ''}`}
                         onClick={() => setArtistBrowseMode('canonical')}
                         aria-pressed={artistBrowseMode === 'canonical'}
-                        title="Use Astra's primary artist and collaboration grouping"
+                        title="Use Musaic's primary artist and collaboration grouping"
                       >
-                        Astra grouping
+                        Musaic grouping
                       </button>
                     </div>
                   </div>
@@ -2384,7 +2384,7 @@ export default function SettingsView() {
                   </label>
                 </div>
                 <p className="settings-note">{lyricsStatusLabel}</p>
-                <p className="settings-note">Astra appends <code>/api/get</code> and <code>/api/search</code>. HTTP is supported for local mirrors.</p>
+                <p className="settings-note">Musaic appends <code>/api/get</code> and <code>/api/search</code>. HTTP is supported for local mirrors.</p>
                 <p className="settings-note">XLRC translation codes are matched left to right, with the first available translation shown.</p>
                 {lyricsResolvedError && <p className="settings-note settings-note-error">{lyricsResolvedError}</p>}
               </div>
@@ -2415,7 +2415,7 @@ export default function SettingsView() {
                     </button>
                   </div>
                   <div className="settings-field settings-field-inline">
-                    <span className="settings-field-label">Astra Icon on Cover Art</span>
+                    <span className="settings-field-label">Musaic Icon on Cover Art</span>
                     <button
                       className={`settings-toggle ${discordSmallIconEnabled ? 'active' : ''}`}
                       onClick={() => void setDiscordSmallIconEnabled(!discordSmallIconEnabled)}
@@ -2605,7 +2605,7 @@ export default function SettingsView() {
                     </button>
                   </div>
                   <p className="settings-note">
-                    Navigate Astra with an Xbox or PlayStation controller. D-pad/stick moves focus, A/Cross selects,
+                    Navigate Musaic with an Xbox or PlayStation controller. D-pad/stick moves focus, A/Cross selects,
                     X/Square plays or pauses, bumpers skip tracks, triggers seek, right stick switches tabs, and
                     Menu/Options opens a radial menu for advanced controls.
                   </p>
@@ -2986,27 +2986,27 @@ export default function SettingsView() {
             <div className="settings-info-panels">
               <div className="settings-info-panel">
                 <h4>Attribution</h4>
-                <p>Astra is created and maintained by Boof2015.</p>
-                <p className="settings-info-meta">Contact: contact@novaml.ai</p>
+                <p>Musaic is created and maintained by solder3t.</p>
+                <p className="settings-info-meta">Contact: adityasikarwar573@gmail.com</p>
                 <div className="settings-info-links">
                   <button
                     type="button"
                     className="settings-btn settings-link-btn"
-                    onClick={() => openExternalLink(ASTRA_REPOSITORY_URL)}
+                    onClick={() => openExternalLink(MUSAIC_REPOSITORY_URL)}
                   >
                     GitHub Repository
                   </button>
                   <button
                     type="button"
                     className="settings-btn settings-link-btn"
-                    onClick={() => openExternalLink(ASTRA_DISCORD_URL)}
+                    onClick={() => openExternalLink(MUSAIC_DISCORD_URL)}
                   >
                     Discord
                   </button>
                   <button
                     type="button"
                     className="settings-btn settings-link-btn settings-link-btn-kofi"
-                    onClick={() => openExternalLink(ASTRA_SUPPORT_URL)}
+                    onClick={() => openExternalLink(MUSAIC_SUPPORT_URL)}
                   >
                     Ko-fi
                     <span className="settings-link-btn-heart" aria-hidden="true" />
@@ -3015,12 +3015,12 @@ export default function SettingsView() {
               </div>
               <div className="settings-info-panel">
                 <h4>License</h4>
-                <p>Astra is distributed under GPL-3.0-only.</p>
+                <p>Musaic is distributed under GPL-3.0-only.</p>
                 <div className="settings-info-links">
                   <button
                     type="button"
                     className="settings-btn settings-link-btn"
-                    onClick={() => openExternalLink(ASTRA_LICENSE_URL)}
+                    onClick={() => openExternalLink(MUSAIC_LICENSE_URL)}
                   >
                     View LICENSE
                   </button>
@@ -3050,7 +3050,7 @@ export default function SettingsView() {
                   </div>
                 </div>
                 <p className="settings-note">
-                  Import or export your Astra settings to move preferences between installs.
+                  Import or export your Musaic settings to move preferences between installs.
                 </p>
               </div>
               <ImportedListeningDataCard />
@@ -3157,10 +3157,10 @@ export default function SettingsView() {
                       </div>
                     </div>
                     <p className="settings-note">
-                      When gapless prebuffer is disabled, Astra stops preloading the next track and clears scheduled handoffs so you can compare memory growth without gapless-style buffering.
+                      When gapless prebuffer is disabled, Musaic stops preloading the next track and clears scheduled handoffs so you can compare memory growth without gapless-style buffering.
                     </p>
                     <p className="settings-note">
-                      When analysis and EQ taps are disabled, Astra bypasses the standard post-EQ analyser and analysis-worklet branches while keeping normal playback and EQ filters active.
+                      When analysis and EQ taps are disabled, Musaic bypasses the standard post-EQ analyser and analysis-worklet branches while keeping normal playback and EQ filters active.
                     </p>
                   </>
                 ) : (

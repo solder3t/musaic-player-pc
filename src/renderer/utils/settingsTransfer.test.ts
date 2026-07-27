@@ -22,7 +22,7 @@ import {
   getImportableSettingsTransferCategoryIds,
   parseSettingsTransferFile,
   serializeSettingsTransferFile,
-  type AstraSettingsTransferFile,
+  type MusaicSettingsTransferFile,
   type SettingsTransferStorage,
 } from './settingsTransfer.ts'
 import { LRCLIB_OFFICIAL_BASE_URL } from '../../types/lyrics.ts'
@@ -52,7 +52,7 @@ class MemoryStorage implements SettingsTransferStorage {
   }
 }
 
-function collectExportedStorageKeys(file: AstraSettingsTransferFile): string[] {
+function collectExportedStorageKeys(file: MusaicSettingsTransferFile): string[] {
   return Object.values(file.categories).flatMap((category) => (
     category ? Object.keys(category.localStorage) : []
   ))
@@ -65,7 +65,7 @@ test('selected export categories include only allowlisted portable keys', () => 
     [INPUT_BINDINGS_STORAGE_KEY]: '{"version":1,"overrides":{}}',
     [GLOBAL_INPUT_BINDINGS_STORAGE_KEY]: '{"version":1,"enabled":{}}',
     [EQ_DEVICE_PROFILE_STORAGE_KEY]: '{"version":1,"profiles":{}}',
-    'astra-subsonic-sources-v1': 'server',
+    'musaic-subsonic-sources-v1': 'server',
   })
 
   const file = createSettingsTransferFile(['appearance', 'eq_presets', 'keybinds'], {
@@ -81,7 +81,7 @@ test('selected export categories include only allowlisted portable keys', () => 
   const exportedKeys = collectExportedStorageKeys(file)
   assert.equal(exportedKeys.includes(GLOBAL_INPUT_BINDINGS_STORAGE_KEY), false)
   assert.equal(exportedKeys.includes(EQ_DEVICE_PROFILE_STORAGE_KEY), false)
-  assert.equal(exportedKeys.includes('astra-subsonic-sources-v1'), false)
+  assert.equal(exportedKeys.includes('musaic-subsonic-sources-v1'), false)
 })
 
 test('known machine-specific, sensitive, and cache keys are excluded from full export', () => {
@@ -180,15 +180,15 @@ test('missing keys inside a selected category reset those preferences to default
 test('invalid schema and kind are rejected, unknown categories are ignored', () => {
   assert.deepEqual(parseSettingsTransferFile('{"kind":"other","schemaVersion":1,"categories":{}}'), {
     ok: false,
-    error: 'This file was not exported by Astra settings transfer.',
+    error: 'This file was not exported by Musaic settings transfer.',
   })
-  assert.deepEqual(parseSettingsTransferFile('{"kind":"astra-settings-transfer","schemaVersion":99,"categories":{}}'), {
+  assert.deepEqual(parseSettingsTransferFile('{"kind":"musaic-settings-transfer","schemaVersion":99,"categories":{}}'), {
     ok: false,
     error: 'This settings transfer file uses an unsupported version.',
   })
 
   const parsed = parseSettingsTransferFile(JSON.stringify({
-    kind: 'astra-settings-transfer',
+    kind: 'musaic-settings-transfer',
     schemaVersion: 1,
     exportedAt: '2026-06-25T00:00:00.000Z',
     appVersion: 'test',
@@ -210,7 +210,7 @@ test('lyrics online preference is a non-secret integration value, not library or
     storage: new MemoryStorage({
       [LYRICS_DISPLAY_SETTINGS_STORAGE_KEY]: '{"wordTimingEnabled":true}',
       [NORMALIZATION_ENABLED_STORAGE_KEY]: '0',
-      'astra-lyrics-cache-v1': 'cached lyrics',
+      'musaic-lyrics-cache-v1': 'cached lyrics',
     }),
     lyricsOnlineEnabled: true,
     lyricsLrclibBaseUrl: 'http://lyrics.local:8080/mirror',
@@ -225,7 +225,7 @@ test('lyrics online preference is a non-secret integration value, not library or
     '{"wordTimingEnabled":true}'
   )
   assert.equal(file.categories.non_secret_integrations?.localStorage[NORMALIZATION_ENABLED_STORAGE_KEY], undefined)
-  assert.equal(file.categories.non_secret_integrations?.localStorage['astra-lyrics-cache-v1'], undefined)
+  assert.equal(file.categories.non_secret_integrations?.localStorage['musaic-lyrics-cache-v1'], undefined)
 
   let importedLyricsEnabled: boolean | null = null
   let importedLrclibBaseUrl: string | null = null
@@ -374,8 +374,8 @@ test('detailed listening history is the only category left unticked by default',
 })
 
 test('older settings transfers without an LRCLIB URL restore the official endpoint', async () => {
-  const file: AstraSettingsTransferFile = {
-    kind: 'astra-settings-transfer',
+  const file: MusaicSettingsTransferFile = {
+    kind: 'musaic-settings-transfer',
     schemaVersion: 1,
     exportedAt: '2026-06-25T00:00:00.000Z',
     appVersion: '0.6.1-beta',

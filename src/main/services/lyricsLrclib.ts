@@ -9,7 +9,7 @@ import {
   normalizeLrclibBaseUrl
 } from '../../types/lyrics'
 
-export const LRCLIB_PROJECT_URL = 'https://github.com/Boof2015/astra'
+export const LRCLIB_PROJECT_URL = 'https://github.com/solder3t/musaic-player-linux'
 export const LRCLIB_REQUEST_TIMEOUT_MS = 15_000
 export const LRCLIB_PROVIDER_UNAVAILABLE_MESSAGE = "LRCLIB didn't respond in time. A retry may work."
 export const LRCLIB_PROVIDER_COOLDOWN_MS = 60_000
@@ -73,7 +73,7 @@ export function buildLrclibApiUrl(
 }
 
 export function createLrclibClientHeaders(config: Pick<LrclibClientConfig, 'appVersion'>): Record<string, string> {
-  const client = `Astra/${normalizeLrclibAppVersion(config.appVersion)} (${LRCLIB_PROJECT_URL})`
+  const client = `Musaic/${normalizeLrclibAppVersion(config.appVersion)} (${LRCLIB_PROJECT_URL})`
   return {
     Accept: 'application/json',
     'Lrclib-Client': client,

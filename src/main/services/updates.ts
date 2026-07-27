@@ -1,5 +1,5 @@
-const RELEASES_API_URL = 'https://api.github.com/repos/Boof2015/astra/releases?per_page=20'
-export const RELEASES_PAGE_URL = 'https://github.com/Boof2015/astra/releases'
+const RELEASES_API_URL = 'https://api.github.com/repos/solder3t/musaic-player-linux/releases?per_page=20'
+export const RELEASES_PAGE_URL = 'https://github.com/solder3t/musaic-player-linux/releases'
 const RELEASES_FETCH_TIMEOUT_MS = 10_000
 
 type SemverIdentifier = number | string
@@ -134,7 +134,7 @@ async function fetchGitHubReleases(): Promise<GitHubReleaseResponse[]> {
     const response = await fetch(RELEASES_API_URL, {
       headers: {
         Accept: 'application/vnd.github+json',
-        'User-Agent': 'Astra-Update-Check',
+        'User-Agent': 'Musaic-Update-Check',
       },
       signal: controller.signal,
     })
@@ -222,7 +222,7 @@ export async function checkForUpdates(currentVersion: string): Promise<UpdateChe
       releaseName: latestRelease.name,
       releaseUrl,
       checkedAt,
-      message: `Astra is up to date (v${currentVersion}).`,
+      message: `Musaic is up to date (v${currentVersion}).`,
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

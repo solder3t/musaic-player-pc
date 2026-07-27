@@ -12,16 +12,16 @@ import {
   type ParallaxDiscoveryEvent
 } from '../../types/parallax'
 
-// §20 / §14.1.5 Commit 2. Thin wrapper around `bonjour-service` for Astra zone-display
+// §20 / §14.1.5 Commit 2. Thin wrapper around `bonjour-service` for Musaic zone-display
 // discovery. Two independent operations:
 //
 //   - `startAdvertising(...)` publishes the local sink-listener address over mDNS so other
-//     Astras can discover it. Runs while `parallaxSinkEnabled` is true.
+//     Musaics can discover it. Runs while `parallaxSinkEnabled` is true.
 //   - `startBrowse()` subscribes to incoming service announcements; renderer wizard turns this
 //     on while the "Add Sink" modal is open, off when it closes.
 //
-// Codex §20.19(f) note: `bonjour-service`'s API expects the human form `{ type: 'astra-zone',
-// protocol: 'tcp' }`, NOT the wire form `_astra-zone._tcp`. The library prepends `_` and
+// Codex §20.19(f) note: `bonjour-service`'s API expects the human form `{ type: 'musaic-zone',
+// protocol: 'tcp' }`, NOT the wire form `_musaic-zone._tcp`. The library prepends `_` and
 // appends `._tcp` on the wire automatically.
 //
 // TXT records (Codex-approved): `version` / `name` / `endpoint_uuid`. No credentials. No `url`
@@ -29,7 +29,7 @@ import {
 // (Codex round 1, high: an advertiser cannot honestly serialize "my URL" on a multi-interface
 // host, and `0.0.0.0` would never be reachable from peers).
 
-export const PARALLAX_DISCOVERY_SERVICE_TYPE = 'astra-zone'
+export const PARALLAX_DISCOVERY_SERVICE_TYPE = 'musaic-zone'
 export const PARALLAX_DISCOVERY_PROTOCOL: 'tcp' = 'tcp'
 const PARALLAX_DISCOVERY_TXT_VERSION = PARALLAX_PROTOCOL_VERSION
 

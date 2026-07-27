@@ -1,4 +1,4 @@
-# pi-gen config for Parallax OS — the flashable Raspberry Pi appliance image for the Astra
+# pi-gen config for Parallax OS — the flashable Raspberry Pi appliance image for the Musaic
 # Parallax receiver. Sourced by pi-gen's build.sh (the CI workflow copies this file plus
 # stage-parallax/ into a pinned pi-gen checkout; see .github/workflows/parallax-os-release.yml).
 #

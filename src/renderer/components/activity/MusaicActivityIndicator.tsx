@@ -1,18 +1,18 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react'
 import {
-  ASTRA_ACTIVITY_EVENT_DURATIONS_MS,
-  type AstraActivityEvent,
-  type AstraActivityState,
-} from '../../utils/astraActivity'
+  MUSAIC_ACTIVITY_EVENT_DURATIONS_MS,
+  type MusaicActivityEvent,
+  type MusaicActivityState,
+} from '../../utils/musaicActivity'
 
-export interface AstraActivityPulse {
+export interface MusaicActivityPulse {
   id: number
-  kind: AstraActivityEvent
+  kind: MusaicActivityEvent
 }
 
-interface AstraActivityIndicatorProps {
-  state: AstraActivityState
-  event?: AstraActivityPulse | null
+interface MusaicActivityIndicatorProps {
+  state: MusaicActivityState
+  event?: MusaicActivityPulse | null
   className?: string
   size?: number
 }
@@ -144,7 +144,7 @@ interface IndicatorPattern {
 
 const IDLE_PATTERN: IndicatorPattern = { delays: idleBreath() }
 
-const STATE_PATTERNS: Record<AstraActivityState, IndicatorPattern> = {
+const STATE_PATTERNS: Record<MusaicActivityState, IndicatorPattern> = {
   idle: IDLE_PATTERN,
   playing: { delays: bitDecode() },
   paused: IDLE_PATTERN,
@@ -157,7 +157,7 @@ const STATE_PATTERNS: Record<AstraActivityState, IndicatorPattern> = {
   'parallax-connected': { delays: parallaxConnected() },
 }
 
-const EVENT_PATTERNS: Record<AstraActivityEvent, number[]> = {
+const EVENT_PATTERNS: Record<MusaicActivityEvent, number[]> = {
   'metadata-saving': metaFill(),
   'external-connected': uniform(),
   attention: uniform(),
@@ -175,7 +175,7 @@ function LightDots({ delays }: { delays: number[] }) {
             cx={cx}
             cy={cy}
             r={LIT_DOT / 2}
-            className="astra-activity-indicator-light"
+            className="musaic-activity-indicator-light"
             style={{ animationDelay: `${delay}ms` }}
           />
         )
@@ -187,7 +187,7 @@ function LightDots({ delays }: { delays: number[] }) {
 function BaseGrid() {
   return (
     <svg
-      className="astra-activity-indicator-base-grid"
+      className="musaic-activity-indicator-base-grid"
       viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
@@ -198,7 +198,7 @@ function BaseGrid() {
           cx={cx}
           cy={cy}
           r={BASE_DOT / 2}
-          className="astra-activity-indicator-base"
+          className="musaic-activity-indicator-base"
         />
       ))}
     </svg>
@@ -218,7 +218,7 @@ function StateDots({ pattern }: { pattern: IndicatorPattern }) {
   )
 }
 
-function EventDots({ event }: { event: AstraActivityEvent }) {
+function EventDots({ event }: { event: MusaicActivityEvent }) {
   return (
     <svg
       viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
@@ -230,15 +230,15 @@ function EventDots({ event }: { event: AstraActivityEvent }) {
   )
 }
 
-function AstraActivityIndicatorImpl({
+function MusaicActivityIndicatorImpl({
   state,
   event,
   className = '',
   size = 22,
-}: AstraActivityIndicatorProps) {
+}: MusaicActivityIndicatorProps) {
   const [eventActive, setEventActive] = useState(false)
   const [overlayPlaying, setOverlayPlaying] = useState(false)
-  const [currentEvent, setCurrentEvent] = useState<AstraActivityEvent | null>(null)
+  const [currentEvent, setCurrentEvent] = useState<MusaicActivityEvent | null>(null)
   const [currentEventId, setCurrentEventId] = useState<number | null>(null)
   const frameRef = useRef<number | null>(null)
   const eventEndTimerRef = useRef<number | null>(null)
@@ -280,7 +280,7 @@ function AstraActivityIndicatorImpl({
         setCurrentEventId(null)
         resumeTimerRef.current = null
       }, 220)
-    }, ASTRA_ACTIVITY_EVENT_DURATIONS_MS[event.kind])
+    }, MUSAIC_ACTIVITY_EVENT_DURATIONS_MS[event.kind])
   }, [event?.id, event?.kind])
 
   useEffect(() => {
@@ -292,11 +292,11 @@ function AstraActivityIndicatorImpl({
   }, [])
 
   const rootClassName = [
-    'astra-activity-indicator',
+    'musaic-activity-indicator',
     eventActive ? 'is-event-active' : '',
     className,
   ].filter(Boolean).join(' ')
-  const rootStyle = { '--astra-activity-indicator-size': `${size}px` } as CSSProperties
+  const rootStyle = { '--musaic-activity-indicator-size': `${size}px` } as CSSProperties
   const statePattern = STATE_PATTERNS[state]
 
   return (
@@ -304,13 +304,13 @@ function AstraActivityIndicatorImpl({
       <BaseGrid />
       <span
         key={state}
-        className={`astra-activity-indicator-layer astra-activity-indicator-state-${state} is-on`}
+        className={`musaic-activity-indicator-layer musaic-activity-indicator-state-${state} is-on`}
         data-state={state}
       >
         <StateDots pattern={statePattern} />
       </span>
       <span
-        className={`astra-activity-indicator-overlay ${overlayPlaying ? 'is-playing' : ''}`.trim()}
+        className={`musaic-activity-indicator-overlay ${overlayPlaying ? 'is-playing' : ''}`.trim()}
         data-event={currentEvent ?? undefined}
       >
         {currentEvent && currentEventId !== null && (
@@ -321,4 +321,4 @@ function AstraActivityIndicatorImpl({
   )
 }
 
-export default memo(AstraActivityIndicatorImpl)
+export default memo(MusaicActivityIndicatorImpl)

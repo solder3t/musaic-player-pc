@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Astra Parallax receiver — one-line installer for Raspberry Pi (64-bit) and other arm64 Linux.
+# Listen Together receiver — one-line installer for Raspberry Pi (64-bit) and other arm64 Linux.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Boof2015/astra/dev/receiver/deploy/install.sh -o /tmp/astra-receiver-install.sh && sudo bash /tmp/astra-receiver-install.sh
+#   curl -fsSL https://raw.githubusercontent.com/solder3t/musaic-player-linux/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh
 #
 # (Download-then-run rather than `| sudo bash`: modern sudo runs commands on a private pty, and
 # with the script arriving on stdin there is no route for keyboard input — the audio-output
@@ -12,25 +12,25 @@
 #   1. Installs Node.js 24 LTS unless Node >= 22.19 is present (bundled undici requires 22.19+).
 #   2. Runs update.sh (shared with the Parallax OS auto-updater): downloads the latest
 #      `receiver-v*` release tarball, sha256-verifies it, and atomically installs it under
-#      /opt/astra-receiver/releases/<tag> with a `current` symlink.
+#      /opt/musaic-receiver/releases/<tag> with a `current` symlink.
 #   3. Creates a service user in the `audio` group.
 #   4. Writes + enables a systemd unit (Type=notify + watchdog). Re-running = update.
 #
-# After install: open http://<this-device>:38405/ and pair from Astra on the host machine.
+# After install: open http://<this-device>:38405/ and pair from Musaic on the host machine.
 
 set -euo pipefail
 
 # Where this script itself lives (for self-referential instructions). The releases repo name
-# lives in update.sh (overridable via ASTRA_RECEIVER_REPO) — releases stay in a dedicated repo
-# so they never mix with the Astra app's own releases.
-REPO_SOURCE="Boof2015/astra"
-INSTALL_DIR="/opt/astra-receiver"
-SERVICE_NAME="astra-receiver"
-SERVICE_USER="astra-receiver"
+# lives in update.sh (overridable via MUSAIC_RECEIVER_REPO) — releases stay in a dedicated repo
+# so they never mix with the Musaic app's own releases.
+REPO_SOURCE="solder3t/musaic-player-linux"
+INSTALL_DIR="/opt/musaic-receiver"
+SERVICE_NAME="musaic-receiver"
+SERVICE_USER="musaic-receiver"
 WEB_PORT=38405
 
-log() { printf '\033[1;36m[astra-receiver]\033[0m %s\n' "$*"; }
-fail() { printf '\033[1;31m[astra-receiver]\033[0m %s\n' "$*" >&2; exit 1; }
+log() { printf '\033[1;36m[musaic-receiver]\033[0m %s\n' "$*"; }
+fail() { printf '\033[1;31m[musaic-receiver]\033[0m %s\n' "$*" >&2; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || fail "Please run with sudo: curl -fsSL <url> | sudo bash"
 [ "$(uname -s)" = "Linux" ] || fail "This installer is for Linux (Raspberry Pi OS and similar)."
@@ -38,7 +38,7 @@ fail() { printf '\033[1;31m[astra-receiver]\033[0m %s\n' "$*" >&2; exit 1; }
 ARCH="$(uname -m)"
 if [ "$ARCH" != "aarch64" ] && [ "$ARCH" != "arm64" ]; then
   fail "Prebuilt packages are arm64-only (found: $ARCH). On a 32-bit Pi OS, reinstall the 64-bit
-image, or build from source — see receiver/README.md in the Astra repo."
+image, or build from source — see receiver/README.md in the Musaic repo."
 fi
 
 command -v curl >/dev/null 2>&1 || fail "curl is required."
@@ -73,7 +73,7 @@ log "Using Node $("$NODE_BIN" -v) at $NODE_BIN"
 # from /dev/tty; without a terminal (automation) we keep the current/default device — the daemon
 # still has its own runtime fallback. Re-running the installer is the supported way to change
 # the device later; the menu defaults to whatever is currently configured.
-CARDS_FILE="${ASTRA_RECEIVER_CARDS_FILE:-/proc/asound/cards}"
+CARDS_FILE="${MUSAIC_RECEIVER_CARDS_FILE:-/proc/asound/cards}"
 SELECTED_DEVICE=""
 
 current_config_device() {
@@ -139,7 +139,7 @@ choose_audio_device() {
     choice=""
     log "Could not read from the terminal (piped install) — using option $default_index."
     log "To choose interactively, run the download-then-run form:"
-    log "  curl -fsSL https://raw.githubusercontent.com/$REPO_SOURCE/dev/receiver/deploy/install.sh -o /tmp/astra-receiver-install.sh && sudo bash /tmp/astra-receiver-install.sh"
+    log "  curl -fsSL https://raw.githubusercontent.com/$REPO_SOURCE/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh"
   fi
   case "$choice" in
     ''|*[!0-9]*) choice="$default_index" ;;
@@ -167,10 +167,10 @@ else
     "https://raw.githubusercontent.com/$REPO_SOURCE/dev/receiver/deploy/update.sh"
 fi
 bash "$TMP_DIR/update.sh" --no-restart
-[ -f "$INSTALL_DIR/current/astra-receiver.mjs" ] || fail "update.sh did not produce $INSTALL_DIR/current/."
+[ -f "$INSTALL_DIR/current/musaic-receiver.mjs" ] || fail "update.sh did not produce $INSTALL_DIR/current/."
 
 # Pre-0.2.0 installs kept the bundle flat in $INSTALL_DIR — remove so nothing stale lingers.
-rm -f "$INSTALL_DIR/astra-receiver.mjs" "$INSTALL_DIR/astra_receiver_alsa.node"
+rm -f "$INSTALL_DIR/musaic-receiver.mjs" "$INSTALL_DIR/musaic_receiver_alsa.node"
 
 # ── Service user ──────────────────────────────────────────────────────────────
 if ! id -u "$SERVICE_USER" >/dev/null 2>&1; then
@@ -202,7 +202,7 @@ chown -R "$SERVICE_USER":"$SERVICE_USER" "$INSTALL_DIR"
 log "Writing systemd unit…"
 cat > "/etc/systemd/system/$SERVICE_NAME.service" <<UNIT
 [Unit]
-Description=Astra Parallax receiver (headless zone speaker)
+Description=Listen Together receiver (headless zone speaker)
 After=network-online.target sound.target
 Wants=network-online.target
 StartLimitIntervalSec=0
@@ -210,9 +210,9 @@ StartLimitIntervalSec=0
 [Service]
 Type=notify
 User=$SERVICE_USER
-ExecStart=$NODE_BIN $INSTALL_DIR/current/astra-receiver.mjs
-Environment=ASTRA_RECEIVER_CONFIG=$INSTALL_DIR/config.json
-Environment=ASTRA_RECEIVER_ALSA_ADDON=$INSTALL_DIR/current/astra_receiver_alsa.node
+ExecStart=$NODE_BIN $INSTALL_DIR/current/musaic-receiver.mjs
+Environment=MUSAIC_RECEIVER_CONFIG=$INSTALL_DIR/config.json
+Environment=MUSAIC_RECEIVER_ALSA_ADDON=$INSTALL_DIR/current/musaic_receiver_alsa.node
 Restart=always
 RestartSec=3
 WatchdogSec=30
@@ -239,5 +239,5 @@ fi
 IP_HINT="$(hostname -I 2>/dev/null | awk '{print $1}')"
 log "Done. The receiver is running and discoverable on your network."
 log "Pairing + status page: http://${IP_HINT:-$(hostname)}:$WEB_PORT/"
-log "Pair from Astra on the host machine (Parallax → Add Sink), approve on the page above."
+log "Pair from Musaic on the host machine (Parallax → Add Sink), approve on the page above."
 log "Logs: journalctl -u $SERVICE_NAME -f   |   Update or change audio output: re-run this installer."

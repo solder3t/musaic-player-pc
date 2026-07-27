@@ -199,7 +199,7 @@ export default function AudioPipelineShelf() {
       result.push({ id: 'upmix', icon: RoutingIcon, label: 'Upmix', detail: `2ch \u2192 ${upmixOutputChannels}ch` })
     }
 
-    // Astra Spatial Engine
+    // Musaic Spatial Engine
     if (
       playbackOutputMode === 'standard'
       && spatialMode === 'binaural'
@@ -209,7 +209,7 @@ export default function AudioPipelineShelf() {
         id: 'spatial',
         icon: SpatialIcon,
         label: 'Spatial',
-        detail: 'Astra Spatial Engine'
+        detail: 'Musaic Spatial Engine'
       })
     }
 

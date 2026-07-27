@@ -1153,15 +1153,15 @@ export default function ScopePopoutApp() {
     <div className="scope-popout-root">
       <header className="scope-popout-header">
         <div className="scope-popout-drag">
-          <span className="scope-popout-badge">ASTRA</span>
+          <span className="scope-popout-badge">MUSAIC</span>
           <span className="scope-popout-title">{label.toUpperCase()}</span>
         </div>
         <div className="scope-popout-controls">
           <button
             className="scope-popout-btn"
             onClick={handleRecall}
-            title="Dock back in Astra"
-            aria-label="Dock back in Astra"
+            title="Dock back in Musaic"
+            aria-label="Dock back in Musaic"
           >
             Dock
           </button>

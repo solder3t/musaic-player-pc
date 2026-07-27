@@ -266,11 +266,11 @@ type SaveCurrentProfileAsResult =
 const FFT_SIZES: readonly FFTSize[] = [1024, 2048, 4096, 8192, 16384]
 
 export const ANALYZER_PROFILE_STORAGE_VERSION = 4
-export const ANALYZER_PROFILES_STORAGE_KEY = 'astra-analyzer-profiles-v1'
-export const OSCILLOSCOPE_UNDERFILL_STORAGE_KEY = 'astra-oscilloscope-underfill-enabled'
-export const VECTORSCOPE_MULTIBAND_STORAGE_KEY = 'astra-vectorscope-multiband'
-export const WAVEFORM_MULTIBAND_STORAGE_KEY = 'astra-waveform-multiband'
-export const SPECTRUM_HEATMAP_STORAGE_KEY = 'astra-spectrum-heatmap'
+export const ANALYZER_PROFILES_STORAGE_KEY = 'musaic-analyzer-profiles-v1'
+export const OSCILLOSCOPE_UNDERFILL_STORAGE_KEY = 'musaic-oscilloscope-underfill-enabled'
+export const VECTORSCOPE_MULTIBAND_STORAGE_KEY = 'musaic-vectorscope-multiband'
+export const WAVEFORM_MULTIBAND_STORAGE_KEY = 'musaic-waveform-multiband'
+export const SPECTRUM_HEATMAP_STORAGE_KEY = 'musaic-spectrum-heatmap'
 
 const DEFAULT_PROFILE_ID = 'default'
 const DEFAULT_PROFILE_NAME = 'Default'

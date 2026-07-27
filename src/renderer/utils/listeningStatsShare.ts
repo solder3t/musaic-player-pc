@@ -149,7 +149,7 @@ function collectOverviewArtworkHashes(
 
 function createSuggestedFileName(dashboard: ListeningStatsDashboard): string {
   const date = new Date(dashboard.rangeEndAt).toISOString().slice(0, 10)
-  return `astra-listening-${dashboard.range}-${date}.png`
+  return `musaic-listening-${dashboard.range}-${date}.png`
 }
 
 export function buildListeningStatsShareModel(

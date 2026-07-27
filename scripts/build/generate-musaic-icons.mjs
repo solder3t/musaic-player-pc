@@ -16,7 +16,7 @@ import { deflateSync, inflateSync } from 'node:zlib'
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, '../..')
 const resourcesDir = join(repoRoot, 'resources')
-const tempDir = mkdtempSync(join(tmpdir(), 'astra-icons-'))
+const tempDir = mkdtempSync(join(tmpdir(), 'musaic-icons-'))
 const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
 
 const iconCanvasSize = 1024
@@ -28,12 +28,12 @@ const iconSymbolScale = 0.9
 const iconMainFill = '#0097ff'
 const iconShadowFill = '#152632'
 
-const astraLogoShadowTransform = 'matrix(1.726813,0,0,1.726813,-608.701518,-379.851382)'
-const astraLogoShadowLeftTransform = 'matrix(1,0,0,1,-10,3)'
-const astraLogoShadowRightTransform = 'matrix(1,0,0,1,0,3)'
-const astraLogoMainTransform = 'matrix(1.726813,0,0,1.726813,-660.505902,-397.11951)'
-const astraLogoLeftPath = 'M526.083,500.65C529.86,496.662 535.112,494.402 540.605,494.402C553.071,494.402 576.056,494.402 588.831,494.402C594.652,494.402 600.185,496.939 603.984,501.35C610.054,508.396 619.61,519.49 627.207,528.31C633.905,536.085 633.631,547.668 626.573,555.117C603.295,579.689 553.937,631.788 536.916,649.755C533.139,653.742 527.889,656 522.397,656L452,656C440.954,656 432,647.046 432,636C432,626.32 432,615.247 432,607.967C432,602.851 433.96,597.93 437.478,594.215C454.783,575.942 508.184,519.551 526.083,500.65Z'
-const astraLogoRightPath = 'M580,389.237C580,378.578 588.641,369.937 599.3,369.937C625.097,369.937 669.782,369.937 688.899,369.937C694.682,369.937 700.183,372.436 703.987,376.792C736.676,414.222 893.163,593.401 921.571,625.929C924.427,629.198 926,633.392 926,637.733C926,637.733 926,637.734 926,637.734C926,648.379 917.371,657.008 906.726,657.008L817.1,657.008C811.318,657.008 805.817,654.51 802.013,650.155C769.332,612.742 612.909,433.673 584.448,401.092C581.58,397.809 580,393.598 580,389.239C580,389.238 580,389.237 580,389.237Z'
+const musaicLogoShadowTransform = 'matrix(1.726813,0,0,1.726813,-608.701518,-379.851382)'
+const musaicLogoShadowLeftTransform = 'matrix(1,0,0,1,-10,3)'
+const musaicLogoShadowRightTransform = 'matrix(1,0,0,1,0,3)'
+const musaicLogoMainTransform = 'matrix(1.726813,0,0,1.726813,-660.505902,-397.11951)'
+const musaicLogoLeftPath = 'M526.083,500.65C529.86,496.662 535.112,494.402 540.605,494.402C553.071,494.402 576.056,494.402 588.831,494.402C594.652,494.402 600.185,496.939 603.984,501.35C610.054,508.396 619.61,519.49 627.207,528.31C633.905,536.085 633.631,547.668 626.573,555.117C603.295,579.689 553.937,631.788 536.916,649.755C533.139,653.742 527.889,656 522.397,656L452,656C440.954,656 432,647.046 432,636C432,626.32 432,615.247 432,607.967C432,602.851 433.96,597.93 437.478,594.215C454.783,575.942 508.184,519.551 526.083,500.65Z'
+const musaicLogoRightPath = 'M580,389.237C580,378.578 588.641,369.937 599.3,369.937C625.097,369.937 669.782,369.937 688.899,369.937C694.682,369.937 700.183,372.436 703.987,376.792C736.676,414.222 893.163,593.401 921.571,625.929C924.427,629.198 926,633.392 926,637.733C926,637.733 926,637.734 926,637.734C926,648.379 917.371,657.008 906.726,657.008L817.1,657.008C811.318,657.008 805.817,654.51 802.013,650.155C769.332,612.742 612.909,433.673 584.448,401.092C581.58,397.809 580,393.598 580,389.239C580,389.238 580,389.237 580,389.237Z'
 
 function ensureCommand(command) {
   try {
@@ -281,7 +281,7 @@ try {
 
   mkdirSync(resourcesDir, { recursive: true })
 
-  const sourceSvgPath = join(tempDir, 'astra-icon-source.svg')
+  const sourceSvgPath = join(tempDir, 'musaic-icon-source.svg')
   const backgroundInset = iconCanvasSize * iconBackgroundInsetRatio
   const backgroundSize = iconCanvasSize - (backgroundInset * 2)
   const backgroundRadius = backgroundSize * iconCornerRadiusRatio
@@ -290,17 +290,17 @@ try {
   writeFileSync(sourceSvgPath, `<svg xmlns="http://www.w3.org/2000/svg" width="${iconCanvasSize}" height="${iconCanvasSize}" viewBox="0 0 ${iconCanvasSize} ${iconCanvasSize}" fill="none">
   <rect x="${backgroundInset}" y="${backgroundInset}" width="${backgroundSize}" height="${backgroundSize}" rx="${backgroundRadius}" fill="${iconBackgroundFill}" />
   <g transform="${symbolTransform}">
-    <g transform="${astraLogoShadowTransform}">
-      <g transform="${astraLogoShadowLeftTransform}">
-        <path d="${astraLogoLeftPath}" fill="${iconShadowFill}" />
+    <g transform="${musaicLogoShadowTransform}">
+      <g transform="${musaicLogoShadowLeftTransform}">
+        <path d="${musaicLogoLeftPath}" fill="${iconShadowFill}" />
       </g>
-      <g transform="${astraLogoShadowRightTransform}">
-        <path d="${astraLogoRightPath}" fill="${iconShadowFill}" />
+      <g transform="${musaicLogoShadowRightTransform}">
+        <path d="${musaicLogoRightPath}" fill="${iconShadowFill}" />
       </g>
     </g>
-    <g transform="${astraLogoMainTransform}">
-      <path d="${astraLogoLeftPath}" fill="${iconMainFill}" />
-      <path d="${astraLogoRightPath}" fill="${iconMainFill}" />
+    <g transform="${musaicLogoMainTransform}">
+      <path d="${musaicLogoLeftPath}" fill="${iconMainFill}" />
+      <path d="${musaicLogoRightPath}" fill="${iconMainFill}" />
     </g>
   </g>
 </svg>
@@ -319,7 +319,7 @@ try {
   copyFileSync(masterPngPath, resourcePngPath)
   restoreIconBackgroundAlpha(resourcePngPath)
 
-  const iconsetDir = join(tempDir, 'Astra.iconset')
+  const iconsetDir = join(tempDir, 'Musaic.iconset')
   mkdirSync(iconsetDir)
   const iconsetEntries = [
     ['icon_16x16.png', 16],

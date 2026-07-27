@@ -11,7 +11,7 @@ import {
 } from './lyricsSidecar.ts'
 
 async function createTempDir() {
-  const dir = await mkdtemp(join(tmpdir(), 'astra-lyrics-sidecar-'))
+  const dir = await mkdtemp(join(tmpdir(), 'musaic-lyrics-sidecar-'))
   return {
     dir,
     cleanup: async () => {

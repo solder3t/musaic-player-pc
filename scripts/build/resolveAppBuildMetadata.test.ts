@@ -5,10 +5,10 @@ import { resolveAppBuildMetadata } from './resolveAppBuildMetadata.ts'
 test('env overrides win without querying git', () => {
   const gitCalls: string[] = []
   const buildMetadata = resolveAppBuildMetadata({
-    cwd: '/tmp/astra',
+    cwd: '/tmp/musaic',
     env: {
-      ASTRA_GIT_COMMIT: 'deadbeefcafebabe1234567890abcdef12345678',
-      ASTRA_GIT_DIRTY: 'true',
+      MUSAIC_GIT_COMMIT: 'deadbeefcafebabe1234567890abcdef12345678',
+      MUSAIC_GIT_DIRTY: 'true',
     },
     runGitCommand: (cwd, args) => {
       gitCalls.push(`${cwd}:${args.join(' ')}`)
@@ -25,7 +25,7 @@ test('env overrides win without querying git', () => {
 
 test('clean git checkout resolves commit metadata', () => {
   const buildMetadata = resolveAppBuildMetadata({
-    cwd: '/tmp/astra',
+    cwd: '/tmp/musaic',
     env: {},
     runGitCommand: (_cwd, args) => {
       if (args[0] === 'rev-parse') {
@@ -46,7 +46,7 @@ test('clean git checkout resolves commit metadata', () => {
 
 test('dirty git checkout marks the build as dirty', () => {
   const buildMetadata = resolveAppBuildMetadata({
-    cwd: '/tmp/astra',
+    cwd: '/tmp/musaic',
     env: {},
     runGitCommand: (_cwd, args) => {
       if (args[0] === 'rev-parse') {
@@ -67,7 +67,7 @@ test('dirty git checkout marks the build as dirty', () => {
 
 test('missing git metadata falls back to version-only mode', () => {
   const buildMetadata = resolveAppBuildMetadata({
-    cwd: '/tmp/astra',
+    cwd: '/tmp/musaic',
     env: {},
     runGitCommand: () => {
       throw new Error('git unavailable')

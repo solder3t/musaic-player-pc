@@ -54,5 +54,5 @@ export function normalizeStatsShareFileName(value: unknown, now: number = Date.n
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .replace(/^[._-]+|[._-]+$/g, '')
     .slice(0, 110)
-  return `${stem || `astra-listening-${fallbackDate}`}.png`
+  return `${stem || `musaic-listening-${fallbackDate}`}.png`
 }

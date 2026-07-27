@@ -216,7 +216,7 @@ const PLAYFUL_GREETINGS: GreetingCopy[] = [
   {
     id: 'playful-ranked',
     primary: 'New feature:',
-    subline: 'Astra ranked'
+    subline: 'Musaic ranked'
   },
   {
     id: 'playful-mistake',
@@ -422,7 +422,7 @@ const TIME_AWARE_GREETINGS: TimeGreetingWindow[] = [
       {
         id: 'late-still-up',
         primary: 'Still up?',
-        subline: 'Astra never sleeps either.'
+        subline: 'Musaic never sleeps either.'
       }
     ]
   }

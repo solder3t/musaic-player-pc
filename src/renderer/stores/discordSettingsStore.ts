@@ -29,18 +29,18 @@ interface DiscordSettingsStore {
   resetToDefaults: () => Promise<void>
 }
 
-export const DISCORD_RPC_ENABLED_STORAGE_KEY = 'astra-discord-rpc-enabled'
-export const DISCORD_RPC_COVER_ART_ENABLED_STORAGE_KEY = 'astra-discord-rpc-cover-art-enabled'
-export const DISCORD_RPC_SMALL_ICON_ENABLED_STORAGE_KEY = 'astra-discord-rpc-small-icon-enabled'
-export const DISCORD_RPC_COMPACT_STATUS_MODE_STORAGE_KEY = 'astra-discord-rpc-compact-status-mode-v1'
-export const DISCORD_RPC_EXPANDED_INFO_MODE_STORAGE_KEY = 'astra-discord-rpc-expanded-info-mode-v1'
-export const DISCORD_RPC_LINK_DESTINATION_STORAGE_KEY = 'astra-discord-rpc-link-destination-v1'
-export const DISCORD_RPC_PAUSE_CLEAR_MINUTES_STORAGE_KEY = 'astra-discord-rpc-pause-clear-minutes-v1'
-const COVER_ART_CACHE_STORAGE_KEY_V1 = 'astra-discord-cover-art-cache-v1'
-const COVER_ART_CACHE_STORAGE_KEY_V2 = 'astra-discord-cover-art-cache-v2'
-const COVER_ART_CACHE_STORAGE_KEY_V3 = 'astra-discord-cover-art-cache-v3'
-const COVER_ART_CACHE_STORAGE_KEY_V4 = 'astra-discord-cover-art-cache-v4'
-const LEGACY_CLIENT_ID_STORAGE_KEY = 'astra-discord-rpc-client-id'
+export const DISCORD_RPC_ENABLED_STORAGE_KEY = 'musaic-discord-rpc-enabled'
+export const DISCORD_RPC_COVER_ART_ENABLED_STORAGE_KEY = 'musaic-discord-rpc-cover-art-enabled'
+export const DISCORD_RPC_SMALL_ICON_ENABLED_STORAGE_KEY = 'musaic-discord-rpc-small-icon-enabled'
+export const DISCORD_RPC_COMPACT_STATUS_MODE_STORAGE_KEY = 'musaic-discord-rpc-compact-status-mode-v1'
+export const DISCORD_RPC_EXPANDED_INFO_MODE_STORAGE_KEY = 'musaic-discord-rpc-expanded-info-mode-v1'
+export const DISCORD_RPC_LINK_DESTINATION_STORAGE_KEY = 'musaic-discord-rpc-link-destination-v1'
+export const DISCORD_RPC_PAUSE_CLEAR_MINUTES_STORAGE_KEY = 'musaic-discord-rpc-pause-clear-minutes-v1'
+const COVER_ART_CACHE_STORAGE_KEY_V1 = 'musaic-discord-cover-art-cache-v1'
+const COVER_ART_CACHE_STORAGE_KEY_V2 = 'musaic-discord-cover-art-cache-v2'
+const COVER_ART_CACHE_STORAGE_KEY_V3 = 'musaic-discord-cover-art-cache-v3'
+const COVER_ART_CACHE_STORAGE_KEY_V4 = 'musaic-discord-cover-art-cache-v4'
+const LEGACY_CLIENT_ID_STORAGE_KEY = 'musaic-discord-rpc-client-id'
 
 function normalizeCompactStatusMode(value: string | null): DiscordRpcCompactStatusMode {
   return value === 'artist' ? 'artist' : 'title'

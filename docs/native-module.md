@@ -1,14 +1,14 @@
 # Native visualizer module — packaging & troubleshooting
 
-Astra ships a native C++ addon, **`visualizer_dsp.node`**, that powers the high‑performance
+Musaic ships a native C++ addon, **`visualizer_dsp.node`**, that powers the high‑performance
 audio visualizers. If it fails to load, several scopes go blank. This guide is for anyone
-**packaging Astra from source** (distro maintainers, third‑party repackagers) and for triaging
+**packaging Musaic from source** (distro maintainers, third‑party repackagers) and for triaging
 "my scope stopped working" reports.
 
 ## What depends on the native module
 
 `visualizer_dsp.node` is required by the **native‑only** scopes — without it they render nothing
-usable and Astra now shows a *"Native DSP unavailable"* notice in their place:
+usable and Musaic now shows a *"Native DSP unavailable"* notice in their place:
 
 - Spectrum
 - Oscilloscope
@@ -23,7 +23,7 @@ addon is missing:
 - VU meter
 
 > **Quick triage:** *spectrum/oscilloscope blank but the vectorscope still animates* ⇒ the native
-> DSP addon did not load. This is almost always a packaging or environment problem, not an Astra
+> DSP addon did not load. This is almost always a packaging or environment problem, not a Musaic
 > rendering bug — the fallbacks and blank scopes are exactly what a missing addon produces.
 
 ## How the module is loaded at runtime

@@ -1,8 +1,8 @@
 {
   "id": "/remote/",
-  "name": "Astra Remote",
-  "short_name": "Astra",
-  "description": "Remote control for Astra on your local network.",
+  "name": "Musaic Remote",
+  "short_name": "Musaic",
+  "description": "Remote control for Musaic on your local network.",
   "start_url": "/remote/",
   "scope": "/remote/",
   "display": "standalone",

@@ -23,7 +23,7 @@ export const SETTINGS_SECTIONS = [
       'artist',
       'artist parsing',
       'file tags',
-      'astra grouping',
+      'musaic grouping',
       'import',
       'path',
       'replaygain',

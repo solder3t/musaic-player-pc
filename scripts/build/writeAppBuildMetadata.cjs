@@ -34,8 +34,8 @@ function execGit(args) {
 }
 
 function resolveBuildMetadata() {
-  const envCommitHash = normalizeCommitHash(process.env.ASTRA_GIT_COMMIT)
-  const envDirty = parseDirtyEnvValue(process.env.ASTRA_GIT_DIRTY)
+  const envCommitHash = normalizeCommitHash(process.env.MUSAIC_GIT_COMMIT)
+  const envDirty = parseDirtyEnvValue(process.env.MUSAIC_GIT_DIRTY)
 
   if (envCommitHash) {
     return {

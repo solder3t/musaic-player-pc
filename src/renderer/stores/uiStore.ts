@@ -21,34 +21,34 @@ export type TransportInfoLineMode = 'output' | 'album' | 'hidden'
 export const DEFAULT_ANALYZER_HEIGHT_PX = 196
 export const MIN_ANALYZER_HEIGHT_PX = 144
 export const MAX_ANALYZER_HEIGHT_PX = 320
-export const ANALYZER_HEIGHT_STORAGE_KEY = 'astra-analyzer-height-px'
-export const ANALYZER_RACK_VISIBILITY_STORAGE_KEY = 'astra-show-analyzer-rack'
+export const ANALYZER_HEIGHT_STORAGE_KEY = 'musaic-analyzer-height-px'
+export const ANALYZER_RACK_VISIBILITY_STORAGE_KEY = 'musaic-show-analyzer-rack'
 export const MIN_UI_SCALE_PERCENT = 80
 export const DEFAULT_UI_SCALE_PERCENT = 100
 export const MAX_UI_SCALE_PERCENT = 125
 export const UI_SCALE_STEP_PERCENT = 5
-export const UI_SCALE_STORAGE_KEY = 'astra-ui-scale-percent-v1'
-export const HOME_GREETING_TEXT_MODE_STORAGE_KEY = 'astra-home-greeting-text-mode-v1'
+export const UI_SCALE_STORAGE_KEY = 'musaic-ui-scale-percent-v1'
+export const HOME_GREETING_TEXT_MODE_STORAGE_KEY = 'musaic-home-greeting-text-mode-v1'
 export const DEFAULT_HOME_GREETING_TEXT_MODE: HomeGreetingTextMode = 'messages'
-export const ACTIVITY_INDICATOR_EXPERIMENT_STORAGE_KEY = 'astra-experimental-activity-indicator-enabled-v1'
-export const CONTROLLER_SUPPORT_EXPERIMENT_STORAGE_KEY = 'astra-experimental-controller-support-enabled-v1'
-export const JUMP_TO_PLAYING_DESTINATION_STORAGE_KEY = 'astra-jump-to-playing-destination-v1'
+export const ACTIVITY_INDICATOR_EXPERIMENT_STORAGE_KEY = 'musaic-experimental-activity-indicator-enabled-v1'
+export const CONTROLLER_SUPPORT_EXPERIMENT_STORAGE_KEY = 'musaic-experimental-controller-support-enabled-v1'
+export const JUMP_TO_PLAYING_DESTINATION_STORAGE_KEY = 'musaic-jump-to-playing-destination-v1'
 export const DEFAULT_JUMP_TO_PLAYING_DESTINATION: JumpToPlayingDestination = 'smart-source'
 export const DEFAULT_TRANSPORT_INFO_LINE_MODE: TransportInfoLineMode = 'output'
 // §14.1.4 — persisted preference: open the Zone Display layout at launch. The session-state
 // `isZoneDisplayActive` derives its initial value from this OR the `--zone` launch flag, and
 // "Library" clears the session flag without touching the persisted preference.
-export const OPEN_ZONE_DISPLAY_ON_LAUNCH_STORAGE_KEY = 'astra-open-zone-display-on-launch-v1'
+export const OPEN_ZONE_DISPLAY_ON_LAUNCH_STORAGE_KEY = 'musaic-open-zone-display-on-launch-v1'
 // Parallax is an experimental feature gated behind a master reveal toggle (in the Experimental
 // settings section). When on, a dedicated "Parallax" settings section appears in the sidebar.
 // `parallaxSetupComplete` tracks whether the guided first-run flow has been finished/dismissed,
 // so returning users land directly on the management view.
-export const PARALLAX_EXPERIMENT_ENABLED_STORAGE_KEY = 'astra-experimental-parallax-enabled-v1'
-export const PARALLAX_SETUP_COMPLETE_STORAGE_KEY = 'astra-parallax-setup-complete-v1'
+export const PARALLAX_EXPERIMENT_ENABLED_STORAGE_KEY = 'musaic-experimental-parallax-enabled-v1'
+export const PARALLAX_SETUP_COMPLETE_STORAGE_KEY = 'musaic-parallax-setup-complete-v1'
 // §14.1.4 — friendly zone name for this speaker, shown on the Zone Display (now-playing footer +
 // idle dashboard heading). Renderer-local override; empty string means "fall back to the OS
 // hostname". Persisted here (not main) since it's a display-only label for this surface.
-export const PARALLAX_ZONE_NAME_STORAGE_KEY = 'astra-parallax-zone-name-v1'
+export const PARALLAX_ZONE_NAME_STORAGE_KEY = 'musaic-parallax-zone-name-v1'
 
 const APP_VIEW_MOTION_ORDER: AppView[] = ['home', 'library', 'stats', 'graph', 'eq', 'playlist', 'settings']
 
@@ -161,7 +161,7 @@ function areTrackDragTracksEqual(left: Track[], right: Track[]): boolean {
   return true
 }
 
-export const WAVEFORM_TIME_DISPLAY_MODE_STORAGE_KEY = 'astra-waveform-time-display-mode'
+export const WAVEFORM_TIME_DISPLAY_MODE_STORAGE_KEY = 'musaic-waveform-time-display-mode'
 
 export function normalizeAnalyzerHeightPx(value: unknown): number {
   if (value == null) return DEFAULT_ANALYZER_HEIGHT_PX

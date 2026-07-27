@@ -858,7 +858,7 @@ test('ListenBrainz native submissions use token auth and omit timestamps for pla
     Authorization: 'Token listenbrainz-token',
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    'User-Agent': 'Astra-LastFM/0.1.0 (https://github.com/Boof2015/astra)'
+    'User-Agent': 'Musaic-LastFM/0.1.0 (https://github.com/solder3t/musaic-player-linux)'
   })
 
   const nowPlayingBody = JSON.parse(requests[0].body) as Record<string, unknown>
@@ -869,8 +869,8 @@ test('ListenBrainz native submissions use token auth and omit timestamps for pla
     artist_name: 'Jamule & Chilla',
     track_name: 'Now Track',
     additional_info: {
-      media_player: 'Astra',
-      submission_client: 'Astra',
+      media_player: 'Musaic',
+      submission_client: 'Musaic',
       artist_names: ['Jamule', 'Chilla'],
       duration: 180,
       duration_played: 12
@@ -883,8 +883,8 @@ test('ListenBrainz native submissions use token auth and omit timestamps for pla
   const scrobblePayload = scrobbleBody.payload as Array<Record<string, unknown>>
   assert.equal(scrobblePayload[0].listened_at, 1_700_000_000)
   assert.deepEqual((scrobblePayload[0].track_metadata as Record<string, unknown>).additional_info, {
-    media_player: 'Astra',
-    submission_client: 'Astra',
+    media_player: 'Musaic',
+    submission_client: 'Musaic',
     artist_names: ['Jamule', 'Chilla'],
     duration: 180
   })

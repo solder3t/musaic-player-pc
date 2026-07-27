@@ -233,7 +233,7 @@ export default function ListenTogetherPanel() {
                   setSuggestions([
                     {
                       id: `sug-${Date.now()}`,
-                      title: 'Astral Echoes',
+                      title: 'Musaicl Echoes',
                       artist: 'Deep Void',
                       genre: 'Ambient / Chill',
                       suggestedBy: 'Guest User',

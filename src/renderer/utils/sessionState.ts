@@ -1,8 +1,8 @@
-import { ASTRA_SESSION_STATE_STORAGE_KEY } from '../constants/settingsStorageKeys'
+import { MUSAIC_SESSION_STATE_STORAGE_KEY } from '../constants/settingsStorageKeys'
 import type { TrackSourceType } from '../../types/subsonic'
 import type { LibraryYearKey } from './libraryYears'
 
-export const SESSION_STATE_KIND = 'astra-session-state'
+export const SESSION_STATE_KIND = 'musaic-session-state'
 export const SESSION_STATE_SCHEMA_VERSION = 1
 
 export type SessionAppView = 'home' | 'library' | 'stats' | 'graph' | 'eq' | 'settings' | 'playlist'
@@ -527,7 +527,7 @@ export function normalizeSessionSnapshot(value: unknown): SessionSnapshotV1 | nu
 
 export function readSessionSnapshot(storage: SessionStorageLike = localStorage): SessionSnapshotV1 | null {
   try {
-    const raw = storage.getItem(ASTRA_SESSION_STATE_STORAGE_KEY)
+    const raw = storage.getItem(MUSAIC_SESSION_STATE_STORAGE_KEY)
     if (!raw) return null
     return normalizeSessionSnapshot(JSON.parse(raw))
   } catch {
@@ -539,9 +539,9 @@ export function writeSessionSnapshot(
   snapshot: SessionSnapshotV1,
   storage: SessionStorageLike = localStorage
 ): void {
-  storage.setItem(ASTRA_SESSION_STATE_STORAGE_KEY, JSON.stringify(snapshot))
+  storage.setItem(MUSAIC_SESSION_STATE_STORAGE_KEY, JSON.stringify(snapshot))
 }
 
 export function clearSessionSnapshot(storage: SessionStorageLike = localStorage): void {
-  storage.removeItem(ASTRA_SESSION_STATE_STORAGE_KEY)
+  storage.removeItem(MUSAIC_SESSION_STATE_STORAGE_KEY)
 }

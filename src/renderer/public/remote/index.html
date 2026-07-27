@@ -6,7 +6,7 @@
     <meta id="theme-color-meta" name="theme-color" content="#0b1118" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Astra Remote</title>
+    <title>Musaic Remote</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
@@ -19,7 +19,7 @@
       <header class="remote-header">
         <div class="remote-header-top">
           <div class="header-brand-stack">
-            <span class="header-brand">Astra</span>
+            <span class="header-brand">Musaic</span>
             <span class="header-title">Phone Remote</span>
           </div>
           <span id="status-pill" class="status-pill status-idle">Idle</span>
@@ -44,7 +44,7 @@
       <p id="connection-label" class="connection-label">Waiting for pairing.</p>
 
       <section class="glass-panel notice-banner notice-info">
-        <p>This controller uses Astra's private HTTPS certificate and receives playback-control access only. If your browser warns about the certificate, compare its SHA-256 fingerprint with the one shown by Astra Desktop before continuing.</p>
+        <p>This controller uses Musaic's private HTTPS certificate and receives playback-control access only. If your browser warns about the certificate, compare its SHA-256 fingerprint with the one shown by Musaic Desktop before continuing.</p>
       </section>
 
       <!-- ── Notice ── -->
@@ -57,16 +57,16 @@
         <div class="pair-idle-intro">
           <p class="section-label">Phone Pairing</p>
           <h2 class="section-title">Pair this phone</h2>
-          <p class="section-copy">From Astra on your desktop, open <strong>Settings → Experimental → Phone Remote</strong>, then scan the QR code or paste the pairing link here.</p>
+          <p class="section-copy">From Musaic on your desktop, open <strong>Settings → Experimental → Phone Remote</strong>, then scan the QR code or paste the pairing link here.</p>
         </div>
         <div class="setup-step-list" aria-hidden="true">
           <div class="setup-step">
             <span class="setup-step-number">1</span>
-            <span class="setup-step-copy">Open the pairing popup in Astra.</span>
+            <span class="setup-step-copy">Open the pairing popup in Musaic.</span>
           </div>
           <div class="setup-step">
             <span class="setup-step-number">2</span>
-            <span class="setup-step-copy">Approve this phone when Astra asks.</span>
+            <span class="setup-step-copy">Approve this phone when Musaic asks.</span>
           </div>
         </div>
         <div class="pair-or-divider">
@@ -104,7 +104,7 @@
             </svg>
           </div>
           <h2 id="pair-pending-title" class="pair-waiting-title">Waiting for approval</h2>
-          <p id="pair-pending-copy" class="pair-waiting-copy">Open Astra on your desktop and tap <strong>Approve</strong> to connect this phone.</p>
+          <p id="pair-pending-copy" class="pair-waiting-copy">Open Musaic on your desktop and tap <strong>Approve</strong> to connect this phone.</p>
           <span id="pair-pending-timer" class="pair-timer"></span>
         </div>
       </section>
@@ -120,7 +120,7 @@
       <section id="auth-panel" class="glass-panel page-section pair-section pair-section-manual" hidden>
         <p class="section-label">Manual Fallback</p>
         <h2 class="section-title">Enter API key</h2>
-        <p class="section-copy">Paste the Local API key shown in Astra's settings.</p>
+        <p class="section-copy">Paste the Local API key shown in Musaic's settings.</p>
         <div id="origin-chip" class="mono-chip"></div>
         <form id="auth-form" class="auth-form">
           <input

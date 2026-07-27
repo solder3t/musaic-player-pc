@@ -10,9 +10,9 @@
 #
 # Codec support: Opus + FLAC + LPCM. AAC is deliberately NOT built — libiamf's
 # AAC path requires fdk-aac, whose Fraunhofer license is incompatible with
-# Astra's GPL-3.0 distribution. Real-world Eclipsa content is IAMF-Opus.
+# Musaic's GPL-3.0 distribution. Real-world Eclipsa content is IAMF-Opus.
 # libiamf's binaural bridges (BEAR/Resonance; boost + VISR) are also excluded:
-# Astra renders binaural itself from the 7.1.4 output.
+# Musaic renders binaural itself from the 7.1.4 output.
 
 set -euo pipefail
 

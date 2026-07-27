@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'crypto'
 
 const SUBSONIC_API_VERSION = '1.16.1'
-const SUBSONIC_CLIENT_ID = 'astra'
+const SUBSONIC_CLIENT_ID = 'musaic'
 const DEFAULT_TIMEOUT_MS = 12_000
 const DEFAULT_RETRIES = 1
 const MAX_SYNC_CONCURRENCY = 4

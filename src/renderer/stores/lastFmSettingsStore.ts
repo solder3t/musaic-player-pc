@@ -41,7 +41,7 @@ function toErrorMessage(error: unknown): string {
 
 function buildDefaultAuthHint(status: LastFmStatus): string {
   if (!status.authPending) return ''
-  return 'Approve Astra in your browser tab. Connection will complete automatically.'
+  return 'Approve Musaic in your browser tab. Connection will complete automatically.'
 }
 
 export const useLastFmSettingsStore = create<LastFmSettingsStore>((set, get) => {
@@ -112,7 +112,7 @@ export const useLastFmSettingsStore = create<LastFmSettingsStore>((set, get) => 
         if (Date.now() >= authPollDeadlineMs) {
           stopAuthPolling()
           set({
-            authHint: 'Authorization still pending. Approve Astra on Last.fm, then press Connect again.',
+            authHint: 'Authorization still pending. Approve Musaic on Last.fm, then press Connect again.',
             errorMessage: ''
           })
           return

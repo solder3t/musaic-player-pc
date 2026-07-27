@@ -30,10 +30,10 @@ test('Signal PNG validation accepts only canonical branded dimensions', () => {
 
 test('Signal filenames strip paths, unsafe characters, and non-PNG extensions', () => {
   assert.equal(
-    normalizeSignalShareFileName('astra-signal-N!GHT-#iwannadance.png'),
-    'astra-signal-N-GHT-iwannadance.png'
+    normalizeSignalShareFileName('musaic-signal-N!GHT-#iwannadance.png'),
+    'musaic-signal-N-GHT-iwannadance.png'
   )
-  assert.equal(normalizeSignalShareFileName('../../Astra / Replay.jpg'), 'Replay.png')
+  assert.equal(normalizeSignalShareFileName('../../Musaic / Replay.jpg'), 'Replay.png')
   assert.equal(normalizeSignalShareFileName(' Café: Replay! '), 'Cafe-Replay.png')
-  assert.equal(normalizeSignalShareFileName(''), 'astra-signal.png')
+  assert.equal(normalizeSignalShareFileName(''), 'musaic-signal.png')
 })

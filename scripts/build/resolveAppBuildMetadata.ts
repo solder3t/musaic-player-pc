@@ -60,8 +60,8 @@ export function resolveAppBuildMetadata(options: ResolveAppBuildMetadataOptions 
   const env = options.env ?? process.env
   const runGitCommand = options.runGitCommand ?? execGitCommand
 
-  const envCommitHash = normalizeCommitHash(env.ASTRA_GIT_COMMIT)
-  const envDirtyState = parseDirtyEnvValue(env.ASTRA_GIT_DIRTY)
+  const envCommitHash = normalizeCommitHash(env.MUSAIC_GIT_COMMIT)
+  const envDirtyState = parseDirtyEnvValue(env.MUSAIC_GIT_DIRTY)
 
   if (envCommitHash) {
     return {

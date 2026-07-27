@@ -14,15 +14,15 @@ const DISCORD_IPC_ENDPOINTS = 10
 const RECONNECT_DELAY_MS = 5000
 const MAX_RPC_PACKET_SIZE = 1024 * 1024
 const DISCORD_RPC_CLIENT_ID = '1471059486100815915'
-const DISCORD_SMALL_IMAGE_KEY = 'astra-logo'
-const DISCORD_SMALL_IMAGE_TEXT = 'Astra'
-const DISCORD_SMALL_IMAGE_LINK_URL = 'https://github.com/Boof2015/astra'
+const DISCORD_SMALL_IMAGE_KEY = 'musaic-logo'
+const DISCORD_SMALL_IMAGE_TEXT = 'Musaic'
+const DISCORD_SMALL_IMAGE_LINK_URL = 'https://github.com/solder3t/musaic-player-linux'
 const DEFAULT_PAUSE_CLEAR_MINUTES = 5
 const MAX_PAUSE_CLEAR_MINUTES = 1440
 const DISCORD_APP_INFO_LOOKUP_URL = `https://discord.com/api/v10/oauth2/applications/${DISCORD_RPC_CLIENT_ID}/rpc`
 const DISCORD_APP_ASSETS_LOOKUP_URL = `https://discord.com/api/v10/oauth2/applications/${DISCORD_RPC_CLIENT_ID}/assets`
 const DISCORD_APP_ICON_LOOKUP_TIMEOUT_MS = 5000
-const DISCORD_RPC_USER_AGENT = 'Astra-Discord-RPC/0.2.0 (https://github.com/Boof2015/astra)'
+const DISCORD_RPC_USER_AGENT = 'Musaic-Discord-RPC/0.2.0 (https://github.com/solder3t/musaic-player-linux)'
 const DISCORD_SET_ACTIVITY_COALESCE_MS = 150
 const DISCORD_SET_ACTIVITY_ACK_TIMEOUT_MS = 1500
 
@@ -608,7 +608,7 @@ export class DiscordRpcService {
 
     const coverArtUrl = this.coverArtEnabled ? normalizeHttpsUrl(presence?.track?.coverArtUrl) : undefined
     const largeImageUrl = coverArtUrl ?? this.fallbackLargeImageUrl ?? undefined
-    // Only badge cover art; the fallback large image is already the Astra icon.
+    // Only badge cover art; the fallback large image is already the Musaic icon.
     // Prefer the resolved CDN URL; the raw asset key is a fallback while lookup is pending.
     const showSmallIcon = this.smallIconEnabled && Boolean(coverArtUrl)
     return buildDiscordActivityFromPresence(presence, {

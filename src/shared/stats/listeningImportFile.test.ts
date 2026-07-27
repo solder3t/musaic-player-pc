@@ -17,7 +17,7 @@ function build(overrides: Record<string, unknown> = {}): string {
     kind: LISTENING_IMPORT_KIND,
     formatVersion: LISTENING_IMPORT_FORMAT_VERSION,
     source: 'lastfm',
-    generator: 'lastfm-to-astra 1.0',
+    generator: 'lastfm-to-musaic 1.0',
     generatedAt: '2026-07-24T00:00:00.000Z',
     tracks: [['Teen Intro', 'Jane Remover', 'Teen Week', '']],
     plays: [[0, 4, T]],
@@ -40,10 +40,10 @@ test('a well-formed import file parses', () => {
 })
 
 test('the wrong kind or format version is rejected with an explanation', () => {
-  const wrongKind = parseListeningImportFile(JSON.stringify({ kind: 'astra-settings-transfer' }), { now: NOW })
+  const wrongKind = parseListeningImportFile(JSON.stringify({ kind: 'musaic-settings-transfer' }), { now: NOW })
   assert.equal(wrongKind.ok, false)
   assert.ok(!wrongKind.ok)
-  assert.match(wrongKind.error, /not an Astra listening import/i)
+  assert.match(wrongKind.error, /not a Musaic listening import/i)
 
   const wrongVersion = parse({ formatVersion: 99 })
   assert.equal(wrongVersion.ok, false)

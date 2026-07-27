@@ -253,11 +253,11 @@ export default function LocalApiPairingModal(props: LocalApiPairingModalProps) {
                       <p className="local-api-pairing-scan-hint">
                         {ticket?.clientKind === 'web'
                           ? 'Open in a browser for playback control only'
-                          : 'Scan in Astra Mobile for secure control and sync'}
+                          : 'Scan in Musaic Mobile for secure control and sync'}
                       </p>
                       {ticket?.clientKind === 'web' && (
                         <p className="settings-note">
-                          Your browser will show a warning for Astra's private certificate. Verify this SHA-256 fingerprint before continuing: <code>{ticket.certificateFingerprint}</code>
+                          Your browser will show a warning for Musaic's private certificate. Verify this SHA-256 fingerprint before continuing: <code>{ticket.certificateFingerprint}</code>
                         </p>
                       )}
                       <div className="local-api-pairing-qr-actions">
@@ -268,7 +268,7 @@ export default function LocalApiPairingModal(props: LocalApiPairingModalProps) {
                           Copy Link
                         </button>
                         <button className="settings-btn" onClick={ticket?.clientKind === 'web' ? onGenerateTicket : onGenerateWebTicket}>
-                          {ticket?.clientKind === 'web' ? 'Astra Mobile' : 'Browser Controller'}
+                          {ticket?.clientKind === 'web' ? 'Musaic Mobile' : 'Browser Controller'}
                         </button>
                         <button className="settings-btn local-api-pairing-refresh-btn" onClick={onRefreshTicket} aria-label="Refresh pairing code">
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

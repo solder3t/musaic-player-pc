@@ -107,7 +107,7 @@ export default function ParallaxSetupFlow({ onClose, onAddSpeaker, hidden = fals
         {step === 'host' && (
           <div className="parallax-setup-step">
             <p className="parallax-setup-lead">
-              Find a nearby Astra running in speaker mode and pair it. You can add more anytime.
+              Find a nearby Musaic running in speaker mode and pair it. You can add more anytime.
             </p>
             {activeSinkCount > 0 ? (
               <div className="parallax-setup-status is-good">

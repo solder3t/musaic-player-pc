@@ -1,12 +1,12 @@
-// The public listening-import format: how an external tool hands Astra listening data it
+// The public listening-import format: how an external tool hands Musaic listening data it
 // gathered somewhere else (a Last.fm history, another player's database, a spreadsheet).
 //
-// This is deliberately NOT the settings-transfer format. That one is Astra talking to
+// This is deliberately NOT the settings-transfer format. That one is Musaic talking to
 // itself and carries internal details — path digests, per-install origin ids, source types —
 // that a third-party tool has no business inventing. Here those are all derived:
 //
 //   * every play is attributed to `import:<source>`, so a file cannot claim to be another
-//     Astra install and overwrite its counts;
+//     Musaic install and overwrite its counts;
 //   * every session key is namespaced with the same prefix, so a file cannot collide with
 //     (and corrupt) a real locally recorded session;
 //   * the source tag is mandatory, which is what makes an import removable afterwards.
@@ -14,7 +14,7 @@
 // Everything a converter writes is plain, self-describing JSON. Timestamps are epoch
 // MILLISECONDS. See docs/listening-import-format.md for the authoring guide.
 
-export const LISTENING_IMPORT_KIND = 'astra-listening-import'
+export const LISTENING_IMPORT_KIND = 'musaic-listening-import'
 export const LISTENING_IMPORT_FORMAT_VERSION = 1
 
 /** [title, artist, album, albumArtist] — albumArtist may be empty. */
@@ -127,22 +127,22 @@ export function parseListeningImportFile(
     return { ok: false, error: 'This file is not valid JSON.' }
   }
   if (!isPlainRecord(parsed)) {
-    return { ok: false, error: 'This file is not an Astra listening import.' }
+    return { ok: false, error: 'This file is not a Musaic listening import.' }
   }
   if (parsed.kind !== LISTENING_IMPORT_KIND) {
-    return { ok: false, error: 'This file is not an Astra listening import.' }
+    return { ok: false, error: 'This file is not a Musaic listening import.' }
   }
   if (parsed.formatVersion !== LISTENING_IMPORT_FORMAT_VERSION) {
     return {
       ok: false,
-      error: `This file uses listening import format ${String(parsed.formatVersion)}, but this version of Astra reads format ${LISTENING_IMPORT_FORMAT_VERSION}.`
+      error: `This file uses listening import format ${String(parsed.formatVersion)}, but this version of Musaic reads format ${LISTENING_IMPORT_FORMAT_VERSION}.`
     }
   }
   if (!isValidImportSource(parsed.source)) {
     return {
       ok: false,
       error: 'This file is missing a valid "source" tag (lowercase letters, digits and hyphens, up to '
-        + `${MAX_SOURCE_LENGTH} characters). Astra needs it to label the import and to remove it later.`
+        + `${MAX_SOURCE_LENGTH} characters). Musaic needs it to label the import and to remove it later.`
     }
   }
   if (parsed.ratings !== undefined || parsed.favorites !== undefined) {
@@ -247,7 +247,7 @@ export function parseListeningImportFile(
   if (sawImplausibleTimestamp) {
     warn(
       `${droppedTimestamps} timestamps were outside a plausible range and were dropped. `
-      + 'Astra expects epoch milliseconds — a value in seconds is 1000x too small and lands in 1970.'
+      + 'Musaic expects epoch milliseconds — a value in seconds is 1000x too small and lands in 1970.'
     )
   }
   if (invalidEventEnds > 0) {
@@ -274,7 +274,7 @@ export function parseListeningImportFile(
       return {
         ok: false,
         error: 'Every timestamp in this file is outside a plausible range, so nothing could be imported. '
-          + 'Astra expects epoch milliseconds; a value in seconds is 1000x too small and lands in 1970.'
+          + 'Musaic expects epoch milliseconds; a value in seconds is 1000x too small and lands in 1970.'
       }
     }
     if (invalidEventEnds > 0) {
@@ -284,7 +284,7 @@ export function parseListeningImportFile(
           + 'An end time must be epoch milliseconds, no earlier than the listen start.'
       }
     }
-    return { ok: false, error: 'This file does not contain any listening data Astra can use.' }
+    return { ok: false, error: 'This file does not contain any listening data Musaic can use.' }
   }
 
   return {

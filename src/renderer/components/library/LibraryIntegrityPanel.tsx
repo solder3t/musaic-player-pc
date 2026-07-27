@@ -181,7 +181,7 @@ function getFindingExplanation(finding: IntegrityFinding): string | null {
     case 'implausibly_small_file':
       return 'The file is much smaller than expected for its duration.'
     case 'metadata_unreadable':
-      return 'Astra could not read enough metadata to inspect this file.'
+      return 'Musaic could not read enough metadata to inspect this file.'
     case 'file_unreadable':
       return 'The file could not be opened from disk.'
     case 'empty_file':
@@ -189,7 +189,7 @@ function getFindingExplanation(finding: IntegrityFinding): string | null {
     case 'not_a_file':
       return 'The indexed path exists, but it is not a normal file.'
     case 'ffmpeg_unavailable':
-      return 'Deep checks need FFmpeg, but Astra could not find it.'
+      return 'Deep checks need FFmpeg, but Musaic could not find it.'
     case 'track_not_found':
       return 'This track is not a local indexed library file.'
     case 'deep_scan_flac_only':
@@ -750,7 +750,7 @@ export default function LibraryIntegrityPanel() {
           <div className="modal-content library-integrity-trash-confirm" onClick={(event) => event.stopPropagation()}>
             <div className="library-integrity-kicker">Duplicate cleanup</div>
             <h2>Move {selectedTrashCount} file{selectedTrashCount === 1 ? '' : 's'} to Trash?</h2>
-            <p>Astra will ask the operating system to move these files to Trash or the Recycle Bin. It will never fall back to permanent deletion.</p>
+            <p>Musaic will ask the operating system to move these files to Trash or the Recycle Bin. It will never fall back to permanent deletion.</p>
             <div className="library-integrity-trash-confirm-list">
               {duplicateTrashActions.flatMap((action) => action.trashPaths.map((trashPath) => (
                 <div key={trashPath}>

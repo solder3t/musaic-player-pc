@@ -1,5 +1,5 @@
 /*
- * Virtual speaker layouts for the Astra Spatial Engine.
+ * Virtual speaker layouts for the Musaic Spatial Engine.
  *
  * A virtual speaker layout is the render target when binaural mode is active:
  * the routing/upmix machinery produces one bus channel per virtual speaker

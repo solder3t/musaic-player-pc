@@ -39,9 +39,9 @@ export default function PhoneRemoteIncomingPairCard({ variant = 'modal' }: Props
 
   const card = (
     <div className={`parallax-pair-card parallax-pair-card-${variant}`} role="alert" aria-live="polite">
-      <div className="parallax-pair-card-kicker">Astra companion pair request</div>
+      <div className="parallax-pair-card-kicker">Musaic companion pair request</div>
       <div className="parallax-pair-card-host">
-        <strong>{incoming.deviceName || 'Astra Mobile'}</strong>
+        <strong>{incoming.deviceName || 'Musaic Mobile'}</strong>
         <span className="parallax-pair-card-host-suffix">wants to pair</span>
       </div>
       <div className="parallax-pair-card-pin" aria-label={`PIN ${incoming.pin}`}>

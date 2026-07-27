@@ -47,17 +47,17 @@ export interface ReceiverConfig {
 export const DEFAULT_WEB_PORT = 38405
 
 export function defaultConfigPath(): string {
-  const override = process.env.ASTRA_RECEIVER_CONFIG?.trim()
+  const override = process.env.MUSAIC_RECEIVER_CONFIG?.trim()
   if (override) return override
   const xdg = process.env.XDG_CONFIG_HOME?.trim()
   const base = xdg || join(homedir(), '.config')
-  return join(base, 'astra-receiver', 'config.json')
+  return join(base, 'musaic-receiver', 'config.json')
 }
 
 function defaults(): ReceiverConfig {
   return {
     endpointUuid: randomUUID(),
-    sinkName: hostname() || 'Astra Receiver',
+    sinkName: hostname() || 'Musaic Receiver',
     audioDevice: 'default',
     audioBackend: process.platform === 'linux' ? 'alsa' : 'null',
     volumePercent: 100,

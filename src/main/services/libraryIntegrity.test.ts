@@ -57,7 +57,7 @@ function buildNativeFlacFile(streamInfoBlock: Buffer): Buffer {
 }
 
 async function withTempDir<T>(callback: (dir: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), 'astra-integrity-'))
+  const dir = await mkdtemp(join(tmpdir(), 'musaic-integrity-'))
   try {
     return await callback(dir)
   } finally {
@@ -304,7 +304,7 @@ test('duplicate scan hashes same-size files by streaming and compares a track sc
 })
 
 test('duplicate scan records unreadable files and honors cancellation', async () => {
-  const missingTarget = { ...targets[0], path: '/definitely-missing/astra-duplicate.flac' }
+  const missingTarget = { ...targets[0], path: '/definitely-missing/musaic-duplicate.flac' }
   const output = await scanIntegrityDuplicates([missingTarget], { type: 'all' }, 'run')
   assert.equal(output.scanned, 0)
   assert.equal(output.skipped, 1)

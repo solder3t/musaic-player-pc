@@ -5,7 +5,7 @@ import {
   checkSettingsTransferWrite
 } from './settingsTransferWrite.ts'
 
-const CHOSEN = '/Users/someone/Desktop/astra-settings-2026-07-24.json'
+const CHOSEN = '/Users/someone/Desktop/musaic-settings-2026-07-24.json'
 
 function check(overrides: Partial<Parameters<typeof checkSettingsTransferWrite>[0]> = {}) {
   return checkSettingsTransferWrite({

@@ -1,5 +1,5 @@
 /*
- * Astra spatial binaural renderer — WASM wrapper over libspatialaudio.
+ * Musaic spatial binaural renderer — WASM wrapper over libspatialaudio.
  *
  * Renders N virtual speaker feeds to binaural stereo by direct per-speaker
  * HRTF convolution (the SpeakersBinauralizer algorithm from libspatialaudio,

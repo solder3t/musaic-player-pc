@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import type { CompanionApiTargetType } from '../../types/companionApi'
 
-const REF_PREFIX = 'astra'
+const REF_PREFIX = 'musaic'
 const SIGNATURE_BYTES = 18
 const MAX_REFERENCE_LENGTH = 2_048
 const MAX_PAYLOAD_BYTES = 1_024

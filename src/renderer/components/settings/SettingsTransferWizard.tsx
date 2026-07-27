@@ -8,7 +8,7 @@ import {
   getImportableSettingsTransferCategoryIds,
   parseSettingsTransferFile,
   serializeSettingsTransferFile,
-  type AstraSettingsTransferFile,
+  type MusaicSettingsTransferFile,
   type SettingsTransferCategoryId,
 } from '../../utils/settingsTransfer'
 import type { ListeningStatsImportResult } from '../../../shared/stats/statsTransfer'
@@ -48,7 +48,7 @@ interface SettingsTransferWizardProps {
 interface ImportFileState {
   path: string
   name: string
-  file: AstraSettingsTransferFile
+  file: MusaicSettingsTransferFile
   availableCategoryIds: SettingsTransferCategoryId[]
 }
 
@@ -174,7 +174,7 @@ function getStage(
       index: 0,
       eyebrow: 'Step 1 of 3',
       title: 'Choose a transfer direction',
-      description: 'Move portable settings into this Astra or create a settings file for another install.',
+      description: 'Move portable settings into this Musaic or create a settings file for another install.',
     }
   }
 
@@ -183,7 +183,7 @@ function getStage(
       index: 1,
       eyebrow: 'Step 2 of 3',
       title: 'Choose a settings file',
-      description: 'Pick an Astra settings export, then choose which portable categories to import.',
+      description: 'Pick a Musaic settings export, then choose which portable categories to import.',
     }
   }
 
@@ -193,7 +193,7 @@ function getStage(
     title: mode === 'export' ? 'Choose what to export' : 'Review what to import',
     description: mode === 'export'
       ? 'Select the portable categories to write into the settings file.'
-      : 'Select the portable categories to replace on this Astra install.',
+      : 'Select the portable categories to replace on this Musaic install.',
   }
 }
 
@@ -329,8 +329,8 @@ export default function SettingsTransferWizard({ isOpen, onClose }: SettingsTran
     setIsBusy(true)
     try {
       const filePath = await window.electronAPI.openFileDialog({
-        title: 'Import Astra Settings',
-        filters: [{ name: 'Astra Settings', extensions: ['json'] }],
+        title: 'Import Musaic Settings',
+        filters: [{ name: 'Musaic Settings', extensions: ['json'] }],
       })
       if (!filePath) return
 
@@ -393,9 +393,9 @@ export default function SettingsTransferWizard({ isOpen, onClose }: SettingsTran
 
       const today = new Date().toISOString().slice(0, 10)
       const filePath = await window.electronAPI.showSaveDialog({
-        title: 'Export Astra Settings',
-        defaultPath: `astra-settings-${today}.json`,
-        filters: [{ name: 'Astra Settings', extensions: ['json'] }],
+        title: 'Export Musaic Settings',
+        defaultPath: `musaic-settings-${today}.json`,
+        filters: [{ name: 'Musaic Settings', extensions: ['json'] }],
       })
       if (!filePath) return
 
@@ -477,7 +477,7 @@ export default function SettingsTransferWizard({ isOpen, onClose }: SettingsTran
             <p className="settings-transfer-step-label">
               {mode ? (mode === 'export' ? 'Export settings' : 'Import settings') : 'Settings transfer'}
             </p>
-            <h2 id="settings-transfer-title">Move Astra settings</h2>
+            <h2 id="settings-transfer-title">Move Musaic settings</h2>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Close" disabled={isBusy}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -527,14 +527,14 @@ export default function SettingsTransferWizard({ isOpen, onClose }: SettingsTran
             <div className="settings-transfer-mode-grid">
               <button type="button" className="settings-transfer-mode-card" onClick={() => selectMode('import')}>
                 <span className="settings-transfer-mode-number">01</span>
-                <span className="settings-transfer-mode-title">Import to this Astra</span>
+                <span className="settings-transfer-mode-title">Import to this Musaic</span>
                 <span className="settings-transfer-mode-description">
-                  Bring portable settings from another Astra export into this install.
+                  Bring portable settings from another Musaic export into this install.
                 </span>
               </button>
               <button type="button" className="settings-transfer-mode-card" onClick={() => selectMode('export')}>
                 <span className="settings-transfer-mode-number">02</span>
-                <span className="settings-transfer-mode-title">Export from this Astra</span>
+                <span className="settings-transfer-mode-title">Export from this Musaic</span>
                 <span className="settings-transfer-mode-description">
                   Save portable settings from this install to a JSON file.
                 </span>
@@ -552,8 +552,8 @@ export default function SettingsTransferWizard({ isOpen, onClose }: SettingsTran
                   </p>
                   <p className="settings-transfer-file-description">
                     {importFile
-                      ? `Exported ${importFile.file.exportedAt || 'from another Astra install'}`
-                      : 'Choose a JSON file exported from Astra settings transfer.'}
+                      ? `Exported ${importFile.file.exportedAt || 'from another Musaic install'}`
+                      : 'Choose a JSON file exported from Musaic settings transfer.'}
                   </p>
                 </div>
                 <button className="settings-btn" onClick={chooseImportFile} disabled={isBusy}>
@@ -666,7 +666,7 @@ export default function SettingsTransferWizard({ isOpen, onClose }: SettingsTran
                 className="settings-btn settings-btn-primary"
                 onClick={() => window.location.reload()}
               >
-                Reload Astra
+                Reload Musaic
               </button>
             )}
             {mode === 'import' && !awaitingReload && (

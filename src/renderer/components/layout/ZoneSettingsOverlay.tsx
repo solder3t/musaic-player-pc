@@ -151,7 +151,7 @@ export default function ZoneSettingsOverlay({ onClose }: Props) {
             type="text"
             className="zone-settings-overlay-select"
             value={zoneNameOverride}
-            placeholder={assignedName || identity?.hostname || 'Astra Speaker'}
+            placeholder={assignedName || identity?.hostname || 'Musaic Speaker'}
             maxLength={60}
             onChange={(event) => setZoneName(event.target.value)}
             aria-label="Zone name"

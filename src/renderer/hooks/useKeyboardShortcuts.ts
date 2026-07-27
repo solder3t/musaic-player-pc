@@ -65,7 +65,7 @@ export function useKeyboardShortcuts(): void {
         slotIndex: request.slotIndex,
         state: 'unavailable' as const,
         accelerator: null,
-        message: 'Astra could not update this global shortcut.'
+        message: 'Musaic could not update this global shortcut.'
       })))
     })
 

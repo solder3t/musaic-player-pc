@@ -146,7 +146,7 @@ function defaultFollowerFactory(
 }
 
 export function createCecController(options: CecControllerOptions): CecController {
-  const log = options.log ?? ((message) => console.log(`[astra-receiver] ${message}`))
+  const log = options.log ?? ((message) => console.log(`[musaic-receiver] ${message}`))
 
   // A Pi 4/5 has one CEC adapter PER HDMI PORT (/dev/cec0, /dev/cec1). Probe them all and
   // drive the one that reports a real physical address — i.e. the port with the TV on it.

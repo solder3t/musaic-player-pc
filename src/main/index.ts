@@ -417,10 +417,10 @@ function resolveBuildMetadata(): ResolvedBuildMetadata {
   }
 
   const envCommitHash = normalizeBuildCommitHash(
-    process.env.ASTRA_GIT_COMMIT ?? process.env.ASTRA_BUILD_COMMIT_HASH
+    process.env.MUSAIC_GIT_COMMIT ?? process.env.MUSAIC_BUILD_COMMIT_HASH
   )
   const envDirty = parseDirtyEnvValue(
-    process.env.ASTRA_GIT_DIRTY ?? process.env.ASTRA_BUILD_DIRTY
+    process.env.MUSAIC_GIT_DIRTY ?? process.env.MUSAIC_BUILD_DIRTY
   )
 
   if (envCommitHash) {
@@ -473,7 +473,7 @@ function resolveBuildMetadata(): ResolvedBuildMetadata {
 }
 
 const MINI_WINDOW_PERSIST_DEBOUNCE_MS = 220
-const MINI_WINDOW_TITLE = 'Astra Mini Player'
+const MINI_WINDOW_TITLE = 'Musaic Mini Player'
 const MAIN_WINDOW_PERSIST_DEBOUNCE_MS = MINI_WINDOW_PERSIST_DEBOUNCE_MS
 const FILE_CREATED_AT_BACKFILL_STARTUP_DELAY_MS = 13_000
 const FILE_CREATED_AT_BACKFILL_MIGRATION_KEY = 'file_created_at_backfill_v1_done'
@@ -518,7 +518,7 @@ const PARALLAX_SINK_CONNECTION_META_KEY = 'parallax_sink_connection_v1'
 // persisted sink connection from §14.1.2 already exists (the user paired this device pre-§20),
 // we flip this true on first read so auto-reconnect doesn't silently break for them.
 const PARALLAX_SINK_ENABLED_META_KEY = 'parallax_sink_enabled_v1'
-// §20.19(c). One role-neutral UUID per Astra install, generated at first launch in any role.
+// §20.19(c). One role-neutral UUID per Musaic install, generated at first launch in any role.
 // Advertised over mDNS when sink-enabled; sent in pair-request when acting as host. Auth still
 // uses host-issued `sinkId` — this is discovery memory only ("seen before / renamed / already
 // paired"). Never a secret.
@@ -543,7 +543,7 @@ const REMOTE_CONTROLLER_ARTWORK_MAX_EDGE_PX = 256
 const REMOTE_CONTROLLER_ARTWORK_JPEG_QUALITY = 80
 const ARTWORK_THUMB_CACHE_VERSION = 'v2'
 const RELEASES_URL_HOSTNAME = 'github.com'
-const RELEASES_URL_PATH_PREFIX = '/boof2015/astra/releases'
+const RELEASES_URL_PATH_PREFIX = '/solder3t/musaic-player-linux/releases'
 const MEMORY_DIAGNOSTICS_ENABLED_META_KEY = 'memory_diagnostics_enabled_v1'
 const MEMORY_DIAGNOSTICS_SAMPLE_INTERVAL_MS = 15_000
 const SUBSONIC_SYNC_INTERVAL_MS = 20 * 60 * 1000
@@ -561,7 +561,7 @@ const JELLYFIN_AUTH_CACHE_TTL_MS = 30 * 60 * 1000
 // data URLs over IPC: bytes go through Chromium's network pipeline, images
 // get short stable URL keys with real cache semantics, and the renderer
 // needs no blob bookkeeping. Must be registered before app ready.
-const ARTWORK_PROTOCOL_SCHEME = 'astra-artwork'
+const ARTWORK_PROTOCOL_SCHEME = 'musaic-artwork'
 protocol.registerSchemesAsPrivileged([{
   scheme: ARTWORK_PROTOCOL_SCHEME,
   privileges: {
@@ -658,7 +658,7 @@ let parallaxPairedSinks: PersistedParallaxPairedSink[] = []
 // persisted sink connection from §14.1.2 already exists (so existing paired sinks survive the
 // §20 cutover transparently — §20.19(d)).
 let parallaxSinkEnabled = false
-// §20.19(c). Role-neutral identity UUID per Astra install. Generated lazily at first read.
+// §20.19(c). Role-neutral identity UUID per Musaic install. Generated lazily at first read.
 // Discovery memory only (never a secret) — auth identity is still the host-issued `sinkId`.
 let parallaxEndpointUuid = ''
 let phoneRemoteTlsIdentity: PhoneRemoteTlsIdentity | null = null
@@ -675,12 +675,12 @@ const phoneRemoteDiscoveryService = new PhoneRemoteDiscoveryService()
 let parallaxIncomingPairRequest: import('../types/parallax').ParallaxIncomingPairRequest | null = null
 const parallaxSinkListener = new ParallaxSinkListener({
   getEndpointUuid: () => parallaxEndpointUuid,
-  getSinkName: () => hostname() || 'Astra Sink',
+  getSinkName: () => hostname() || 'Musaic Sink',
   getHasPersistedConnection: () => parallaxSinkConnection !== null,
   onPaired: async (info) => {
     // Persist through the existing §14.1.2 path so the sink-side credential lands in the same
     // schema auto-reconnect already consumes. The cleared/persisted sequence mirrors what
-    // `parallax:setSinkConnection` IPC does for the legacy "Connect This Astra as Sink" flow.
+    // `parallax:setSinkConnection` IPC does for the legacy "Connect This Musaic as Sink" flow.
     await clearParallaxSinkConnection().catch((error) => {
       console.warn('Failed to clear stale Parallax sink connection during pair-commit:', error)
     })
@@ -1221,7 +1221,7 @@ const parallaxService = new ParallaxService({
   getEndpointUuid: () => parallaxEndpointUuid,
   // §20 Commit 3. Sink's PIN card shows "<this> wants to pair" — fall back to the OS hostname
   // (same source the §14.1.4 identity card uses) when no better label exists.
-  getHostDisplayName: () => hostname() || 'Astra Host',
+  getHostDisplayName: () => hostname() || 'Musaic Host',
   // §20 Commit 3 sink side. Reads the listener's live pending-pair so it lands in
   // ParallaxStatus.sink.incomingPairRequest on every status push.
   getIncomingPairRequest: () => parallaxIncomingPairRequest,
@@ -1288,49 +1288,49 @@ const SCOPE_POPOUT_DEFAULTS: Record<ScopeKind, {
   minHeight: number
 }> = {
   spectrum: {
-    title: 'Astra Spectrum',
+    title: 'Musaic Spectrum',
     width: 760,
     height: 320,
     minWidth: 420,
     minHeight: 220,
   },
   oscilloscope: {
-    title: 'Astra Oscilloscope',
+    title: 'Musaic Oscilloscope',
     width: 760,
     height: 320,
     minWidth: 420,
     minHeight: 220,
   },
   vectorscope: {
-    title: 'Astra Vectorscope',
+    title: 'Musaic Vectorscope',
     width: 440,
     height: 440,
     minWidth: 300,
     minHeight: 300,
   },
   spectrogram: {
-    title: 'Astra Spectrogram',
+    title: 'Musaic Spectrogram',
     width: 760,
     height: 320,
     minWidth: 420,
     minHeight: 220,
   },
   vumeter: {
-    title: 'Astra VU Meter',
+    title: 'Musaic VU Meter',
     width: 480,
     height: 240,
     minWidth: 320,
     minHeight: 180,
   },
   lufsmeter: {
-    title: 'Astra LUFS Meter',
+    title: 'Musaic LUFS Meter',
     width: 480,
     height: 320,
     minWidth: 320,
     minHeight: 220,
   },
   waveform: {
-    title: 'Astra Waveform',
+    title: 'Musaic Waveform',
     width: 760,
     height: 320,
     minWidth: 420,
@@ -1920,7 +1920,7 @@ async function loadOrCreateParallaxTlsIdentity(): Promise<ParallaxTlsIdentity> {
     invalidExistingIdentity = true
   }
 
-  const identity = await createParallaxTlsIdentity(hostname() || 'Astra Parallax')
+  const identity = await createParallaxTlsIdentity(hostname() || 'Listen Together')
   await library.setAppMeta(PARALLAX_TLS_IDENTITY_META_KEY, JSON.stringify({
     version: 2,
     certificatePem: identity.certificatePem,
@@ -1975,7 +1975,7 @@ async function loadOrCreatePhoneRemoteTlsIdentity(): Promise<PhoneRemoteTlsIdent
     invalidExistingIdentity = true
   }
 
-  const identity = await createPhoneRemoteTlsIdentity(hostname() || 'Astra Phone Remote')
+  const identity = await createPhoneRemoteTlsIdentity(hostname() || 'Musaic Phone Remote')
   await library.setAppMeta(PHONE_REMOTE_TLS_IDENTITY_META_KEY, JSON.stringify({
     version: 3,
     certificatePem: identity.certificatePem,
@@ -3170,7 +3170,7 @@ function refreshJellyfinStatusCache(isSyncing: boolean = jellyfinSyncInFlight): 
 function ensureSafeStorageAvailable(): void {
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error(
-      'Secure credential storage is unavailable. Unlock your OS keychain and restart Astra, then retry.'
+      'Secure credential storage is unavailable. Unlock your OS keychain and restart Musaic, then retry.'
     )
   }
 }
@@ -4214,7 +4214,7 @@ async function createLyricsPopoutWindow(): Promise<void> {
     resizable: true,
     maximizable: false,
     fullscreenable: false,
-    title: 'Astra Lyrics',
+    title: 'Musaic Lyrics',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -4798,7 +4798,7 @@ async function getArtworkThumbnailDataUrlByHash(
   return artwork ? toDataUrl(artwork.mimeType, artwork.bytes) : null
 }
 
-// URL shape: astra-artwork://art/<thumb|card|full>/<encodeURIComponent(hash)>
+// URL shape: musaic-artwork://art/<thumb|card|full>/<encodeURIComponent(hash)>
 // Hashes are md5 hex with an optional extension, optionally prefixed with
 // "plc:" (playlist covers) or "ari:" (artist images).
 const ARTWORK_PROTOCOL_HASH_PATTERN = /^(?:plc:|ari:)?[A-Za-z0-9][A-Za-z0-9._ -]*$/
@@ -5093,7 +5093,7 @@ app.on('before-quit', () => {
   void phoneRemoteService.stop()
   phoneRemoteDiscoveryService.destroy()
   void parallaxService.stop()
-  // §20 Commit 2. Release the mDNS socket on quit so a relaunched Astra doesn't fight the
+  // §20 Commit 2. Release the mDNS socket on quit so a relaunched Musaic doesn't fight the
   // prior instance for the multicast group. Idempotent — safe even when no advert was running.
   parallaxDiscoveryService.destroy()
   // §20 Commit 3. Close the sink listener port. Fire-and-forget — the listen socket will close
@@ -6260,7 +6260,7 @@ function refreshParallaxAdvertisement(): void {
     try {
       parallaxDiscoveryService.startAdvertising({
         role: 'host',
-        name: hostname() || 'Astra Host',
+        name: hostname() || 'Musaic Host',
         port: parallaxHostConfig.port,
         endpointUuid: parallaxEndpointUuid
       })
@@ -6273,7 +6273,7 @@ function refreshParallaxAdvertisement(): void {
     try {
       parallaxDiscoveryService.startAdvertising({
         role: 'sink',
-        name: hostname() || 'Astra Sink',
+        name: hostname() || 'Musaic Sink',
         port: PARALLAX_SINK_DEFAULT_PORT,
         endpointUuid: parallaxEndpointUuid
       })
@@ -6288,7 +6288,7 @@ function refreshParallaxAdvertisement(): void {
 function getPhoneRemoteIdentity(): PhoneRemoteIdentity {
   return {
     endpointUuid: parallaxEndpointUuid || null,
-    desktopName: hostname() || 'Astra Desktop',
+    desktopName: hostname() || 'Musaic Desktop',
     protocolVersion: PHONE_REMOTE_PROTOCOL_VERSION
   }
 }
@@ -7527,7 +7527,7 @@ async function handleDuplicateTrashRequest(request: IntegrityDuplicateTrashReque
       return staleDuplicateTrashResult(runId, 'Choose one valid Keep file for every selected duplicate group.')
     }
     if (trashPaths.includes(keepPath) || trashPaths.length >= group.members.length) {
-      return staleDuplicateTrashResult(runId, 'Astra will not move the Keep file or every member of a duplicate group to Trash.')
+      return staleDuplicateTrashResult(runId, 'Musaic will not move the Keep file or every member of a duplicate group to Trash.')
     }
     for (const trashPath of trashPaths) {
       if (!memberPaths.has(trashPath) || selectedPaths.has(trashPath)) {
@@ -7613,7 +7613,7 @@ async function handleDuplicateTrashRequest(request: IntegrityDuplicateTrashReque
     return {
       runId,
       stale: false,
-      error: 'Some files reached Trash, but Astra could not merge their library records. Rescan the library before continuing.',
+      error: 'Some files reached Trash, but Musaic could not merge their library records. Rescan the library before continuing.',
       outcomes,
       replacements,
       remainingGroups: []
@@ -8379,7 +8379,7 @@ ipcMain.handle('signal-share:save-png', async (_event, input: unknown, suggested
   if (!mainWindow) return null
   const bytes = validateSignalSharePng(input)
   const result = await dialog.showSaveDialog(mainWindow, {
-    title: 'Save Astra Signal',
+    title: 'Save Musaic Signal',
     defaultPath: normalizeSignalShareFileName(suggestedFileName),
     filters: [{ name: 'PNG Image', extensions: ['png'] }]
   })
@@ -9473,7 +9473,7 @@ async function writeTempAudioFileFromBuffer(
   buffer: ArrayBuffer,
   extension: string | null | undefined
 ): Promise<{ tempDir: string; filePath: string }> {
-  const tempDir = await mkdtemp(join(tmpdir(), 'astra-remote-'))
+  const tempDir = await mkdtemp(join(tmpdir(), 'musaic-remote-'))
   const ext = sanitizeAudioExtension(extension)
   const tempPath = join(tempDir, `stream${ext || '.bin'}`)
   const data = Buffer.from(buffer)
@@ -9810,7 +9810,7 @@ async function decodeAudioWithFfmpeg(filePath: string): Promise<ArrayBuffer | nu
   const ffmpegPath = await resolveBinary('ffmpeg')
   if (!ffmpegPath) return null
 
-  const tempDir = await mkdtemp(join(tmpdir(), 'astra-ffmpeg-'))
+  const tempDir = await mkdtemp(join(tmpdir(), 'musaic-ffmpeg-'))
   const outputPath = join(tempDir, 'decoded.wav')
 
   try {

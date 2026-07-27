@@ -256,7 +256,7 @@ test('Parallax keeps inactive sinks connected while filtering playback delivery'
       streamId: 'zone-stream',
       trackId: 'zone-track',
       title: 'Zone Test',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48_000,
       channels: 2,
@@ -316,7 +316,7 @@ test('Parallax keeps inactive sinks connected while filtering playback delivery'
       streamId: 'targeted-tone',
       trackId: 'parallax-test-tone',
       title: 'Test tone',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Setup',
       sampleRate: 48_000,
       channels: 2,
@@ -367,7 +367,7 @@ test('Parallax reintroduces stream metadata when the first playback zone rejoins
       streamId: 'mid-stream-rejoin',
       trackId: 'zone-track',
       title: 'Zone Test',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48_000,
       channels: 2,
@@ -716,7 +716,7 @@ test('Parallax audio endpoint streams timestamped PCM packets', async (t) => {
       streamId: 'stream-audio-test',
       trackId: 'track-audio-test',
       title: 'Audio Test',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48000,
       channels: 2,
@@ -791,7 +791,7 @@ test('Parallax stream metadata carries host normalization gain through status an
       streamId: 'stream-normalized-test',
       trackId: 'track-normalized-test',
       title: 'Normalized Test',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48000,
       channels: 2,
@@ -847,7 +847,7 @@ test('Parallax events endpoint delivers consecutive stream-start metadata update
         streamId: 'stream-one',
         trackId: 'track-one',
         title: 'One',
-        artist: 'Astra',
+        artist: 'Musaic',
         album: 'Parallax',
         sampleRate: 48000,
         channels: 2,
@@ -860,7 +860,7 @@ test('Parallax events endpoint delivers consecutive stream-start metadata update
         streamId: 'stream-two',
         trackId: 'track-two',
         title: 'Two',
-        artist: 'Astra',
+        artist: 'Musaic',
         album: 'Parallax',
         sampleRate: 48000,
         channels: 2,
@@ -929,7 +929,7 @@ test('Parallax app sink initial join reports a structured sanitized validation d
   const sinkService = new ParallaxService({
     config: { enabled: false, port },
     pairedSinks: [],
-    softwareVersion: 'astra-app-test',
+    softwareVersion: 'musaic-app-test',
     onDiagnostic: (diagnostic) => diagnostics.push(diagnostic)
   })
   try {
@@ -949,7 +949,7 @@ test('Parallax app sink initial join reports a structured sanitized validation d
       httpStatus: 200,
       contentType: 'application/problem+json; charset=utf-8',
       protocolVersion: 2,
-      softwareVersion: 'astra-app-test'
+      softwareVersion: 'musaic-app-test'
     }])
     assert.match(sinkService.getStatus().sink.lastError ?? '', /invalid-timeline-fields/)
     const surfaced = JSON.stringify({ diagnostics, status: sinkService.getStatus() })
@@ -1044,7 +1044,7 @@ test('Parallax app sink reconnect reports the exact failed invariant', async (t)
   const sinkService = new ParallaxService({
     config: { enabled: false, port },
     pairedSinks: [],
-    softwareVersion: 'astra-app-test',
+    softwareVersion: 'musaic-app-test',
     onDiagnostic: (diagnostic) => diagnostics.push(diagnostic)
   })
   try {
@@ -1065,7 +1065,7 @@ test('Parallax app sink reconnect reports the exact failed invariant', async (t)
       httpStatus: 200,
       contentType: 'application/json',
       protocolVersion: 2,
-      softwareVersion: 'astra-app-test'
+      softwareVersion: 'musaic-app-test'
     })
     assert.match(sinkService.getStatus().sink.lastError ?? '', /active-id-mismatch/)
   } finally {
@@ -1121,7 +1121,7 @@ test('Parallax host and receiver lifecycle keeps stop, forget, re-pair, and gapl
       streamId: 'stream-before-stop',
       trackId: 'track-before-stop',
       title: 'Before Stop',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48_000,
       channels: 2,
@@ -1160,7 +1160,7 @@ test('Parallax host and receiver lifecycle keeps stop, forget, re-pair, and gapl
       streamId: 'gapless-active',
       trackId: 'gapless-active-track',
       title: 'Gapless Active',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48_000,
       channels: 2,
@@ -1171,7 +1171,7 @@ test('Parallax host and receiver lifecycle keeps stop, forget, re-pair, and gapl
       streamId: 'gapless-next',
       trackId: 'gapless-next-track',
       title: 'Gapless Next',
-      artist: 'Astra',
+      artist: 'Musaic',
       album: 'Parallax',
       sampleRate: 48_000,
       channels: 2,

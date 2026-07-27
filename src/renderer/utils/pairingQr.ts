@@ -581,7 +581,7 @@ export function renderPairingQrSvg(text: string, moduleSize: number = 8, margin:
   }
 
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxSize} ${viewBoxSize}" role="img" aria-label="Pair Astra Remote" shape-rendering="crispEdges">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxSize} ${viewBoxSize}" role="img" aria-label="Pair Musaic Remote" shape-rendering="crispEdges">`,
     `<rect width="${viewBoxSize}" height="${viewBoxSize}" fill="#ffffff" />`,
     `<path d="${pathCommands.join('')}" fill="#050912" />`,
     '</svg>'

@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "target_name": "astra_receiver_alsa",
+      "target_name": "musaic_receiver_alsa",
       "cflags!": ["-fno-exceptions"],
       "cflags_cc!": ["-fno-exceptions"],
       "cflags_cc": ["-std=c++17", "-O2"],

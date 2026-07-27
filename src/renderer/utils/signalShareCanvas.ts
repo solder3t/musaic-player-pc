@@ -3,9 +3,9 @@ import {
   type SignalLayout
 } from '@boof2015/astra-signal'
 import {
-  ASTRA_LOGO_LEFT_PATH,
-  ASTRA_LOGO_RIGHT_PATH
-} from '../components/icons/astraLogoShared'
+  MUSAIC_LOGO_LEFT_PATH,
+  MUSAIC_LOGO_RIGHT_PATH
+} from '../components/icons/musaicLogoShared'
 
 export const SIGNAL_EXPORT_SCALE = 6
 export const SIGNAL_FOREGROUND = '#0b0b12'
@@ -18,10 +18,7 @@ const BRAND_PADDING_MODULES = 10
 const BRAND_LOGO_SIZE_MODULES = 34
 const BRAND_LOGO_X_MODULES = 3
 const BRAND_LOGO_Y_MODULES = 3
-const LOGO_VIEWBOX_SIZE = 1024
-const LOGO_MAIN_SCALE = 1.726813
-const LOGO_MAIN_TRANSLATE_X = -660.505902
-const LOGO_MAIN_TRANSLATE_Y = -397.11951
+const LOGO_VIEWBOX_SIZE = 512
 
 export interface SignalShareCanvasSize {
   width: number
@@ -63,19 +60,14 @@ export function renderSignalShareCanvas(
   )
 
   const logoScale = (BRAND_LOGO_SIZE_MODULES * SIGNAL_EXPORT_SCALE) / LOGO_VIEWBOX_SIZE
-  const pathScale = LOGO_MAIN_SCALE * logoScale
-  const translateX =
-    (BRAND_PADDING_MODULES + BRAND_LOGO_X_MODULES) * SIGNAL_EXPORT_SCALE
-    + LOGO_MAIN_TRANSLATE_X * logoScale
-  const translateY =
-    (BRAND_PADDING_MODULES + BRAND_LOGO_Y_MODULES) * SIGNAL_EXPORT_SCALE
-    + LOGO_MAIN_TRANSLATE_Y * logoScale
+  const translateX = (BRAND_PADDING_MODULES + BRAND_LOGO_X_MODULES) * SIGNAL_EXPORT_SCALE
+  const translateY = (BRAND_PADDING_MODULES + BRAND_LOGO_Y_MODULES) * SIGNAL_EXPORT_SCALE
 
   context.save()
-  context.setTransform(pathScale, 0, 0, pathScale, translateX, translateY)
+  context.setTransform(logoScale, 0, 0, logoScale, translateX, translateY)
   context.fillStyle = SIGNAL_FOREGROUND
-  context.fill(new Path2D(ASTRA_LOGO_LEFT_PATH))
-  context.fill(new Path2D(ASTRA_LOGO_RIGHT_PATH))
+  context.fill(new Path2D(MUSAIC_LOGO_LEFT_PATH))
+  context.fill(new Path2D(MUSAIC_LOGO_RIGHT_PATH))
   context.restore()
 }
 

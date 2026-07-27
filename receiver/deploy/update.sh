@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Astra Parallax receiver — hardened update path. One script, three consumers:
+# Listen Together receiver — hardened update path. One script, three consumers:
 #
-#   1. The Parallax OS auto-update timer (astra-receiver-update.timer) runs it bare: resolve the
+#   1. The Parallax OS auto-update timer (musaic-receiver-update.timer) runs it bare: resolve the
 #      latest `receiver-v*` release, verify, atomically swap, restart, roll back on failure.
 #   2. install.sh runs it with --no-restart and handles the service itself.
 #   3. The image build runs it OFFLINE against the pi-gen rootfs:
-#        ASTRA_RECEIVER_INSTALL_DIR=$ROOTFS_DIR/opt/astra-receiver \
+#        MUSAIC_RECEIVER_INSTALL_DIR=$ROOTFS_DIR/opt/musaic-receiver \
 #          update.sh --from-tarball <tar.gz> --sha256-file <file> --tag receiver-vX.Y.Z --no-restart
 #
 # Layout it maintains:
@@ -19,17 +19,17 @@
 
 set -euo pipefail
 
-# Repo name appears exactly once; a rename only needs ASTRA_RECEIVER_REPO (GitHub 301-redirects
+# Repo name appears exactly once; a rename only needs MUSAIC_RECEIVER_REPO (GitHub 301-redirects
 # renamed repos, and curl -L follows, so even that is not urgent — deployed devices with the old
 # default keep updating through the redirect until a release ships them this new default).
-REPO="${ASTRA_RECEIVER_REPO:-Boof2015/parallax-os}"
-INSTALL_DIR="${ASTRA_RECEIVER_INSTALL_DIR:-/opt/astra-receiver}"
-SERVICE_NAME="astra-receiver"
-TARBALL_NAME="astra-receiver-linux-arm64.tar.gz"
+REPO="${MUSAIC_RECEIVER_REPO:-solder3t/musaic-player-linux}"
+INSTALL_DIR="${MUSAIC_RECEIVER_INSTALL_DIR:-/opt/musaic-receiver}"
+SERVICE_NAME="musaic-receiver"
+TARBALL_NAME="musaic-receiver-linux-arm64.tar.gz"
 RELEASE_TAG_PREFIX="receiver-v"
 
-log() { printf '\033[1;36m[astra-receiver-update]\033[0m %s\n' "$*"; }
-fail() { printf '\033[1;31m[astra-receiver-update]\033[0m %s\n' "$*" >&2; exit 1; }
+log() { printf '\033[1;36m[musaic-receiver-update]\033[0m %s\n' "$*"; }
+fail() { printf '\033[1;31m[musaic-receiver-update]\033[0m %s\n' "$*" >&2; exit 1; }
 
 NO_RESTART=0
 FROM_TARBALL=""
@@ -161,8 +161,8 @@ STAGING_DIR="$INSTALL_DIR/releases/.staging-$NEW_TAG"
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"
 tar -xzf "$TARBALL_PATH" -C "$STAGING_DIR"
-[ -f "$STAGING_DIR/astra-receiver.mjs" ] || fail "Tarball is missing astra-receiver.mjs."
-[ -f "$STAGING_DIR/astra_receiver_alsa.node" ] || fail "Tarball is missing the ALSA addon."
+[ -f "$STAGING_DIR/musaic-receiver.mjs" ] || fail "Tarball is missing musaic-receiver.mjs."
+[ -f "$STAGING_DIR/musaic_receiver_alsa.node" ] || fail "Tarball is missing the ALSA addon."
 if [ -f "$STAGING_DIR/update.sh" ]; then
   chmod +x "$STAGING_DIR/update.sh"
 fi
@@ -210,7 +210,7 @@ else
   else
     fail "Service unhealthy on $NEW_TAG and no previous release to roll back to — check: journalctl -u $SERVICE_NAME -n 50"
   fi
-  # A unit from the pre-0.2.0 flat layout still points at $INSTALL_DIR/astra-receiver.mjs and
+  # A unit from the pre-0.2.0 flat layout still points at $INSTALL_DIR/musaic-receiver.mjs and
   # would silently keep running the old bundle.
   if [ -f "/etc/systemd/system/$SERVICE_NAME.service" ] \
     && ! grep -q "$INSTALL_DIR/current/" "/etc/systemd/system/$SERVICE_NAME.service"; then

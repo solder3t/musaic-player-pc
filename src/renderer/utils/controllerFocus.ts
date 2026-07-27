@@ -31,7 +31,7 @@ const CONTROLLER_OVERLAY_SELECTOR = [
   '.sidebar-playlist-popout'
 ].join(',')
 
-export const CONTROLLER_VIRTUAL_MOVE_EVENT = 'astra-controller-virtual-move'
+export const CONTROLLER_VIRTUAL_MOVE_EVENT = 'musaic-controller-virtual-move'
 
 export interface ControllerVirtualMoveDetail {
   direction: 'up' | 'down'

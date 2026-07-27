@@ -239,4 +239,4 @@ static Napi::Object Init(Napi::Env env, Napi::Object exports) {
   return exports;
 }
 
-NODE_API_MODULE(astra_receiver_alsa, Init)
+NODE_API_MODULE(musaic_receiver_alsa, Init)

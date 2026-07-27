@@ -266,7 +266,7 @@ export default function ZoneDisplay() {
   const zoneName = (assignedName && assignedName.trim())
     || (zoneNameOverride && zoneNameOverride.trim())
     || identity?.hostname
-    || 'Astra Speaker'
+    || 'Musaic Speaker'
   // Only "now playing" when the host is actually reachable — a quit/unreachable host must not leave
   // a frozen, stale track on screen (the connection config lingers for auto-reconnect).
   const nowPlaying = connected && hostReachable && playbackEnabled && Boolean(stream)

@@ -250,7 +250,7 @@ function App() {
         }
       },
       // Diagnostic: opens loopback, waits, scans captured PCM for real audio vs NaN vs silence.
-      // Caller plays music in Astra manually between start() and the resolution of this Promise.
+      // Caller plays music in Musaic manually between start() and the resolution of this Promise.
       loopbackDiag: async (durationMs = 3000) => {
         const api = window.parallaxLoopbackAPI
         if (!api) {
@@ -259,7 +259,7 @@ function App() {
         }
         const startResult = api.start()
         console.log('[loopbackDiag] start:', startResult)
-        console.log(`[loopbackDiag] capturing for ${durationMs} ms — PLAY MUSIC IN ASTRA NOW`)
+        console.log(`[loopbackDiag] capturing for ${durationMs} ms — PLAY MUSIC IN MUSAIC NOW`)
         await new Promise((r) => setTimeout(r, durationMs))
         const segs = api.drain()
         let nonZero = 0
@@ -383,7 +383,7 @@ function App() {
           await usePlayerStore.getState().restoreSession(sessionSnapshot.player)
         }
       } catch (error) {
-        console.error('Failed to restore Astra session:', error)
+        console.error('Failed to restore Musaic session:', error)
       } finally {
         if (!didUnmount) {
           sessionPersistenceCleanup = installSessionPersistence()

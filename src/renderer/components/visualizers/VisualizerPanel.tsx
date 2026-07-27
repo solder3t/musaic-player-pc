@@ -834,7 +834,7 @@ function NativeUnavailableNotice({
       <div className="visualizer-native-unavailable-glyph" aria-hidden="true">⚠</div>
       <div className="visualizer-native-unavailable-title">Native DSP unavailable</div>
       <div className="visualizer-native-unavailable-copy">
-        {scopeLabel(scope)} needs Astra&apos;s native audio module, which didn&apos;t load in this build.
+        {scopeLabel(scope)} needs Musaic&apos;s native audio module, which didn&apos;t load in this build.
       </div>
       {reason ? (
         <div className="visualizer-native-unavailable-reason">{reason}</div>

@@ -1,10 +1,10 @@
-# systemd unit for the standalone Astra Parallax receiver (reference for manual/source installs;
-# install.sh writes its own equivalent pointing at /opt/astra-receiver/current/).
+# systemd unit for the standalone Listen Together receiver (reference for manual/source installs;
+# install.sh writes its own equivalent pointing at /opt/musaic-receiver/current/).
 # Install:
-#   sudo cp astra-receiver.service /etc/systemd/system/
+#   sudo cp musaic-receiver.service /etc/systemd/system/
 #   sudo systemctl daemon-reload
-#   sudo systemctl enable --now astra-receiver
-# Logs: journalctl -u astra-receiver -f
+#   sudo systemctl enable --now musaic-receiver
+# Logs: journalctl -u musaic-receiver -f
 #
 # Adjust User= and the paths below to where the receiver was deployed.
 #
@@ -13,7 +13,7 @@
 # drop WatchdogSec — a notify unit that never receives READY=1 restart-loops.
 
 [Unit]
-Description=Astra Parallax receiver (headless zone speaker)
+Description=Listen Together receiver (headless zone speaker)
 After=network-online.target sound.target
 Wants=network-online.target
 StartLimitIntervalSec=0
@@ -21,8 +21,8 @@ StartLimitIntervalSec=0
 [Service]
 Type=notify
 User=pi
-ExecStart=/usr/bin/node /home/pi/astra-receiver/astra-receiver.mjs
-Environment=ASTRA_RECEIVER_ALSA_ADDON=/home/pi/astra-receiver/astra_receiver_alsa.node
+ExecStart=/usr/bin/node /home/pi/musaic-receiver/musaic-receiver.mjs
+Environment=MUSAIC_RECEIVER_ALSA_ADDON=/home/pi/musaic-receiver/musaic_receiver_alsa.node
 Restart=always
 RestartSec=3
 WatchdogSec=30

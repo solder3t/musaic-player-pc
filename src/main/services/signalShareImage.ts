@@ -57,5 +57,5 @@ export function normalizeSignalShareFileName(value: unknown): string {
     .replace(/-+/g, '-')
     .replace(/^[._-]+|[._-]+$/g, '')
     .slice(0, 110)
-  return `${stem || 'astra-signal'}.png`
+  return `${stem || 'musaic-signal'}.png`
 }

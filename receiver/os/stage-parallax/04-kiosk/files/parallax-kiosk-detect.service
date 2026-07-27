@@ -3,7 +3,7 @@
 
 [Unit]
 Description=Parallax TV detect (start kiosk when HDMI is connected)
-After=multi-user.target astra-receiver.service
+After=multi-user.target musaic-receiver.service
 
 [Service]
 Type=oneshot

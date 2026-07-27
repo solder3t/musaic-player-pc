@@ -1,7 +1,7 @@
 import type { PlaybackState } from '../types/audio'
 import type { ParallaxStatus } from '../../types/parallax'
 
-export type AstraActivityState =
+export type MusaicActivityState =
   | 'idle'
   | 'playing'
   | 'paused'
@@ -13,12 +13,12 @@ export type AstraActivityState =
   | 'lyrics-lookup'
   | 'parallax-connected'
 
-export type AstraActivityEvent =
+export type MusaicActivityEvent =
   | 'metadata-saving'
   | 'external-connected'
   | 'attention'
 
-export interface AstraActivityInputs {
+export interface MusaicActivityInputs {
   playbackState: PlaybackState
   isIntegrityScanning?: boolean
   isLibraryScanning?: boolean
@@ -29,13 +29,13 @@ export interface AstraActivityInputs {
   isParallaxConnected?: boolean
 }
 
-export interface AstraActivityEventFlags {
+export interface MusaicActivityEventFlags {
   metadataSaving: boolean
   externalConnected: boolean
   attention: boolean
 }
 
-export const ASTRA_ACTIVITY_STATE_ORDER: readonly AstraActivityState[] = [
+export const MUSAIC_ACTIVITY_STATE_ORDER: readonly MusaicActivityState[] = [
   'idle',
   'playing',
   'paused',
@@ -48,7 +48,7 @@ export const ASTRA_ACTIVITY_STATE_ORDER: readonly AstraActivityState[] = [
   'parallax-connected',
 ]
 
-export const ASTRA_ACTIVITY_STATE_NOTES: Record<AstraActivityState, string> = {
+export const MUSAIC_ACTIVITY_STATE_NOTES: Record<MusaicActivityState, string> = {
   idle: 'No background activity',
   playing: 'Audio playback active',
   paused: 'Playback held',
@@ -61,7 +61,7 @@ export const ASTRA_ACTIVITY_STATE_NOTES: Record<AstraActivityState, string> = {
   'parallax-connected': 'Parallax connection active',
 }
 
-export const ASTRA_ACTIVITY_EVENT_DURATIONS_MS: Record<AstraActivityEvent, number> = {
+export const MUSAIC_ACTIVITY_EVENT_DURATIONS_MS: Record<MusaicActivityEvent, number> = {
   'metadata-saving': 1000,
   'external-connected': 720,
   attention: 720,
@@ -75,7 +75,7 @@ export function isParallaxConnectionActive(status: ParallaxStatus | null | undef
   return hostHasOnlineSink || sinkHasReachableHost
 }
 
-export function resolveAstraActivityState(input: AstraActivityInputs): AstraActivityState {
+export function resolveMusaicActivityState(input: MusaicActivityInputs): MusaicActivityState {
   if (input.isIntegrityScanning) return 'integrity-scan'
   if (input.isLibraryScanning) return 'library-scan'
   if (input.isRemoteSyncing) return 'remote-sync'
@@ -88,10 +88,10 @@ export function resolveAstraActivityState(input: AstraActivityInputs): AstraActi
   return 'idle'
 }
 
-export function resolveAstraActivityEvent(
-  current: AstraActivityEventFlags,
-  previous: AstraActivityEventFlags
-): AstraActivityEvent | null {
+export function resolveMusaicActivityEvent(
+  current: MusaicActivityEventFlags,
+  previous: MusaicActivityEventFlags
+): MusaicActivityEvent | null {
   if (current.attention && !previous.attention) return 'attention'
   if (current.metadataSaving && !previous.metadataSaving) return 'metadata-saving'
   if (current.externalConnected && !previous.externalConnected) return 'external-connected'

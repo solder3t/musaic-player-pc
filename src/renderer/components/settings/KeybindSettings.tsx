@@ -210,8 +210,8 @@ export default function KeybindSettings() {
                                 onClick={() => {
                                   setGlobalEnabled(definition.id, slotIndex, !globalOn)
                                   setFeedback(!globalOn
-                                    ? `${definition.action} will listen globally while Astra is running.`
-                                    : `${definition.action} is now local to Astra.`)
+                                    ? `${definition.action} will listen globally while Musaic is running.`
+                                    : `${definition.action} is now local to Musaic.`)
                                 }}
                               >
                                 <span className="keybind-global-dot" />

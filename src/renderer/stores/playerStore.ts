@@ -213,7 +213,7 @@ export const GAPLESS_PREBUFFER_LEAD_SECONDS = 15
 const GAPLESS_PREBUFFER_TIMER_TOLERANCE_MS = 250
 const MAX_GAPLESS_PREBUFFER_TIMER_MS = 2_147_000_000
 export const MAX_PLAYBACK_HISTORY = 500
-export const PLAYER_VOLUME_STORAGE_KEY = 'astra-player-volume-v1'
+export const PLAYER_VOLUME_STORAGE_KEY = 'musaic-player-volume-v1'
 const BIT_PERFECT_REMOTE_FALLBACK_MESSAGE = 'Bit-perfect mode is only available for local files. Playback fell back to Standard.'
 const IAMF_BIT_PERFECT_FALLBACK_MESSAGE = 'Eclipsa (IAMF) tracks decode through the standard pipeline. Playback fell back to Standard.'
 let nextQueueItemId = 1
@@ -1295,7 +1295,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => {
           ])
         }
         if (typeof window.dispatchEvent === 'function') {
-          window.dispatchEvent(new Event('astra:listening-history-checkpoint'))
+          window.dispatchEvent(new Event('musaic:listening-history-checkpoint'))
         }
       } catch (error) {
         console.warn('Failed to checkpoint listening history:', error)

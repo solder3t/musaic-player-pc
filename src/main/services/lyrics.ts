@@ -223,7 +223,7 @@ export class LyricsService {
         enabled: false,
         provider: 'xlrcdb',
         lrclibBaseUrl: this.lrclibBaseUrl,
-        statusMessage: 'Online lyrics lookup is disabled. Astra will only use local lyrics and embedded lyrics.',
+        statusMessage: 'Online lyrics lookup is disabled. Musaic will only use local lyrics and embedded lyrics.',
         lastError: this.lastError
       }
     }

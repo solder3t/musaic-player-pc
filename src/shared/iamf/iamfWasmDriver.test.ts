@@ -147,15 +147,15 @@ test('7.1.4 vector matches the layout_3 reference per channel', { skip: !process
   assert.equal(reference.channels, 12)
   assert.equal(result.frames, reference.frames)
 
-  // The reference WAV is in libiamf's BS.2051-J order; our output is Astra
-  // order — the mapping below mirrors IAMF_INDEX_FOR_ASTRA_CHANNEL. The
+  // The reference WAV is in libiamf's BS.2051-J order; our output is Musaic
+  // order — the mapping below mirrors IAMF_INDEX_FOR_MUSAIC_CHANNEL. The
   // renders come from iamf-tools' reference renderer, and test_000050 is a
   // scalable stream whose surrounds/heights are demixed with recon gain
   // (implementation latitude), so sample-exact equality is not achievable —
   // the assertion is CHANNEL IDENTITY: each decoded channel must correlate
   // best, and strongly, with exactly its mapped reference channel. That is
   // what proves the SL/SR<->BL/BR swap.
-  const referenceIndexForAstraChannel = [0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11]
+  const referenceIndexForMusaicChannel = [0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11]
   const stride = 7 // sample sparsely; correlation over ~150k points is plenty
   for (let channel = 0; channel < 12; channel++) {
     const decoded = result.channelData[channel]
@@ -182,7 +182,7 @@ test('7.1.4 vector matches the layout_3 reference per channel', { skip: !process
     }
     assert.equal(
       bestReference,
-      referenceIndexForAstraChannel[channel],
+      referenceIndexForMusaicChannel[channel],
       `channel ${channel} correlates with the wrong reference channel (${JSON.stringify(correlations.map((c) => c.toFixed(2)))})`
     )
     assert.ok(bestCorrelation > 0.8, `channel ${channel} correlation too weak (${bestCorrelation})`)

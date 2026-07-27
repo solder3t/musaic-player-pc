@@ -19,8 +19,8 @@ const genId = (): string => `band-${++bandIdCounter}`
 // Persistence helpers
 // ============================================
 
-export const EQ_STORAGE_KEY = 'astra-eq-custom-presets'
-export const EQ_DEVICE_PROFILE_STORAGE_KEY = 'astra-eq-device-profiles-v1'
+export const EQ_STORAGE_KEY = 'musaic-eq-custom-presets'
+export const EQ_DEVICE_PROFILE_STORAGE_KEY = 'musaic-eq-device-profiles-v1'
 const EQ_DEVICE_PROFILE_STORAGE_VERSION = 1
 const DEFAULT_OUTPUT_PROFILE_KEY = 'default'
 

@@ -1,8 +1,8 @@
-const baseUrl = (process.env.ASTRA_API_URL ?? 'http://127.0.0.1:38401').replace(/\/$/, '')
-const token = process.env.ASTRA_API_TOKEN
+const baseUrl = (process.env.MUSAIC_API_URL ?? 'http://127.0.0.1:38401').replace(/\/$/, '')
+const token = process.env.MUSAIC_API_TOKEN
 const query = process.argv.slice(2).join(' ').trim()
 
-if (!token) throw new Error('Set ASTRA_API_TOKEN to the bearer token shown in Astra settings.')
+if (!token) throw new Error('Set MUSAIC_API_TOKEN to the bearer token shown in Musaic settings.')
 if (!query) throw new Error('Usage: node search-to-play.mjs <search query>')
 
 const headers = { Authorization: `Bearer ${token}` }

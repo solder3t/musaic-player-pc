@@ -11,31 +11,31 @@ check() {
 }
 
 check "daemon files under releases/${RECEIVER_TAG}"
-[ -f "${ROOTFS_DIR}/opt/astra-receiver/releases/${RECEIVER_TAG}/astra-receiver.mjs" ]
-[ -f "${ROOTFS_DIR}/opt/astra-receiver/releases/${RECEIVER_TAG}/astra_receiver_alsa.node" ]
-[ -f "${ROOTFS_DIR}/opt/astra-receiver/releases/${RECEIVER_TAG}/update.sh" ]
-[ -x "${ROOTFS_DIR}/opt/astra-receiver/releases/${RECEIVER_TAG}/update.sh" ]
+[ -f "${ROOTFS_DIR}/opt/musaic-receiver/releases/${RECEIVER_TAG}/musaic-receiver.mjs" ]
+[ -f "${ROOTFS_DIR}/opt/musaic-receiver/releases/${RECEIVER_TAG}/musaic_receiver_alsa.node" ]
+[ -f "${ROOTFS_DIR}/opt/musaic-receiver/releases/${RECEIVER_TAG}/update.sh" ]
+[ -x "${ROOTFS_DIR}/opt/musaic-receiver/releases/${RECEIVER_TAG}/update.sh" ]
 
 check "current symlink is relative and points at the baked release"
-[ "$(readlink "${ROOTFS_DIR}/opt/astra-receiver/current")" = "releases/${RECEIVER_TAG}" ]
+[ "$(readlink "${ROOTFS_DIR}/opt/musaic-receiver/current")" = "releases/${RECEIVER_TAG}" ]
 
 check "units present with the appliance settings"
-grep -q '^Type=notify' "${ROOTFS_DIR}/etc/systemd/system/astra-receiver.service"
-grep -q '^WatchdogSec=' "${ROOTFS_DIR}/etc/systemd/system/astra-receiver.service"
-grep -q '^TimeoutStopSec=15s$' "${ROOTFS_DIR}/etc/systemd/system/astra-receiver.service"
-grep -q '^AmbientCapabilities=CAP_NET_BIND_SERVICE' "${ROOTFS_DIR}/etc/systemd/system/astra-receiver.service"
-grep -q '^ExecStart=/usr/bin/node /opt/astra-receiver/current/' "${ROOTFS_DIR}/etc/systemd/system/astra-receiver.service"
-[ -f "${ROOTFS_DIR}/etc/systemd/system/astra-receiver-update.timer" ]
+grep -q '^Type=notify' "${ROOTFS_DIR}/etc/systemd/system/musaic-receiver.service"
+grep -q '^WatchdogSec=' "${ROOTFS_DIR}/etc/systemd/system/musaic-receiver.service"
+grep -q '^TimeoutStopSec=15s$' "${ROOTFS_DIR}/etc/systemd/system/musaic-receiver.service"
+grep -q '^AmbientCapabilities=CAP_NET_BIND_SERVICE' "${ROOTFS_DIR}/etc/systemd/system/musaic-receiver.service"
+grep -q '^ExecStart=/usr/bin/node /opt/musaic-receiver/current/' "${ROOTFS_DIR}/etc/systemd/system/musaic-receiver.service"
+[ -f "${ROOTFS_DIR}/etc/systemd/system/musaic-receiver-update.timer" ]
 
 check "units enabled (wants symlinks)"
-[ -L "${ROOTFS_DIR}/etc/systemd/system/multi-user.target.wants/astra-receiver.service" ]
-[ -L "${ROOTFS_DIR}/etc/systemd/system/timers.target.wants/astra-receiver-update.timer" ]
+[ -L "${ROOTFS_DIR}/etc/systemd/system/multi-user.target.wants/musaic-receiver.service" ]
+[ -L "${ROOTFS_DIR}/etc/systemd/system/timers.target.wants/musaic-receiver-update.timer" ]
 
 check "baked config parses with webPort 80 and no endpointUuid"
 on_chroot << 'CHROOT'
 set -e
 node -e '
-  const config = JSON.parse(require("fs").readFileSync("/opt/astra-receiver/config.json", "utf8"))
+  const config = JSON.parse(require("fs").readFileSync("/opt/musaic-receiver/config.json", "utf8"))
   if (config.webPort !== 80) throw new Error("webPort is " + config.webPort)
   if (config.audioBackend !== "alsa") throw new Error("audioBackend is " + config.audioBackend)
   if ("endpointUuid" in config) throw new Error("endpointUuid must not be baked into the image")
@@ -139,7 +139,7 @@ grep -q 'XCURSOR_SIZE=24' "${ROOTFS_DIR}/etc/systemd/system/parallax-kiosk.servi
 check "polkit rule covers NetworkManager, timedate1, reboot, and the updater unit"
 grep -q 'org.freedesktop.timedate1' "${ROOTFS_DIR}/etc/polkit-1/rules.d/50-parallax-network.rules"
 grep -q 'org.freedesktop.login1.reboot' "${ROOTFS_DIR}/etc/polkit-1/rules.d/50-parallax-network.rules"
-grep -q 'astra-receiver-update.service' "${ROOTFS_DIR}/etc/polkit-1/rules.d/50-parallax-network.rules"
+grep -q 'musaic-receiver-update.service' "${ROOTFS_DIR}/etc/polkit-1/rules.d/50-parallax-network.rules"
 on_chroot << 'CHROOT'
 set -e
 dpkg -s network-manager polkitd >/dev/null
@@ -147,7 +147,7 @@ command -v nmcli >/dev/null
 # The baked user must be locked — a shipped image with a usable password would be a backdoor.
 passwd -S parallax | awk '{ exit ($2 == "L") ? 0 : 1 }'
 node -e '
-  const config = JSON.parse(require("fs").readFileSync("/opt/astra-receiver/config.json", "utf8"))
+  const config = JSON.parse(require("fs").readFileSync("/opt/musaic-receiver/config.json", "utf8"))
   if (config.apSetup !== true) throw new Error("apSetup not baked on")
 '
 CHROOT
@@ -255,7 +255,7 @@ on_chroot << 'CHROOT'
 set -e
 dpkg -s cage cog v4l-utils ir-keytable >/dev/null
 id -u parallax-kiosk >/dev/null
-id -nG astra-receiver | grep -qw video
+id -nG musaic-receiver | grep -qw video
 CHROOT
 [ -x "${ROOTFS_DIR}/usr/local/lib/parallax/hdmi-connected.sh" ]
 [ -x "${ROOTFS_DIR}/usr/local/lib/parallax/parallax-kiosk-launch.sh" ]
@@ -269,7 +269,7 @@ check "CEC control baked on"
 on_chroot << 'CHROOT'
 set -e
 node -e '
-  const config = JSON.parse(require("fs").readFileSync("/opt/astra-receiver/config.json", "utf8"))
+  const config = JSON.parse(require("fs").readFileSync("/opt/musaic-receiver/config.json", "utf8"))
   if (config.cecControl !== true) throw new Error("cecControl not baked on")
 '
 CHROOT

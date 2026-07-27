@@ -33,7 +33,7 @@ export function saveCurrentSessionSnapshot(): void {
   try {
     writeSessionSnapshot(createCurrentSessionSnapshot())
   } catch (error) {
-    console.warn('Failed to persist Astra session state:', error)
+    console.warn('Failed to persist Musaic session state:', error)
   }
 }
 

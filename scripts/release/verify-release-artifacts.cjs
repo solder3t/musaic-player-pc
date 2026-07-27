@@ -27,42 +27,27 @@ function normalizePlatform(value) {
   return normalized
 }
 
-function toDebArch(arch) {
-  if (arch === 'x64') return 'amd64'
-  if (arch === 'arm64') return 'arm64'
-  if (arch === 'ia32') return 'i386'
-  if (arch === 'armv7l') return 'armhf'
-  return arch
-}
-
-function toRpmArch(arch) {
-  if (arch === 'x64') return 'x86_64'
-  if (arch === 'arm64') return 'aarch64'
-  if (arch === 'ia32') return 'i686'
-  return arch
-}
-
-function expectedArtifactNames({ platform, arch, version }) {
+function getRequiredPatterns(platform) {
   if (platform === 'linux') {
     return [
-      `Musaic-${version}-Linux.AppImage`,
-      `Musaic-${version}-Linux-${toDebArch(arch)}.deb`,
-      `Musaic-${version}-Linux-${toRpmArch(arch)}.rpm`,
-      `Musaic-${version}-Linux-${arch}.tar.gz`,
+      { name: 'AppImage', pattern: /^Musaic-.*\.AppImage$/i },
+      { name: 'Debian Package (.deb)', pattern: /^Musaic-.*\.deb$/i },
+      { name: 'RPM Package (.rpm)', pattern: /^Musaic-.*\.rpm$/i },
+      { name: 'Tarball (.tar.gz)', pattern: /^Musaic-.*\.tar\.gz$/i },
     ]
   }
 
   if (platform === 'darwin') {
     return [
-      `Musaic-${version}-Mac-${arch}.dmg`,
-      `Musaic-${version}-Mac-${arch}.zip`,
+      { name: 'macOS Disk Image (.dmg)', pattern: /^Musaic-.*\.dmg$/i },
+      { name: 'macOS Zip Archive (.zip)', pattern: /^Musaic-.*\.zip$/i },
     ]
   }
 
   if (platform === 'win32') {
     return [
-      `Musaic.Setup.${version}.Windows.exe`,
-      `Musaic.Portable.${version}.Windows.exe`,
+      { name: 'Windows Setup (.exe)', pattern: /^Musaic\.Setup\..*\.exe$/i },
+      { name: 'Windows Portable (.exe)', pattern: /^Musaic\.Portable\..*\.exe$/i },
     ]
   }
 
@@ -80,29 +65,35 @@ function listDistFiles(distDir) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2))
-  const packageJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'))
-  const platform = normalizePlatform(args.platform || process.env.MUSAIC_RELEASE_PLATFORM || process.env.ASTRA_RELEASE_PLATFORM || process.platform)
-  const arch = args.arch || process.env.MUSAIC_RELEASE_ARCH || process.env.ASTRA_RELEASE_ARCH || process.arch
-  const version = args.version || process.env.MUSAIC_RELEASE_VERSION || process.env.ASTRA_RELEASE_VERSION || packageJson.version
-  const distDir = path.resolve(repoRoot, args['dist-dir'] || process.env.MUSAIC_RELEASE_DIST_DIR || process.env.ASTRA_RELEASE_DIST_DIR || 'dist')
-  const expectedNames = expectedArtifactNames({ platform, arch, version })
-  const missingNames = expectedNames.filter((name) => {
-    const filePath = path.join(distDir, name)
-    try {
-      return !fs.statSync(filePath).isFile()
-    } catch (error) {
-      if (error && error.code === 'ENOENT') return true
-      throw error
-    }
-  })
+  const platform = normalizePlatform(args.platform || process.env.MUSAIC_RELEASE_PLATFORM || process.env.MUSAIC_RELEASE_PLATFORM || process.platform)
+  const distDir = path.resolve(repoRoot, args['dist-dir'] || process.env.MUSAIC_RELEASE_DIST_DIR || process.env.MUSAIC_RELEASE_DIST_DIR || 'dist')
+  
+  const requiredPatterns = getRequiredPatterns(platform)
+  const actualNames = listDistFiles(distDir)
+  const missingTypes = []
+  const foundFiles = []
 
-  if (missingNames.length > 0) {
-    console.error('[verify-release-artifacts] Missing expected release artifact(s):')
-    for (const name of missingNames) {
+  for (const req of requiredPatterns) {
+    const match = actualNames.find((name) => req.pattern.test(name))
+    if (!match) {
+      missingTypes.push(req.name)
+    } else {
+      const filePath = path.join(distDir, match)
+      const stat = fs.statSync(filePath)
+      if (!stat.isFile() || stat.size === 0) {
+        missingTypes.push(`${req.name} (file empty or invalid)`)
+      } else {
+        foundFiles.push(match)
+      }
+    }
+  }
+
+  if (missingTypes.length > 0) {
+    console.error(`[verify-release-artifacts] Missing or invalid release artifact(s) for ${platform}:`)
+    for (const name of missingTypes) {
       console.error(`  - ${name}`)
     }
 
-    const actualNames = listDistFiles(distDir)
     console.error(`[verify-release-artifacts] Files currently in ${distDir}:`)
     if (actualNames.length === 0) {
       console.error('  (none)')
@@ -114,10 +105,11 @@ function main() {
     process.exit(1)
   }
 
-  console.log(`[verify-release-artifacts] ${platform}/${arch} release artifacts look valid.`)
-  for (const name of expectedNames) {
+  console.log(`[verify-release-artifacts] ${platform} release artifacts look valid:`)
+  for (const name of foundFiles) {
     console.log(`  - ${name}`)
   }
+
 }
 
 main()

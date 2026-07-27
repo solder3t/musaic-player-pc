@@ -4,7 +4,7 @@ import { CompanionApiReferenceSigner } from './companionApiRefs.ts'
 
 const SECRET = Buffer.from('0123456789abcdef0123456789abcdef', 'utf8')
 
-test('AstraRefs round-trip every public target type without exposing the signed key', () => {
+test('MusaicRefs round-trip every public target type without exposing the signed key', () => {
   const signer = new CompanionApiReferenceSigner(SECRET)
   const fixtures = [
     ['track', 42],
@@ -15,14 +15,14 @@ test('AstraRefs round-trip every public target type without exposing the signed 
 
   for (const [type, key] of fixtures) {
     const ref = signer.create(type, key)
-    assert.match(ref, /^astra\.(track|album|artist|playlist)\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)
+    assert.match(ref, /^musaic\.(track|album|artist|playlist)\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/)
     assert.equal(ref.includes(String(key)), false)
     assert.deepEqual(signer.parse(ref), { type, key: String(key) })
     assert.deepEqual(signer.parse(ref, type), { type, key: String(key) })
   }
 })
 
-test('AstraRefs reject tampering, type substitution, malformed payloads, and another signing secret', () => {
+test('MusaicRefs reject tampering, type substitution, malformed payloads, and another signing secret', () => {
   const signer = new CompanionApiReferenceSigner(SECRET)
   const ref = signer.create('track', 42)
   const parts = ref.split('.')
@@ -36,7 +36,7 @@ test('AstraRefs reject tampering, type substitution, malformed payloads, and ano
   assert.equal(new CompanionApiReferenceSigner(Buffer.alloc(32, 9)).parse(ref), null)
 })
 
-test('AstraRefs remain valid when unrelated bearer credentials rotate', () => {
+test('MusaicRefs remain valid when unrelated bearer credentials rotate', () => {
   const signer = new CompanionApiReferenceSigner(SECRET)
   const ref = signer.create('playlist', 123)
   let bearerToken = 'old-token'

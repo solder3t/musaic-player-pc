@@ -503,7 +503,7 @@ export class PhoneRemoteService {
       baseUrl: selectedBaseUrl,
       controllerUrl: `${selectedBaseUrl}/remote/`,
       pairingUrl: clientKind === 'native'
-        ? `astra://desktop-remote?baseUrl=${encodeURIComponent(selectedBaseUrl)}&ticket=${encodeURIComponent(ticket)}&endpointUuid=${encodeURIComponent(this.getIdentity().endpointUuid ?? '')}&fingerprint=${encodeURIComponent(this.requireTlsIdentity().fingerprint256)}&protocolVersion=${PHONE_REMOTE_PROTOCOL_VERSION}`
+        ? `musaic://desktop-remote?baseUrl=${encodeURIComponent(selectedBaseUrl)}&ticket=${encodeURIComponent(ticket)}&endpointUuid=${encodeURIComponent(this.getIdentity().endpointUuid ?? '')}&fingerprint=${encodeURIComponent(this.requireTlsIdentity().fingerprint256)}&protocolVersion=${PHONE_REMOTE_PROTOCOL_VERSION}`
         : `${selectedBaseUrl}/remote/#pair=${encodeURIComponent(ticket)}&fingerprint=${encodeURIComponent(this.requireTlsIdentity().fingerprint256)}`,
       createdAt,
       expiresAt,
@@ -621,7 +621,7 @@ export class PhoneRemoteService {
 
   private normalizeIdentity(identity: PhoneRemoteIdentity | undefined): PhoneRemoteIdentity {
     const endpointUuid = identity?.endpointUuid?.trim() || null
-    const desktopName = identity?.desktopName?.trim() || 'Astra Desktop'
+    const desktopName = identity?.desktopName?.trim() || 'Musaic Desktop'
     const protocolVersion = Number.isFinite(identity?.protocolVersion)
       ? Math.max(1, Math.floor(identity?.protocolVersion ?? PHONE_REMOTE_PROTOCOL_VERSION))
       : PHONE_REMOTE_PROTOCOL_VERSION

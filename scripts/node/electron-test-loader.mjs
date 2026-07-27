@@ -2,8 +2,8 @@ import { extname } from 'node:path'
 
 const electronStubSource = `
 const userDataPath = () => {
-  const path = globalThis.__ASTRA_TEST_USER_DATA || process.env.ASTRA_TEST_USER_DATA
-  if (!path) throw new Error('ASTRA_TEST_USER_DATA is required for Electron service tests.')
+  const path = globalThis.__MUSAIC_TEST_USER_DATA || process.env.MUSAIC_TEST_USER_DATA
+  if (!path) throw new Error('MUSAIC_TEST_USER_DATA is required for Electron service tests.')
   return path
 }
 
@@ -20,7 +20,7 @@ export const powerMonitor = {
 }
 
 export const screen = {
-  getAllDisplays: () => globalThis.__ASTRA_TEST_DISPLAYS || [{
+  getAllDisplays: () => globalThis.__MUSAIC_TEST_DISPLAYS || [{
     workArea: { x: 0, y: 0, width: 1920, height: 1080 }
   }]
 }

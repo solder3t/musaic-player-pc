@@ -76,13 +76,13 @@ const TINY_PNG_FIXTURE = Buffer.from(
 )
 
 async function setupEmptyLibrary(t: test.TestContext): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'astra-library-sqlite-'))
-  process.env.ASTRA_TEST_USER_DATA = dir
+  const dir = await mkdtemp(join(tmpdir(), 'musaic-library-sqlite-'))
+  process.env.MUSAIC_TEST_USER_DATA = dir
   await library.initDatabase()
 
   t.after(async () => {
     library.closeDatabase()
-    delete process.env.ASTRA_TEST_USER_DATA
+    delete process.env.MUSAIC_TEST_USER_DATA
     await rm(dir, { recursive: true, force: true })
   })
 
@@ -181,8 +181,8 @@ async function setupSeededLibrary(t: test.TestContext): Promise<string> {
 }
 
 async function setupLegacyPlaycountLibrary(t: test.TestContext): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'astra-library-playcount-migration-'))
-  process.env.ASTRA_TEST_USER_DATA = dir
+  const dir = await mkdtemp(join(tmpdir(), 'musaic-library-playcount-migration-'))
+  process.env.MUSAIC_TEST_USER_DATA = dir
 
   const directDb = new TestSqliteDatabase(join(dir, 'library.db'))
   try {
@@ -258,7 +258,7 @@ async function setupLegacyPlaycountLibrary(t: test.TestContext): Promise<string>
 
   t.after(async () => {
     library.closeDatabase()
-    delete process.env.ASTRA_TEST_USER_DATA
+    delete process.env.MUSAIC_TEST_USER_DATA
     await rm(dir, { recursive: true, force: true })
   })
 
@@ -2078,7 +2078,7 @@ test('manual playlist reassociation rejects invalid inputs but permits repeated 
 
   await assert.rejects(
     () => library.reassociatePlaylistEntry(playlist.id, missingEntry.id, join(musicDir, 'not-indexed.wav')),
-    /isn't in your Astra library/
+    /isn't in your Musaic library/
   )
   await assert.rejects(
     () => library.reassociatePlaylistEntry(playlist.id + 999, missingEntry.id, duplicateTargetPath),
@@ -2521,7 +2521,7 @@ test('dynamic playlist export writes the current evaluated result', async (t) =>
   const result = await library.exportPlaylistToM3u(playlist.id, exportPath)
 
   assert.equal(result.exportedCount, 1)
-  assert.deepEqual(result.warnings, ['1 entries reference remote or app-specific locations and may not work outside Astra.'])
+  assert.deepEqual(result.warnings, ['1 entries reference remote or app-specific locations and may not work outside Musaic.'])
   const lines = (await readFile(exportPath, 'utf-8')).trimEnd().split('\n')
   assert.equal(lines[0], '#EXTM3U')
   assert.match(lines[1], /^#EXTINF:-?\d+,Export Artist - Export A$/)
@@ -3774,7 +3774,7 @@ test('an unmatched cross-machine session stores a synthetic id, never a path dig
       .get('foreign') as { track_path: string; track_id: number | null }
 
     assert.equal(row.track_id, null)
-    assert.ok(row.track_path.startsWith('astra-sync://unmatched/'))
+    assert.ok(row.track_path.startsWith('musaic-sync://unmatched/'))
     assert.equal(row.track_path.includes('deadbeefdeadbeef'), false)
   } finally {
     directDb.close()
@@ -3806,7 +3806,7 @@ test('an exported settings payload contains no filesystem paths', async (t) => {
 function buildImportFile(overrides: Record<string, unknown> = {}) {
   const base = 1_750_000_000_000
   return {
-    kind: 'astra-listening-import' as const,
+    kind: 'musaic-listening-import' as const,
     formatVersion: 1 as const,
     source: 'lastfm',
     generator: 'test-converter',
@@ -3835,7 +3835,7 @@ test('an external import lands on matched tracks and is attributed to its source
   assert.equal(dashboard.summary.qualifiedPlays, 2)
   assert.equal(dashboard.summary.listenedSeconds, 360)
 
-  // Provenance is derived by Astra, never taken from the file.
+  // Provenance is derived by Musaic, never taken from the file.
   const directDb = new TestSqliteDatabase(join(dir, 'library.db'))
   try {
     const session = directDb

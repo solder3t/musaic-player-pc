@@ -45,7 +45,7 @@ test('builds a Spotify-like listening activity while playing', () => {
   })
 
   assert.deepEqual(activity, {
-    name: 'Astra',
+    name: 'Musaic',
     type: 2,
     details: '0\u200B',
     state: 'Ado',
@@ -73,15 +73,15 @@ test('adds the small image badge when a key is provided alongside cover art', ()
     }
   }, {
     largeImageUrl: 'https://example.com/cover.jpg',
-    smallImageKey: 'astra-logo',
-    smallImageText: 'Astra',
+    smallImageKey: 'musaic-logo',
+    smallImageText: 'Musaic',
     nowSeconds: 1000
   })
 
   assert.deepEqual(activity?.assets, {
     large_image: 'https://example.com/cover.jpg',
-    small_image: 'astra-logo',
-    small_text: 'Astra'
+    small_image: 'musaic-logo',
+    small_text: 'Musaic'
   })
 })
 
@@ -95,8 +95,8 @@ test('ignores the small image key without a large image', () => {
       artist: 'Dazbee'
     }
   }, {
-    smallImageKey: 'astra-logo',
-    smallImageText: 'Astra',
+    smallImageKey: 'musaic-logo',
+    smallImageText: 'Musaic',
     nowSeconds: 1000
   })
 
@@ -115,9 +115,9 @@ test('links title, artist, album art, and badge for YouTube Music', () => {
     }
   }, {
     largeImageUrl: 'https://example.com/cover.jpg',
-    smallImageKey: 'astra-logo',
-    smallImageText: 'Astra',
-    smallImageLinkUrl: 'https://github.com/Boof2015/astra',
+    smallImageKey: 'musaic-logo',
+    smallImageText: 'Musaic',
+    smallImageLinkUrl: 'https://github.com/solder3t/musaic-player-linux',
     linkDestination: 'ytmusic',
     nowSeconds: 1000
   })
@@ -125,7 +125,7 @@ test('links title, artist, album art, and badge for YouTube Music', () => {
   assert.equal(activity?.details_url, 'https://music.youtube.com/search?q=Air%20Dzeko%20%26%20Torres')
   assert.equal(activity?.state_url, 'https://music.youtube.com/search?q=Dzeko%20%26%20Torres')
   assert.equal(activity?.assets?.large_url, 'https://music.youtube.com/search?q=Air%20EP%20Dzeko%20%26%20Torres')
-  assert.equal(activity?.assets?.small_url, 'https://github.com/Boof2015/astra')
+  assert.equal(activity?.assets?.small_url, 'https://github.com/solder3t/musaic-player-linux')
 })
 
 test('links to Last.fm pages and prefers the album artist for album links', () => {

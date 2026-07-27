@@ -39,7 +39,7 @@ export default function BitPerfectModeWarningModal({
           </p>
           <ul className="exclusive-mode-warning-list">
             <li>System and app volume controls may stop working on that device.</li>
-            <li>Other apps may lose audio while Astra owns the device.</li>
+            <li>Other apps may lose audio while Musaic owns the device.</li>
             <li>Sample-rate switching can interrupt playback when tracks change formats.</li>
             <li>EQ, normalization, routing, and delay compensation are disabled in this mode.</li>
             <li>Use Standard mode if you want normal shared-device playback.</li>

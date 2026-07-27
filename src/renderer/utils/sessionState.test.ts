@@ -9,7 +9,7 @@ import {
   writeSessionSnapshot,
   type SessionStorageLike,
 } from './sessionState.ts'
-import { ASTRA_SESSION_STATE_STORAGE_KEY } from '../constants/settingsStorageKeys.ts'
+import { MUSAIC_SESSION_STATE_STORAGE_KEY } from '../constants/settingsStorageKeys.ts'
 
 class MemoryStorage implements SessionStorageLike {
   private values = new Map<string, string>()
@@ -158,7 +158,7 @@ test('session snapshots round-trip through storage and clear cleanly', () => {
   assert.ok(snapshot)
 
   writeSessionSnapshot(snapshot, storage)
-  assert.equal(storage.getItem(ASTRA_SESSION_STATE_STORAGE_KEY)?.includes(SESSION_STATE_KIND), true)
+  assert.equal(storage.getItem(MUSAIC_SESSION_STATE_STORAGE_KEY)?.includes(SESSION_STATE_KIND), true)
   assert.deepEqual(readSessionSnapshot(storage), snapshot)
 
   clearSessionSnapshot(storage)

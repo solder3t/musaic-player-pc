@@ -26,8 +26,8 @@ test('share-card PNG validation accepts only the fixed export dimensions', () =>
 })
 
 test('share-card filename normalization strips paths, unsafe characters, and non-PNG extensions', () => {
-  assert.equal(normalizeStatsShareFileName('astra-listening-30d-2026-07-18.png'), 'astra-listening-30d-2026-07-18.png')
+  assert.equal(normalizeStatsShareFileName('musaic-listening-30d-2026-07-18.png'), 'musaic-listening-30d-2026-07-18.png')
   assert.equal(normalizeStatsShareFileName('../../My Listening / July.jpg'), 'July.png')
   assert.equal(normalizeStatsShareFileName(' Listening: July! '), 'Listening-July.png')
-  assert.equal(normalizeStatsShareFileName('', new Date('2026-07-18T12:00:00Z').getTime()), 'astra-listening-2026-07-18.png')
+  assert.equal(normalizeStatsShareFileName('', new Date('2026-07-18T12:00:00Z').getTime()), 'musaic-listening-2026-07-18.png')
 })

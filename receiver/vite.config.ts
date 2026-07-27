@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 
 // Bundles the daemon (plus the shared protocol/crypto/discovery modules from ../src) into a
 // single Node ESM file. Only the native .node addon stays external — it's loaded at runtime via
-// createRequire with a filesystem path. Deploy = dist/astra-receiver.mjs + receiver/native.
+// createRequire with a filesystem path. Deploy = dist/musaic-receiver.mjs + receiver/native.
 export default defineConfig({
   resolve: {
     alias: {
@@ -22,7 +22,7 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       output: {
-        entryFileNames: 'astra-receiver.mjs'
+        entryFileNames: 'musaic-receiver.mjs'
       }
     }
   },

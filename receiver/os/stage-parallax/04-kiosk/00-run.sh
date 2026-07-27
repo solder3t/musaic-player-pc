@@ -49,6 +49,6 @@ if ! id -u parallax-kiosk >/dev/null 2>&1; then
   useradd --system --create-home --home-dir /var/lib/parallax-kiosk \
     --shell /usr/sbin/nologin --groups video,render,input parallax-kiosk
 fi
-usermod -aG video astra-receiver
+usermod -aG video musaic-receiver
 systemctl enable parallax-kiosk-detect.service
 CHROOT

@@ -6,8 +6,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-BASE_URL = os.environ.get("ASTRA_API_URL", "http://127.0.0.1:38401").rstrip("/")
-TOKEN = os.environ.get("ASTRA_API_TOKEN")
+BASE_URL = os.environ.get("MUSAIC_API_URL", "http://127.0.0.1:38401").rstrip("/")
+TOKEN = os.environ.get("MUSAIC_API_TOKEN")
 
 
 def request(method, path, body=None):
@@ -27,7 +27,7 @@ def request(method, path, body=None):
 
 
 if not TOKEN:
-    raise SystemExit("Set ASTRA_API_TOKEN to the bearer token shown in Astra settings.")
+    raise SystemExit("Set MUSAIC_API_TOKEN to the bearer token shown in Musaic settings.")
 if len(sys.argv) < 3:
     raise SystemExit("Usage: playlist-generator.py <playlist name> <query> [query ...]")
 

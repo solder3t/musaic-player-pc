@@ -25,7 +25,7 @@ export function parseAlsaCards(text: string): AlsaDeviceOption[] {
 }
 
 export function listAlsaDevices(
-  path = process.env.ASTRA_RECEIVER_CARDS_FILE?.trim() || '/proc/asound/cards'
+  path = process.env.MUSAIC_RECEIVER_CARDS_FILE?.trim() || '/proc/asound/cards'
 ): AlsaDeviceOption[] {
   try {
     return parseAlsaCards(readFileSync(path, 'utf8'))

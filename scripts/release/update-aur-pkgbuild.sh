@@ -46,7 +46,7 @@ escaped_sha="$(escape_sed_replacement "${sha256}")"
 sed \
   -e "s/^pkgver=.*/pkgver=${aur_version}/" \
   -e "s/^pkgrel=.*/pkgrel=1/" \
-  -e "s|^source=.*|source=(\"astra-${aur_version}.AppImage::${escaped_url}\")|" \
+  -e "s|^source=.*|source=(\"musaic-${aur_version}.AppImage::${escaped_url}\")|" \
   -e "s/^sha256sums=.*/sha256sums=('${escaped_sha}')/" \
   "${pkgbuild_path}" > "${tmp_file}"
 

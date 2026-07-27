@@ -6,7 +6,7 @@ import {
   ANALYZER_RACK_VISIBILITY_STORAGE_KEY,
   ARTIST_BROWSE_MODE_STORAGE_KEY,
   ARTIST_ROOT_VIEW_MODE_STORAGE_KEY,
-  ASTRA_SESSION_STATE_STORAGE_KEY,
+  MUSAIC_SESSION_STATE_STORAGE_KEY,
   AUDIO_OUTPUT_DEVICE_STORAGE_KEY,
   BIT_PERFECT_WARNING_DISMISSED_STORAGE_KEY,
   CALIBRATION_INPUT_STORAGE_KEY,
@@ -66,7 +66,7 @@ import {
 import { LRCLIB_OFFICIAL_BASE_URL } from '../../types/lyrics'
 import type { ListeningStatsImportResult } from '../../shared/stats/statsTransfer'
 
-export const SETTINGS_TRANSFER_KIND = 'astra-settings-transfer'
+export const SETTINGS_TRANSFER_KIND = 'musaic-settings-transfer'
 export const SETTINGS_TRANSFER_SCHEMA_VERSION = 1
 
 export const SETTINGS_TRANSFER_CATEGORY_IDS = [
@@ -103,7 +103,7 @@ export interface SettingsTransferCategoryPayload {
   values?: Record<string, unknown>
 }
 
-export interface AstraSettingsTransferFile {
+export interface MusaicSettingsTransferFile {
   kind: typeof SETTINGS_TRANSFER_KIND
   schemaVersion: typeof SETTINGS_TRANSFER_SCHEMA_VERSION
   exportedAt: string
@@ -112,7 +112,7 @@ export interface AstraSettingsTransferFile {
 }
 
 export type SettingsTransferParseResult =
-  | { ok: true; file: AstraSettingsTransferFile }
+  | { ok: true; file: MusaicSettingsTransferFile }
   | { ok: false; error: string }
 
 export type SettingsTransferApplyResult =
@@ -294,7 +294,7 @@ export const SETTINGS_TRANSFER_EXCLUDED_STORAGE_KEYS = [
   DISCORD_COVER_ART_CACHE_STORAGE_KEY_V3,
   DISCORD_COVER_ART_CACHE_STORAGE_KEY_V4,
   DISCORD_LEGACY_CLIENT_ID_STORAGE_KEY,
-  ASTRA_SESSION_STATE_STORAGE_KEY,
+  MUSAIC_SESSION_STATE_STORAGE_KEY,
   DEVELOPER_SETTINGS_VISIBILITY_STORAGE_KEY,
   BIT_PERFECT_WARNING_DISMISSED_STORAGE_KEY,
 ] as const
@@ -413,7 +413,7 @@ export function getSettingsTransferCategoryStorageKeys(
 }
 
 export function getImportableSettingsTransferCategoryIds(
-  file: AstraSettingsTransferFile
+  file: MusaicSettingsTransferFile
 ): SettingsTransferCategoryId[] {
   return SETTINGS_TRANSFER_CATEGORY_IDS.filter((categoryId) => hasOwn(file.categories, categoryId))
 }
@@ -421,7 +421,7 @@ export function getImportableSettingsTransferCategoryIds(
 export function createSettingsTransferFile(
   categoryIds: readonly SettingsTransferCategoryId[],
   options: CreateSettingsTransferOptions = {}
-): AstraSettingsTransferFile {
+): MusaicSettingsTransferFile {
   const storage = resolveStorage(options.storage)
   const categories: Partial<Record<SettingsTransferCategoryId, SettingsTransferCategoryPayload>> = {}
 
@@ -441,7 +441,7 @@ export function createSettingsTransferFile(
   }
 }
 
-export function serializeSettingsTransferFile(file: AstraSettingsTransferFile): string {
+export function serializeSettingsTransferFile(file: MusaicSettingsTransferFile): string {
   return JSON.stringify(file, null, 2)
 }
 
@@ -458,7 +458,7 @@ export function parseSettingsTransferFile(content: string): SettingsTransferPars
   }
 
   if (parsed.kind !== SETTINGS_TRANSFER_KIND) {
-    return { ok: false, error: 'This file was not exported by Astra settings transfer.' }
+    return { ok: false, error: 'This file was not exported by Musaic settings transfer.' }
   }
 
   if (parsed.schemaVersion !== SETTINGS_TRANSFER_SCHEMA_VERSION) {
@@ -488,7 +488,7 @@ export function parseSettingsTransferFile(content: string): SettingsTransferPars
 }
 
 export async function applySettingsTransferFile(
-  file: AstraSettingsTransferFile,
+  file: MusaicSettingsTransferFile,
   categoryIds: readonly SettingsTransferCategoryId[],
   options: ApplySettingsTransferOptions = {}
 ): Promise<SettingsTransferApplyResult> {

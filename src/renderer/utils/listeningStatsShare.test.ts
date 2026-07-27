@@ -89,7 +89,7 @@ test('range footer uses exact local dates and all-time uses the detailed-history
   const dashboard = createDashboard()
   assert.equal(buildListeningStatsShareModel(dashboard, 'overview').rangeLabel, 'JUN 18 – JUL 18, 2026')
   assert.equal(buildListeningStatsShareModel({ ...dashboard, range: 'all' }, 'overview').rangeLabel, 'SINCE JUN 18, 2026')
-  assert.equal(buildListeningStatsShareModel(dashboard, 'overview').suggestedFileName, 'astra-listening-30d-2026-07-18.png')
+  assert.equal(buildListeningStatsShareModel(dashboard, 'overview').suggestedFileName, 'musaic-listening-30d-2026-07-18.png')
 })
 
 test('sparse overview omits unavailable categories and still produces a safe empty-art model', () => {

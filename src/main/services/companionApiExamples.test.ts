@@ -48,8 +48,8 @@ test('observation example consumes an SSE playback event', async () => {
     res.end('event: playback\ndata: {"state":"playing"}\n\n')
   }, async (baseUrl) => {
     const result = await run(process.execPath, ['observe.mjs'], {
-      ASTRA_API_URL: baseUrl,
-      ASTRA_API_TOKEN: 'test-token'
+      MUSAIC_API_URL: baseUrl,
+      MUSAIC_API_TOKEN: 'test-token'
     })
     assert.match(result.stdout, /playback \{ state: 'playing' \}/)
   })
@@ -62,8 +62,8 @@ test('search-to-play and queue examples send only high-level intents', async () 
       res.setHeader('Content-Type', 'application/json')
       res.end(JSON.stringify({
         results: [
-          { type: 'track', ref: 'astra.track.one.sig', title: 'One', subtitle: 'Artist' },
-          { type: 'track', ref: 'astra.track.two.sig', title: 'Two', subtitle: 'Artist' }
+          { type: 'track', ref: 'musaic.track.one.sig', title: 'One', subtitle: 'Artist' },
+          { type: 'track', ref: 'musaic.track.two.sig', title: 'Two', subtitle: 'Artist' }
         ]
       }))
       return
@@ -81,18 +81,18 @@ test('search-to-play and queue examples send only high-level intents', async () 
     }
     res.writeHead(404).end()
   }, async (baseUrl) => {
-    const env = { ASTRA_API_URL: baseUrl, ASTRA_API_TOKEN: 'test-token' }
+    const env = { MUSAIC_API_URL: baseUrl, MUSAIC_API_TOKEN: 'test-token' }
     await run(process.execPath, ['search-to-play.mjs', 'One'], env)
     await run(process.execPath, ['queue.mjs', 'Artist'], env)
   })
 
   assert.deepEqual(intents[0], {
     action: 'play',
-    targetRef: 'astra.track.one.sig'
+    targetRef: 'musaic.track.one.sig'
   })
   assert.deepEqual(intents.slice(1), [
-    { action: 'enqueue', targetRef: 'astra.track.one.sig', position: 'next' },
-    { action: 'enqueue', targetRef: 'astra.track.two.sig', position: 'end' }
+    { action: 'enqueue', targetRef: 'musaic.track.one.sig', position: 'next' },
+    { action: 'enqueue', targetRef: 'musaic.track.two.sig', position: 'end' }
   ])
 })
 
@@ -102,7 +102,7 @@ test('Python playlist generator searches, creates, and fills one bounded playlis
     if (req.method === 'GET' && req.url?.startsWith('/v2/search')) {
       const query = new URL(req.url, 'http://localhost').searchParams.get('q') ?? 'track'
       res.setHeader('Content-Type', 'application/json')
-      res.end(JSON.stringify({ results: [{ ref: `astra.track.${query}.sig`, title: query }] }))
+      res.end(JSON.stringify({ results: [{ ref: `musaic.track.${query}.sig`, title: query }] }))
       return
     }
     if (req.method === 'POST') {
@@ -113,7 +113,7 @@ test('Python playlist generator searches, creates, and fills one bounded playlis
         mutations.push({ url: req.url ?? '', body: JSON.parse(body) as Record<string, unknown> })
         res.setHeader('Content-Type', 'application/json')
         res.end(req.url === '/v2/playlists'
-          ? '{"ref":"astra.playlist.generated.sig","title":"Generated"}'
+          ? '{"ref":"musaic.playlist.generated.sig","title":"Generated"}'
           : '{"added":2}')
       })
       return
@@ -126,8 +126,8 @@ test('Python playlist generator searches, creates, and fills one bounded playlis
       'Alpha',
       'Beta'
     ], {
-      ASTRA_API_URL: baseUrl,
-      ASTRA_API_TOKEN: 'test-token'
+      MUSAIC_API_URL: baseUrl,
+      MUSAIC_API_TOKEN: 'test-token'
     })
     assert.match(result.stdout, /Created Generated with 2 tracks/)
   })
@@ -135,8 +135,8 @@ test('Python playlist generator searches, creates, and fills one bounded playlis
   assert.deepEqual(mutations, [
     { url: '/v2/playlists', body: { name: 'Generated' } },
     {
-      url: '/v2/playlists/astra.playlist.generated.sig/items',
-      body: { trackRefs: ['astra.track.Alpha.sig', 'astra.track.Beta.sig'] }
+      url: '/v2/playlists/musaic.playlist.generated.sig/items',
+      body: { trackRefs: ['musaic.track.Alpha.sig', 'musaic.track.Beta.sig'] }
     }
   ])
 })

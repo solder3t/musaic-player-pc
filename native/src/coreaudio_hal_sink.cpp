@@ -43,11 +43,11 @@ constexpr uint32_t kMaximumRequestedDeviceBufferFrames = 1024;
 
 bool isAudioDebugLoggingEnabled() {
     static const bool enabled = []() {
-        const char* value = std::getenv("ASTRA_AUDIO_DEBUG");
+        const char* value = std::getenv("MUSAIC_AUDIO_DEBUG");
         const bool on = value != nullptr && value[0] != '\0' && value[0] != '0';
         if (on) {
             std::fprintf(stderr,
-                "[astra-audio] ASTRA_AUDIO_DEBUG enabled - "
+                "[musaic-audio] MUSAIC_AUDIO_DEBUG enabled - "
                 "slow open()/start()/stop()/pause()/reset() and drain timeouts will be logged\n");
         }
         return on;
@@ -69,7 +69,7 @@ public:
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - start_);
         if (elapsed.count() > thresholdMs_) {
-            std::fprintf(stderr, "[astra-audio] slow %s: %lldms\n",
+            std::fprintf(stderr, "[musaic-audio] slow %s: %lldms\n",
                 label_,
                 static_cast<long long>(elapsed.count()));
         }
@@ -568,7 +568,7 @@ bool ensureDeviceNominalSampleRate(AudioDeviceID deviceId, double targetSampleRa
             std::chrono::steady_clock::now() - rateChangeStart);
         if (isAudioDebugLoggingEnabled() && totalElapsed.count() > 500) {
             std::fprintf(stderr,
-                "[astra-audio] slow sample-rate change to %d Hz: total=%lldms "
+                "[musaic-audio] slow sample-rate change to %d Hz: total=%lldms "
                 "(waiter=%lldms poll=%lldms outputCfg=%lldms)\n",
                 static_cast<int>(std::llround(targetSampleRate)),
                 static_cast<long long>(totalElapsed.count()),
@@ -736,7 +736,7 @@ public:
                     std::chrono::steady_clock::now() - openStart);
                 if (totalElapsed.count() > 100) {
                     std::fprintf(stderr,
-                        "[astra-audio] slow open()-noop for %d Hz: total=%lldms (already-open path)\n",
+                        "[musaic-audio] slow open()-noop for %d Hz: total=%lldms (already-open path)\n",
                         static_cast<int>(format.sampleRate),
                         static_cast<long long>(totalElapsed.count()));
                 }
@@ -955,7 +955,7 @@ public:
                 std::chrono::steady_clock::now() - openStart);
             if (totalElapsed.count() > 100) {
                 std::fprintf(stderr,
-                    "[astra-audio] slow open() for %d Hz on '%s': total=%lldms "
+                    "[musaic-audio] slow open() for %d Hz on '%s': total=%lldms "
                     "(dispose=%lldms hog=%lldms rate=%lldms buffer=%lldms init=%lldms) "
                     "deviceChanged=%d formatChanged=%d\n",
                     static_cast<int>(format.sampleRate),
@@ -1326,7 +1326,7 @@ private:
             const uint32_t stuckCount = activeRenderCallbacks_.load(std::memory_order_acquire);
             if (isAudioDebugLoggingEnabled()) {
                 std::fprintf(stderr,
-                    "[astra-audio] render-drain timed out after %lldms; "
+                    "[musaic-audio] render-drain timed out after %lldms; "
                     "force-resetting activeRenderCallbacks_ (was %u)\n",
                     static_cast<long long>(kRenderDrainWaitTimeout.count()),
                     stuckCount);

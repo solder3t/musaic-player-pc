@@ -24,8 +24,8 @@ export const PHONE_REMOTE_TOKEN_ROTATE_REQUIRED_MS = 120 * 24 * 60 * 60_000
 export const PHONE_REMOTE_PREVIOUS_TOKEN_GRACE_MS = 24 * 60 * 60_000
 export const PHONE_REMOTE_DEVICE_INACTIVITY_MS = 365 * 24 * 60 * 60_000
 
-const PAIRING_INFO = Buffer.from('astra-phone-remote-v3-pairing', 'utf8')
-const PAIRING_AAD_PREFIX = Buffer.from('astra-phone-remote-v3-confirm:', 'utf8')
+const PAIRING_INFO = Buffer.from('musaic-phone-remote-v3-pairing', 'utf8')
+const PAIRING_AAD_PREFIX = Buffer.from('musaic-phone-remote-v3-confirm:', 'utf8')
 
 export interface PhoneRemotePairingTranscript {
   version: 3
@@ -100,7 +100,7 @@ export function derivePhoneRemotePairingCode(
   transcript: PhoneRemotePairingTranscript
 ): string {
   const digest = createHmac('sha256', key)
-    .update('astra-phone-remote-v3-code')
+    .update('musaic-phone-remote-v3-code')
     .update(transcriptBytes(transcript))
     .digest()
   return String(digest.readUInt32BE(0) % 1_000_000).padStart(6, '0')
@@ -111,7 +111,7 @@ export function createPhoneRemotePairingProof(
   transcript: PhoneRemotePairingTranscript
 ): string {
   return createHmac('sha256', key)
-    .update('astra-phone-remote-v3-proof')
+    .update('musaic-phone-remote-v3-proof')
     .update(transcriptBytes(transcript))
     .digest('base64url')
 }

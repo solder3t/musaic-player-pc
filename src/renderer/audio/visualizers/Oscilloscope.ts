@@ -49,7 +49,7 @@ const defaultOscilloscopeDataSource: OscilloscopeDataSource = {
   ...defaultVisualizerSessionSource,
 }
 
-// Amplitude the trace is drawn at (Astra rendered the scope 1.8x taller than raw samples).
+// Amplitude the trace is drawn at (Musaic rendered the scope 1.8x taller than raw samples).
 const OSCILLOSCOPE_VISUAL_GAIN = 1.8
 
 function highContrastUnderfillColor(accentColor: string, alpha: number): string {
@@ -108,7 +108,7 @@ export class Oscilloscope {
     this.frameLoop = new VisualizerFrameLoop({
       frameScheduler,
       // Native DSP is required; when it's unavailable, stop the loop after one
-      // frame (warned once) instead of spinning — preserves Astra's fallback behavior.
+      // frame (warned once) instead of spinning — preserves Musaic's fallback behavior.
       shouldRun: () => this.nativeReady() && this.dataSource.isPlaying(),
       onFrame: this.drawFrame,
     })
@@ -201,7 +201,7 @@ export class Oscilloscope {
   }
 
   private projectSampleY(sample: number, height: number): number {
-    // Match Astra's pre-port amplitude: samples are drawn 1.8x taller than raw so
+    // Match Musaic's pre-port amplitude: samples are drawn 1.8x taller than raw so
     // the trace fills the tile (Prism's port had dropped this visual gain).
     return ((1 - sample * OSCILLOSCOPE_VISUAL_GAIN) / 2) * height
   }

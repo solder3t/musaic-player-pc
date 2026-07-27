@@ -6,7 +6,7 @@ import ParallaxPresencePill from './ParallaxPresencePill'
 import PhoneSyncPresencePill from './PhoneSyncPresencePill'
 import { usePhoneRemoteSettingsStore } from '../../stores/phoneRemoteSettingsStore'
 import { useUIStore } from '../../stores/uiStore'
-import { useAstraActivity } from '../../hooks/useAstraActivity'
+import { useMusaicActivity } from '../../hooks/useMusaicActivity'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import {
   captureTitleBarPerformanceSample,
@@ -15,10 +15,10 @@ import {
   type TitleBarPerformanceSample
 } from '../../utils/titleBarMemoryStats'
 import type { AppMemoryFootprintSource } from '../../../shared/processMemoryFootprint'
-import AstraActivityIndicator from '../activity/AstraActivityIndicator'
-import AstraLogo from '../icons/AstraLogo'
+import MusaicActivityIndicator from '../activity/MusaicActivityIndicator'
+import MusaicLogo from '../icons/MusaicLogo'
 
-const ASTRA_SUPPORT_URL = 'https://ko-fi.com/boof2015'
+const MUSAIC_SUPPORT_URL = 'https://github.com/solder3t/musaic-player-linux'
 const FPS_SAMPLE_INTERVAL_MS = 1000
 const FPS_SAMPLE_WINDOW_MS = 200
 const ANALYZER_RAIL_COLLAPSE_QUERY = '(max-width: 1040px)'
@@ -60,15 +60,15 @@ function formatFailedPids(pids: readonly number[]): string {
 }
 
 function TitleBarActivityFallback({ rackVisible }: { rackVisible: boolean }) {
-  const activity = useAstraActivity()
+  const activity = useMusaicActivity()
 
   return (
     <span
       className={`titlebar-activity-fallback ${rackVisible ? 'is-rack-visible' : 'is-rack-hidden'}`.trim()}
       title={activity.note}
-      aria-label={`Astra activity: ${activity.note}`}
+      aria-label={`Musaic activity: ${activity.note}`}
     >
-      <AstraActivityIndicator
+      <MusaicActivityIndicator
         className="titlebar-activity-indicator"
         state={activity.state}
         event={activity.event}
@@ -244,7 +244,7 @@ export default function TitleBar() {
   }
   const handleClose = () => window.electronAPI?.close()
   const handleOpenSupport = () => {
-    window.open(ASTRA_SUPPORT_URL, '_blank', 'noopener,noreferrer')
+    window.open(MUSAIC_SUPPORT_URL, '_blank', 'noopener,noreferrer')
   }
 
   const memorySample = performanceSample.memory
@@ -279,7 +279,7 @@ export default function TitleBar() {
     ? `${appBuildInfo.shortCommitHash}${appBuildInfo.isDirty ? '*' : ''}`
     : ''
   const appBuildTooltip = appBuildInfo?.commitHash
-    ? `Astra ${appVersionLabel}\nCommit: ${appBuildInfo.commitHash}${appBuildInfo.isDirty ? '\nWorking tree was dirty when this build started.' : ''}`
+    ? `Musaic ${appVersionLabel}\nCommit: ${appBuildInfo.commitHash}${appBuildInfo.isDirty ? '\nWorking tree was dirty when this build started.' : ''}`
     : undefined
   const apiIndicatorLabel = localApiStatus?.active
     ? localApiStatus.controlsEnabled ? 'API+CTL' : 'API'
@@ -298,17 +298,17 @@ export default function TitleBar() {
       : `Phone remote active on port ${phoneRemoteStatus.port}`
     : 'Phone remote status unavailable'
   const rendererTitle = `Interface process private memory (includes JS heap and decoded audio): ${formattedRendererPrivateMemory}.`
-  const rendererJsTitle = `JS heap used by Astra's code in the interface process: ${formattedRendererJsMemory}.`
+  const rendererJsTitle = `JS heap used by Musaic's code in the interface process: ${formattedRendererJsMemory}.`
   const bufferMemoryTitle = `Decoded audio held for playback. Current track: ${formattedCurrentBufferMemory}. Next track (gapless): ${formattedNextBufferMemory}.`
   const mainProcessTitle = `Main (background) process private memory: ${formattedMainProcessMemory}.`
   const helperProcessesTitle = `GPU and system helper processes (working set; private memory is not reported for these): ${formattedHelperProcessesMemory}.`
-  const childProcessFootprintTitle = `External child processes started by Astra, such as active ffmpeg decoders: ${formattedChildProcessFootprintMemory}.`
-  const combinedFootprintTitle = `Astra process group plus external child processes: ${formattedCombinedFootprintMemory}.`
+  const childProcessFootprintTitle = `External child processes started by Musaic, such as active ffmpeg decoders: ${formattedChildProcessFootprintMemory}.`
+  const combinedFootprintTitle = `Musaic process group plus external child processes: ${formattedCombinedFootprintMemory}.`
   const fallbackPrivateMemoryTitle = `Private-memory estimate: measurable process private memory plus helper working sets: ${formattedTotalPrivateMemory}.`
   const totalMemoryTitle = `Raw Electron working set across Electron processes: ${formattedTotalMemory}. Overstates app footprint because shared framework pages are counted once per process.`
   const appFootprintIntro = memorySample.appFootprintSource === 'fallback-private-working-set'
-    ? `Astra private-process memory estimate: ${formattedAppFootprintMemory}. Source: ${footprintSourceLabel}.`
-    : `Astra process-group footprint: ${formattedAppFootprintMemory}. Source: ${footprintSourceLabel}.`
+    ? `Musaic private-process memory estimate: ${formattedAppFootprintMemory}. Source: ${footprintSourceLabel}.`
+    : `Musaic process-group footprint: ${formattedAppFootprintMemory}. Source: ${footprintSourceLabel}.`
   const footprintFallbackDetail = memorySample.appFootprintSource === 'fallback-private-working-set'
     ? ` ${fallbackPrivateMemoryTitle}`
     : ''
@@ -337,11 +337,11 @@ export default function TitleBar() {
           type="button"
           className="titlebar-logo-link"
           onClick={handleOpenSupport}
-          aria-label="Support Astra on Ko-fi"
-          title="Support Astra on Ko-fi"
+          aria-label="Support Musaic on Ko-fi"
+          title="Support Musaic on Ko-fi"
         >
           <span className="titlebar-logo">
-            <AstraLogo includeBackground={false} />
+            <MusaicLogo includeBackground={false} />
           </span>
           <span className="titlebar-logo-heart" aria-hidden="true" />
         </button>
@@ -398,9 +398,9 @@ export default function TitleBar() {
         <div
           className="titlebar-stats-shell"
           tabIndex={0}
-          aria-label="Astra performance stats with memory breakdown"
+          aria-label="Musaic performance stats with memory breakdown"
         >
-          <div className="titlebar-stats" aria-label="Astra performance stats">
+          <div className="titlebar-stats" aria-label="Musaic performance stats">
             <span className="titlebar-stat">
               <span className="titlebar-stat-label">CPU</span>
               <span>{formattedCpu}</span>
@@ -441,7 +441,7 @@ export default function TitleBar() {
               <span className="titlebar-stats-breakdown-value">{formattedHelperProcessesMemory}</span>
             </div>
             <div className="titlebar-stats-breakdown-row titlebar-stats-breakdown-row-total" title={appFootprintTitle}>
-              <span className="titlebar-stats-breakdown-label">Astra processes</span>
+              <span className="titlebar-stats-breakdown-label">Musaic processes</span>
               <span className="titlebar-stats-breakdown-value">{formattedAppFootprintMemory}</span>
             </div>
             {hasChildProcessFootprint && (

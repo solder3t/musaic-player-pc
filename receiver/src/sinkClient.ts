@@ -442,7 +442,7 @@ export class ParallaxSinkClient {
     if (this.callbacks.onDiagnostic) {
       this.callbacks.onDiagnostic(diagnostic)
     } else {
-      console.error(`[astra-receiver] Parallax join validation failed: ${JSON.stringify(diagnostic)}`)
+      console.error(`[musaic-receiver] Parallax join validation failed: ${JSON.stringify(diagnostic)}`)
     }
     throw new Error(`Parallax host returned an invalid join response (${validation.reason}).`)
   }

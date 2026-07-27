@@ -36,7 +36,7 @@ export const INPUT_ACTION_GROUPS: ReadonlyArray<{
 }> = [
   { id: 'app', label: 'App', description: 'App-wide commands and interface scaling.' },
   { id: 'playback', label: 'Playback', description: 'Playback, seeking, and volume controls.' },
-  { id: 'navigation', label: 'Navigation', description: 'Move around Astra and focus the current view.' }
+  { id: 'navigation', label: 'Navigation', description: 'Move around Musaic and focus the current view.' }
 ]
 
 export const INPUT_ACTION_DEFINITIONS: readonly InputActionDefinition[] = [

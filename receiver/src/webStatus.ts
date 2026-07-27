@@ -157,7 +157,7 @@ const PAGE_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Astra Receiver</title>
+<title>Musaic Receiver</title>
 <style>
   :root { color-scheme: dark; }
   body { font-family: system-ui, sans-serif; background: #101014; color: #e8e8ee; margin: 0;
@@ -194,7 +194,7 @@ const PAGE_HTML = `<!doctype html>
 </head>
 <body>
 <main>
-  <h1>Astra Receiver</h1>
+  <h1>Musaic Receiver</h1>
   <div class="card" id="busy-banner" style="display:none; padding:0.7rem 1.25rem">
     <span id="busy-text"></span>
   </div>
@@ -1489,7 +1489,7 @@ function updatePairModal(s) {
   document.getElementById('pair-modal-pin').textContent = pair.pin
   document.getElementById('pair-modal-hint').textContent = pair.awaitingApproval
     ? 'Approve to finish pairing'
-    : 'Enter this PIN in Astra to continue'
+    : 'Enter this PIN in Musaic to continue'
   const actions = document.getElementById('pair-actions-tv')
   const wasHidden = actions.style.display !== 'flex'
   actions.style.display = pair.awaitingApproval ? 'flex' : 'none'
@@ -1841,7 +1841,7 @@ const SETUP_HTML = `<!doctype html>
       <p class="muted" style="margin-bottom:0">When you tap Connect, the <strong>Parallax-Setup</strong>
       network disappears while the speaker joins your Wi-Fi. If the password was wrong,
       Parallax-Setup comes back — rejoin it to retry. Otherwise you're done: find the speaker at
-      <strong>http://parallax.local/</strong> from your normal Wi-Fi and pair from Astra.</p>
+      <strong>http://parallax.local/</strong> from your normal Wi-Fi and pair from Musaic.</p>
     </div>
   </div>
   <div class="card" id="applied">

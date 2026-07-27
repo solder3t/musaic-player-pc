@@ -1,7 +1,7 @@
 # Parallax OS
 
 Flashable SD-card image that turns a Raspberry Pi into a zero-maintenance Parallax zone
-speaker: flash, boot, open `http://parallax.local/`, pair from Astra, and explicitly approve on
+speaker: flash, boot, open `http://parallax.local/`, pair from Musaic, and explicitly approve on
 the page or display — 24/7 from there. HDMI-CEC and a TV remote are optional.
 
 Built with [pi-gen](https://github.com/RPi-Distro/pi-gen) (Raspberry Pi OS Lite base + the
@@ -14,17 +14,17 @@ Drafts are invisible to non-collaborators, so an untested image is never downloa
 
 ## What the image adds on top of Pi OS Lite
 
-- The astra-receiver daemon (latest `receiver-v*` release baked in) under
-  `/opt/astra-receiver/releases/<tag>` with the `current` symlink layout, service user, and a
+- The musaic-receiver daemon (latest `receiver-v*` release baked in) under
+  `/opt/musaic-receiver/releases/<tag>` with the `current` symlink layout, service user, and a
   `Type=notify` unit — status page on **port 80** (`AmbientCapabilities=CAP_NET_BIND_SERVICE`).
 - Hostname `parallax` + stock avahi → `http://parallax.local/` (auto-renames on conflict).
-- Auto-update: `astra-receiver-update.timer` (daily 03:30 + 10 min after boot) runs
+- Auto-update: `musaic-receiver-update.timer` (daily 03:30 + 10 min after boot) runs
   `current/update.sh` — sha256-verified, atomic symlink swap, health-gated rollback.
 - `unattended-upgrades` for security patches (auto-reboot 04:30 when a kernel update needs it).
 - Watchdogs: daemon `WatchdogSec=30` via sd_notify keepalives, plus the Pi hardware watchdog
   (`RuntimeWatchdogSec=15`) for kernel hangs. `Restart=always` with no start limit.
 - Node.js 24 LTS (NodeSource), journald capped at 64 M for SD longevity.
-- **Boot splash:** a pure-black Plymouth screen with the single-layer Astra mark, a flat cyan
+- **Boot splash:** a pure-black Plymouth screen with the single-layer Musaic mark, a flat cyan
   diagonal pulse using smooth Easy Ease timing, and a dim `Esc — show boot details` hint. Esc
   uses Plymouth's native splash/details toggle; text/details themes remain in both Pi kernel
   initramfs images as the non-graphical fallback. Shutdown and reboot use the static mark, and
@@ -58,7 +58,7 @@ default.
    **Parallax-Setup** network to appear, join it with your phone, and pick your Wi-Fi in the
    portal that opens (a connected TV shows the instructions + a join QR).
 3. Open `http://parallax.local/` on a phone or computer on the same LAN, then start pairing from
-   Astra (Parallax → Add Sink). Enter the 6-digit PIN shown on the page or connected display,
+   Musaic (Parallax → Add Sink). Enter the 6-digit PIN shown on the page or connected display,
    then explicitly approve before the pairing window expires:
    - **Headless:** use the Approve/Reject controls on `http://parallax.local/`.
    - **TV with working CEC:** use the TV remote on the display, or use the web page instead.
@@ -110,7 +110,7 @@ git checkout <PI_GEN_REF from the workflow>
 cp ../receiver/os/config config
 cp -r ../receiver/os/stage-parallax .
 # inject a receiver release into stage-parallax/02-daemon/files/payload/:
-#   astra-receiver-linux-arm64.tar.gz + .sha256 + receiver-tag.txt + receiver/deploy/update.sh
+#   musaic-receiver-linux-arm64.tar.gz + .sha256 + receiver-tag.txt + receiver/deploy/update.sh
 touch stage2/SKIP_IMAGES
 sudo ./build-docker.sh -c config
 sudo ../receiver/os/ci/verify-image.sh deploy/*.img

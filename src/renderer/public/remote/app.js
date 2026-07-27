@@ -1,6 +1,6 @@
 (function () {
   // v3 intentionally invalidates every pre-HTTPS browser credential.
-  const STORAGE_KEY = 'astra-remote-api-token-v3'
+  const STORAGE_KEY = 'musaic-remote-api-token-v3'
   const POLL_INTERVAL_MS = 5000
   const PAIR_POLL_INTERVAL_MS = 1500
   const RECONNECT_DELAY_MS = 2000
@@ -302,7 +302,7 @@
 
   function deriveDeviceName() {
     const cl = detectClientLabel()
-    return cl === 'Remote Controller' ? 'Astra Remote' : `${cl} Remote`
+    return cl === 'Remote Controller' ? 'Musaic Remote' : `${cl} Remote`
   }
 
   // ── URL helpers ──
@@ -342,7 +342,7 @@
     state.pairingMessage = ''
     state.pairingExpiresAt = 0
     state.connectionState = 'idle'
-    state.connectionMessage = 'Waiting for Astra to approve this phone.'
+    state.connectionMessage = 'Waiting for Musaic to approve this phone.'
     elements.authToken.value = ''
     elements.pairLinkInput.value = ''
     clearArtwork(null)
@@ -427,8 +427,8 @@
       const countdown = state.pairingExpiresAt > 0 ? Math.max(0, state.pairingExpiresAt - Date.now()) : 0
       elements.pairPendingTitle.textContent = isClaiming ? 'Starting pairing' : 'Waiting for approval'
       elements.pairPendingCopy.textContent = state.pairingMessage || (isClaiming
-        ? 'Connecting to Astra...'
-        : 'Open Astra on your desktop and tap Approve to connect this phone.')
+        ? 'Connecting to Musaic...'
+        : 'Open Musaic on your desktop and tap Approve to connect this phone.')
       elements.pairPendingTimer.textContent = !isClaiming && countdown > 0 ? formatTime(countdown / 1000) : ''
     }
 
@@ -556,7 +556,7 @@
     state.connectionState = 'error'
     state.connectionMessage = 'Phone pairing expired.'
     clearArtwork(null)
-    setNotice('Authentication failed. Pair this phone again from Astra.', 'error', 0)
+    setNotice('Authentication failed. Pair this phone again from Musaic.', 'error', 0)
     setPairingState('idle', '', 0)
     renderPage()
     elements.pairLinkInput.focus()
@@ -656,8 +656,8 @@
       if (!background) {
         destroyMediaSession()
         state.connectionState = 'error'
-        state.connectionMessage = 'Unable to reach Astra.'
-        setNotice('Make sure this phone is on the same network as Astra.', 'error', 0)
+        state.connectionMessage = 'Unable to reach Musaic.'
+        setNotice('Make sure this phone is on the same network as Musaic.', 'error', 0)
         renderPage()
       } else if (state.connectionState === 'connected') {
         state.connectionState = 'reconnecting'
@@ -695,7 +695,7 @@
       const resp = await fetch(`/v1/pairing/status?pollToken=${encodeURIComponent(pollToken)}`, { cache: 'no-store' })
       const p = await resp.json().catch(() => ({}))
       if (!isActivePairingAttempt(attemptId) || state.pairingPollToken !== pollToken) return
-      if (resp.status === 404) { completePairingAttempt(attemptId); setPairingState('error', 'Astra no longer recognizes this request. Start a new pairing flow.', 0); return }
+      if (resp.status === 404) { completePairingAttempt(attemptId); setPairingState('error', 'Musaic no longer recognizes this request. Start a new pairing flow.', 0); return }
       if (resp.status === 410 || p.state === 'consumed') { completePairingAttempt(attemptId); setPairingState('consumed', 'This link was already used. Start a new pairing flow.', 0); return }
       if (!resp.ok) throw new Error(`${resp.status}`)
       if (p.state === 'approved' && typeof p.token === 'string' && p.token.trim()) {
@@ -711,14 +711,14 @@
         void connect()
         return
       }
-      if (p.state === 'rejected') { completePairingAttempt(attemptId); setPairingState('rejected', 'Astra rejected this phone. Try again from the desktop.', p.expiresAt || 0); return }
+      if (p.state === 'rejected') { completePairingAttempt(attemptId); setPairingState('rejected', 'Musaic rejected this phone. Try again from the desktop.', p.expiresAt || 0); return }
       if (p.state === 'expired') { completePairingAttempt(attemptId); setPairingState('expired', 'This request expired. Start Pair Remote again.', p.expiresAt || 0); return }
-      setPairingState('pending', 'Approve this phone in Astra.', p.expiresAt || state.pairingExpiresAt)
+      setPairingState('pending', 'Approve this phone in Musaic.', p.expiresAt || state.pairingExpiresAt)
       schedulePairingPoll(attemptId, PAIR_POLL_INTERVAL_MS)
     } catch {
       if (!isActivePairingAttempt(attemptId)) return
       completePairingAttempt(attemptId)
-      setPairingState('error', 'Lost connection to Astra. Check the desktop app.', 0)
+      setPairingState('error', 'Lost connection to Musaic. Check the desktop app.', 0)
     }
   }
 
@@ -735,16 +735,16 @@
       const p = await resp.json().catch(() => ({}))
       if (!isActivePairingAttempt(attemptId)) return false
       if (resp.status === 404 || resp.status === 410) { completePairingAttempt(attemptId); setPairingState('expired', 'This link is no longer valid. Start Pair Remote again.', 0); return false }
-      if (!resp.ok || typeof p.pollToken !== 'string' || !p.pollToken.trim()) { completePairingAttempt(attemptId); setPairingState('error', 'Astra could not start pairing. Try again.', 0); return false }
+      if (!resp.ok || typeof p.pollToken !== 'string' || !p.pollToken.trim()) { completePairingAttempt(attemptId); setPairingState('error', 'Musaic could not start pairing. Try again.', 0); return false }
       state.pairingPollToken = p.pollToken.trim()
       clearPairingHash()
-      setPairingState('pending', 'Approve this phone in Astra to finish.', p.expiresAt || 0)
+      setPairingState('pending', 'Approve this phone in Musaic to finish.', p.expiresAt || 0)
       void fetchPairingStatus(attemptId)
       return true
     } catch {
       if (!isActivePairingAttempt(attemptId)) return false
       completePairingAttempt(attemptId)
-      setPairingState('error', 'Could not reach Astra. Check your network.', 0)
+      setPairingState('error', 'Could not reach Musaic. Check your network.', 0)
       return false
     }
   }
@@ -754,7 +754,7 @@
     if (!v) return false
     const ticket = extractPairingTicket(v)
     if (!ticket) {
-      if (notifyOnInvalid !== false) { setNotice('Paste a pairing link or ticket from Astra.', 'error', NOTICE_TIMEOUT_MS); elements.pairLinkInput.focus() }
+      if (notifyOnInvalid !== false) { setNotice('Paste a pairing link or ticket from Musaic.', 'error', NOTICE_TIMEOUT_MS); elements.pairLinkInput.focus() }
       return false
     }
     prepareForPairingClaim()
@@ -767,7 +767,7 @@
 
   function handleStreamPayload(payload) {
     try { applySnapshot(JSON.parse(payload)) }
-    catch { setNotice('Received unreadable data from Astra.', 'error', NOTICE_TIMEOUT_MS) }
+    catch { setNotice('Received unreadable data from Musaic.', 'error', NOTICE_TIMEOUT_MS) }
   }
 
   function processSseChunk(buf, chunk) {
@@ -830,7 +830,7 @@
         body: JSON.stringify(body)
       })
       if (resp.status === 401) { handleAuthorizationFailure(); return }
-      if (resp.status === 403) { setNotice('Read-only mode. Enable playback controls in Astra.', 'error', 0); return }
+      if (resp.status === 403) { setNotice('Read-only mode. Enable playback controls in Musaic.', 'error', 0); return }
       if (!resp.ok) throw new Error(`${resp.status}`)
       clearNotice()
     } catch { setNotice('Could not send command.', 'error', NOTICE_TIMEOUT_MS) }
@@ -997,8 +997,8 @@
   async function ensureMediaSessionActivated() {
     if (!state.snapshot || !state.snapshot.currentTrack) return false
     if (!mediaSessionSupported()) {
-      setMediaSessionActivationState('blocked', 'This browser does not expose a Media Session for Astra Remote.')
-      setNotice('This browser does not expose Android lock screen controls for Astra Remote.', 'error', NOTICE_TIMEOUT_MS)
+      setMediaSessionActivationState('blocked', 'This browser does not expose a Media Session for Musaic Remote.')
+      setNotice('This browser does not expose Android lock screen controls for Musaic Remote.', 'error', NOTICE_TIMEOUT_MS)
       return false
     }
     if (ms.activationState === 'active') return true

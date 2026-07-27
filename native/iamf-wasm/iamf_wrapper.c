@@ -1,5 +1,5 @@
 /*
- * Astra IAMF (Eclipsa Audio) decoder — WASM wrapper around libiamf v1.1.0.
+ * Musaic IAMF (Eclipsa Audio) decoder — WASM wrapper around libiamf v1.1.0.
  *
  * Built by scripts/build/build-iamf-wasm.sh into
  * src/renderer/public/iamf-decoder.wasm and driven from a renderer Web Worker
@@ -19,16 +19,16 @@
  * Output is SOUND_SYSTEM_J (7.1.4): 12 channels, interleaved int32.
  * NOTE the channel order is libiamf's BS.2051-J order
  *   L R C LFE SL SR BL BR TFL TFR TBL TBR
- * which differs from Astra's STANDARD_LAYOUTS[12] (FFmpeg order,
+ * which differs from Musaic's STANDARD_LAYOUTS[12] (FFmpeg order,
  * BL/BR before SL/SR) — the worker swaps indices 4<->6 and 5<->7.
  *
- * libiamf's own loudness normalization is DISABLED (0.0f): Astra's in-renderer
+ * libiamf's own loudness normalization is DISABLED (0.0f): Musaic's in-renderer
  * analyzer + normalization stage owns loudness. The default peak limiter stays
  * enabled (protects the rendering/downmix stage itself).
  *
  * Codec support in this build: Opus, FLAC, LPCM. AAC is intentionally NOT
  * compiled: libiamf's AAC path requires fdk-aac, whose license is incompatible
- * with Astra's GPL-3.0 distribution.
+ * with Musaic's GPL-3.0 distribution.
  */
 
 #include <limits.h>

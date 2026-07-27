@@ -271,16 +271,16 @@ export class SinkSession {
       // Targeted by sinkId; drop trims keyed to a different output device than ours. Logged
       // either way — a silently-rejected trim looks exactly like "trim doesn't work" upstream.
       if (!this.ownSinkId || this.ownSinkId !== event.sinkId) {
-        console.log(`[astra-receiver] trim update ignored: for sink ${event.sinkId}, we are ${this.ownSinkId ?? '(unset)'}`)
+        console.log(`[musaic-receiver] trim update ignored: for sink ${event.sinkId}, we are ${this.ownSinkId ?? '(unset)'}`)
         return
       }
       if (event.outputDeviceId !== this.backend.deviceId) {
-        console.log(`[astra-receiver] trim update ignored: keyed to device '${event.outputDeviceId}', ours is '${this.backend.deviceId}'`)
+        console.log(`[musaic-receiver] trim update ignored: keyed to device '${event.outputDeviceId}', ours is '${this.backend.deviceId}'`)
         return
       }
       const previousAdvanceMs = this.advanceMs
       this.advanceMs = Math.max(-500, Math.min(500, event.advanceMs))
-      console.log(`[astra-receiver] trim update applied: ${previousAdvanceMs} -> ${this.advanceMs} ms`)
+      console.log(`[musaic-receiver] trim update applied: ${previousAdvanceMs} -> ${this.advanceMs} ms`)
       return
     }
     if (event.type === 'sink-name-update') {
@@ -428,7 +428,7 @@ export class SinkSession {
     this.driver.setStagedEngine(engine)
     const leadMs = Math.max(0, sinkStartWallTimeMs - localNowMs())
     console.log(
-      `[astra-receiver] staged next stream "${stream.title ?? stream.streamId}" — boundary in ${(leadMs / 1000).toFixed(1)} s`
+      `[musaic-receiver] staged next stream "${stream.title ?? stream.streamId}" — boundary in ${(leadMs / 1000).toFixed(1)} s`
     )
   }
 
@@ -439,7 +439,7 @@ export class SinkSession {
     const title = this.stagedStream?.title ?? this.stagedStream?.streamId ?? staged?.getStreamId() ?? '?'
     this.stagedStream = null
     this.stagedTimeline = null
-    console.log(`[astra-receiver] staged next stream dropped (${reason}): "${title}"`)
+    console.log(`[musaic-receiver] staged next stream dropped (${reason}): "${title}"`)
   }
 
   private promoteStagedStream(
@@ -467,7 +467,7 @@ export class SinkSession {
       this.resetHostEmitAnchors()
       this.hardSyncCount = 0
       this.snapPendingTicks = 0
-      console.log(`[astra-receiver] gapless promote -> "${stream.title ?? stream.streamId}"`)
+      console.log(`[musaic-receiver] gapless promote -> "${stream.title ?? stream.streamId}"`)
       return
     }
     // Nothing staged (joined inside the handoff window without the pre-announce, or staging was
@@ -808,7 +808,7 @@ export class SinkSession {
         this.lastHardSyncAtMs = now
         this.hardSyncCount += 1
         syncEvent = 'rebuffer_snap'
-        console.log(`[astra-receiver] rebuffer snap -> frame ${snap.targetFrame} (advance ${this.advanceMs} ms)`)
+        console.log(`[musaic-receiver] rebuffer snap -> frame ${snap.targetFrame} (advance ${this.advanceMs} ms)`)
       }
     } else {
       const decision = decideParallaxSinkCorrection(correction.driftFrames, stream.sampleRate)
@@ -871,7 +871,7 @@ export class SinkSession {
         this.hardSyncCount += 1
         syncEvent = 'snap'
         console.log(
-          `[astra-receiver] snap: drift was ${(correction.driftFrames / stream.sampleRate * 1000).toFixed(1)} ms `
+          `[musaic-receiver] snap: drift was ${(correction.driftFrames / stream.sampleRate * 1000).toFixed(1)} ms `
           + `(${correction.loopSource}) -> frame ${snap.targetFrame} (advance ${this.advanceMs} ms)`
         )
       } else {

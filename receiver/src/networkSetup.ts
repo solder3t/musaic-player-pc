@@ -106,7 +106,7 @@ function defaultExec(command: string, args: string[], timeoutMs = 15_000): Promi
 
 export function createNetworkSetup(options: NetworkSetupOptions): NetworkSetup {
   const apSsid = options.apSsid ?? DEFAULT_AP_SSID
-  const log = options.log ?? ((message) => console.log(`[astra-receiver] ${message}`))
+  const log = options.log ?? ((message) => console.log(`[musaic-receiver] ${message}`))
   const disabled: NetworkSetup = {
     enabled: false,
     apSsid,

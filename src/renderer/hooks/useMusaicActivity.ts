@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AstraActivityPulse } from '../components/activity/AstraActivityIndicator'
+import type { MusaicActivityPulse } from '../components/activity/MusaicActivityIndicator'
 import { useDiscordSettingsStore } from '../stores/discordSettingsStore'
 import { useJellyfinSettingsStore } from '../stores/jellyfinSettingsStore'
 import { useLastFmSettingsStore } from '../stores/lastFmSettingsStore'
@@ -14,27 +14,27 @@ import { usePlayerStore } from '../stores/playerStore'
 import { useSubsonicSettingsStore } from '../stores/subsonicSettingsStore'
 import { useUpdateStore } from '../stores/updateStore'
 import {
-  ASTRA_ACTIVITY_STATE_NOTES,
+  MUSAIC_ACTIVITY_STATE_NOTES,
   isParallaxConnectionActive,
-  resolveAstraActivityEvent,
-  resolveAstraActivityState,
-  type AstraActivityEventFlags,
-  type AstraActivityState,
-} from '../utils/astraActivity'
+  resolveMusaicActivityEvent,
+  resolveMusaicActivityState,
+  type MusaicActivityEventFlags,
+  type MusaicActivityState,
+} from '../utils/musaicActivity'
 
-export interface AstraActivitySnapshot {
-  state: AstraActivityState
-  event: AstraActivityPulse | null
+export interface MusaicActivitySnapshot {
+  state: MusaicActivityState
+  event: MusaicActivityPulse | null
   note: string
 }
 
-const EMPTY_EVENT_FLAGS: AstraActivityEventFlags = {
+const EMPTY_EVENT_FLAGS: MusaicActivityEventFlags = {
   metadataSaving: false,
   externalConnected: false,
   attention: false,
 }
 
-export function useAstraActivity(): AstraActivitySnapshot {
+export function useMusaicActivity(): MusaicActivitySnapshot {
   const playbackState = usePlayerStore((state) => state.playbackState)
   const remoteLoadProgress = usePlayerStore((state) => state.remoteLoadProgress)
   const remoteStreamSessionId = usePlayerStore((state) => state.remoteStreamSessionId)
@@ -69,8 +69,8 @@ export function useAstraActivity(): AstraActivitySnapshot {
   const lastFmError = useLastFmSettingsStore((state) => Boolean(state.errorMessage || state.status?.lastError))
   const updateError = useUpdateStore((state) => state.checkState === 'error')
 
-  const [eventPulse, setEventPulse] = useState<AstraActivityPulse | null>(null)
-  const previousEventFlagsRef = useRef<AstraActivityEventFlags>(EMPTY_EVENT_FLAGS)
+  const [eventPulse, setEventPulse] = useState<MusaicActivityPulse | null>(null)
+  const previousEventFlagsRef = useRef<MusaicActivityEventFlags>(EMPTY_EVENT_FLAGS)
   const nextEventPulseIdRef = useRef(0)
   const clearEventPulseTimerRef = useRef<number | null>(null)
 
@@ -87,7 +87,7 @@ export function useAstraActivity(): AstraActivitySnapshot {
     )
   )
 
-  const state = resolveAstraActivityState({
+  const state = resolveMusaicActivityState({
     playbackState,
     isIntegrityScanning,
     isLibraryScanning,
@@ -97,7 +97,7 @@ export function useAstraActivity(): AstraActivitySnapshot {
     isParallaxConnected,
   })
 
-  const eventFlags = useMemo<AstraActivityEventFlags>(() => ({
+  const eventFlags = useMemo<MusaicActivityEventFlags>(() => ({
     metadataSaving,
     externalConnected: localApiConnected || phoneRemoteConnected,
     attention: (
@@ -128,7 +128,7 @@ export function useAstraActivity(): AstraActivitySnapshot {
 
   useEffect(() => {
     const previousEventFlags = previousEventFlagsRef.current
-    const event = resolveAstraActivityEvent(eventFlags, previousEventFlags)
+    const event = resolveMusaicActivityEvent(eventFlags, previousEventFlags)
     previousEventFlagsRef.current = eventFlags
 
     if (!event) return
@@ -160,6 +160,6 @@ export function useAstraActivity(): AstraActivitySnapshot {
   return {
     state,
     event: eventPulse,
-    note: ASTRA_ACTIVITY_STATE_NOTES[state],
+    note: MUSAIC_ACTIVITY_STATE_NOTES[state],
   }
 }

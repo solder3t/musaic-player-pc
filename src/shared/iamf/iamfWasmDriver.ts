@@ -3,7 +3,7 @@
 // native/iamf-wasm/iamf_wrapper.c). Runs in the renderer decode worker and in
 // node tests; no DOM or node APIs.
 //
-// Output is Astra's STANDARD_LAYOUTS[12] channel order. libiamf emits
+// Output is Musaic's STANDARD_LAYOUTS[12] channel order. libiamf emits
 // BS.2051-J order (SL/SR before BL/BR), so indices 4<->6 and 5<->7 swap here
 // and ONLY here.
 
@@ -11,8 +11,8 @@ import { collectIamfStreamStats } from './obuWalker'
 
 export const IAMF_CHANNELS = 12
 
-/** astra channel index -> libiamf interleaved index. */
-const IAMF_INDEX_FOR_ASTRA_CHANNEL = [0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11]
+/** musaic channel index -> libiamf interleaved index. */
+const IAMF_INDEX_FOR_MUSAIC_CHANNEL = [0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11]
 
 const INT32_MIN = -2147483648
 const INV_INT32_SCALE = 1 / 2147483648
@@ -80,7 +80,7 @@ export interface IamfDecodeResult {
   sampleRate: number
   frames: number
   channels: number
-  /** 12 planar channels in Astra STANDARD_LAYOUTS[12] order. */
+  /** 12 planar channels in Musaic STANDARD_LAYOUTS[12] order. */
   channelData: Float32Array[]
   /** Integrated loudness from the mix presentation metadata, if present. */
   loudnessLufs: number | null
@@ -152,7 +152,7 @@ export async function decodeIamfObuStream(
       // Fresh view every call: ALLOW_MEMORY_GROWTH detaches old buffers.
       const pcm = new Int32Array(wasm.memory.buffer, wasm.iamf_pcm_ptr(), produced * IAMF_CHANNELS)
       for (let c = 0; c < IAMF_CHANNELS; c++) {
-        const src = IAMF_INDEX_FOR_ASTRA_CHANNEL[c]
+        const src = IAMF_INDEX_FOR_MUSAIC_CHANNEL[c]
         const dst = channelData[c]
         for (let i = 0; i < produced; i++) {
           dst[frames + i] = pcm[i * IAMF_CHANNELS + src] * INV_INT32_SCALE

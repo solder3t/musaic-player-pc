@@ -23,7 +23,7 @@ import { createShutdownCoordinator } from './shutdown'
 import { createSystemdNotifier } from './systemdNotify'
 import { WebStatusServer, resolveReceiverStatusLabel, type WebStatusState } from './webStatus'
 
-// astra-receiver — standalone headless Parallax sink daemon ("parallax headless node").
+// musaic-receiver — standalone headless Parallax sink daemon ("parallax headless node").
 // Reuses the app's protocol/crypto/discovery modules in place (src/types/parallax.ts +
 // src/main/services/parallax{Security,SinkListener,Discovery}.ts); everything renderer-side is
 // replaced by SinkSession + SinkPlayoutEngine on an ALSA (or null) output backend.
@@ -33,12 +33,12 @@ import { WebStatusServer, resolveReceiverStatusLabel, type WebStatusState } from
 // ParallaxSinkClient) — so a 24/7 node latches onto the host whenever it streams.
 
 function log(message: string): void {
-  console.log(`[astra-receiver] ${new Date().toISOString()} ${message}`)
+  console.log(`[musaic-receiver] ${new Date().toISOString()} ${message}`)
 }
 
 function logError(message: string, error?: unknown): void {
   const detail = error instanceof Error ? error.message : error !== undefined ? String(error) : ''
-  console.error(`[astra-receiver] ${new Date().toISOString()} ${message}${detail ? `: ${detail}` : ''}`)
+  console.error(`[musaic-receiver] ${new Date().toISOString()} ${message}${detail ? `: ${detail}` : ''}`)
 }
 
 const RELOCATE_TIMEOUT_MS = 3_000
@@ -79,7 +79,7 @@ async function listTimezones(): Promise<string[]> {
 const OUTPUT_CHANGE_RESTART_DELAY_MS = 750
 
 // Installed release tag, derived from where this script actually lives: the appliance/installer
-// layout runs /opt/astra-receiver/current/astra-receiver.mjs with current → releases/<tag>, so
+// layout runs /opt/musaic-receiver/current/musaic-receiver.mjs with current → releases/<tag>, so
 // the resolved parent directory IS the version stamp (same invariant update.sh relies on).
 function resolveInstalledVersion(): string {
   try {
@@ -229,7 +229,7 @@ async function main(): Promise<void> {
         stopUpdateWatch()
         return
       }
-      void runCommand('systemctl', ['show', '-p', 'ActiveState', '--value', 'astra-receiver-update.service'])
+      void runCommand('systemctl', ['show', '-p', 'ActiveState', '--value', 'musaic-receiver-update.service'])
         .then((stdout) => {
           const state = stdout.trim()
           if (state !== 'active' && state !== 'activating') stopUpdateWatch()
@@ -455,7 +455,7 @@ async function main(): Promise<void> {
       // 'update': kick the image's updater unit without waiting for it (a oneshot start blocks
       // until the unit finishes otherwise). If an update is found, update.sh restarts us.
       try {
-        await runCommand('systemctl', ['start', '--no-block', 'astra-receiver-update.service'])
+        await runCommand('systemctl', ['start', '--no-block', 'musaic-receiver-update.service'])
         watchUpdateUnit()
         return { ok: true }
       } catch (error) {
@@ -484,7 +484,7 @@ async function main(): Promise<void> {
     endpointUuid: config.endpointUuid,
     role: 'sink'
   })
-  log(`advertising "_astra-zone._tcp" as "${config.sinkName}"`)
+  log(`advertising "_musaic-zone._tcp" as "${config.sinkName}"`)
 
   // The daemon is now genuinely serving (pairing listener, web page, mDNS). Under a Type=notify
   // unit this releases systemd's start wait and arms the WatchdogSec keepalive; everywhere else
@@ -496,7 +496,7 @@ async function main(): Promise<void> {
   if (configStore.get().connection) {
     void startConnectLoop()
   } else {
-    log('not paired yet — open the status page and pair from Astra on the host')
+    log('not paired yet — open the status page and pair from Musaic on the host')
   }
 
   const shutdown = createShutdownCoordinator({

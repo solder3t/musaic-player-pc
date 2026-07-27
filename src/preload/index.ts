@@ -619,7 +619,7 @@ try {
   let modulePath: string
 
   if (isDev) {
-    // In dev: .../astra/native/build/Release/visualizer_dsp.node
+    // In dev: .../musaic/native/build/Release/visualizer_dsp.node
     // __dirname is .../out/preload
     modulePath = join(__dirname, '../../native/build/Release/visualizer_dsp.node')
   } else {
@@ -1465,7 +1465,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     applyListeningStatsTransfer: (request: ListeningStatsApplyRequest) =>
       ipcRenderer.invoke('library:applyListeningStatsTransfer', request) as Promise<ListeningStatsImportResult>,
 
-    // External listening imports (the public astra-listening-import format)
+    // External listening imports (the public musaic-listening-import format)
     readListeningImportFile: (filePath: string) =>
       ipcRenderer.invoke('library:readListeningImportFile', filePath) as Promise<ListeningImportPreview>,
     applyListeningImportFile: (filePath: string) =>

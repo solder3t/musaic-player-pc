@@ -2,7 +2,7 @@ import { audioEngine } from '../AudioEngine'
 import { isPlaybackAnalyzerActive } from '../visualizerSilence'
 
 // Session-level signals shared by every visualizer's data source.
-// In Astra these are driven by the playback AudioEngine (Prism drove them from a
+// In Musaic these are driven by the playback AudioEngine (Prism drove them from a
 // system-audio capture router); the scope classes only need sample rate, a
 // "should the loop run" flag, and a reset signal on track/state changes.
 export interface VisualizerSessionSource {

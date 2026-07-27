@@ -56,16 +56,16 @@ export default function AssociatedOpenCue() {
       <div className="fullscreen-next-cue-card">
         <div className="fullscreen-next-cue-artwork">
           {artworkTrack?.artworkHash ? (
-            <AlbumArtwork hash={artworkTrack.artworkHash} alt="Open with Astra cue artwork" variant="card" />
+            <AlbumArtwork hash={artworkTrack.artworkHash} alt="Open with Musaic cue artwork" variant="card" />
           ) : artworkTrack?.artworkData ? (
-            <img src={artworkTrack.artworkData} alt="Open with Astra cue artwork" />
+            <img src={artworkTrack.artworkData} alt="Open with Musaic cue artwork" />
           ) : (
             <div className="fullscreen-next-cue-placeholder">OA</div>
           )}
         </div>
 
         <div className="fullscreen-next-cue-meta">
-          <span className="fullscreen-next-cue-label">Open With Astra</span>
+          <span className="fullscreen-next-cue-label">Open With Musaic</span>
           <div className="fullscreen-next-cue-title">Playing from {notice.sourceLabel}</div>
           <div className="fullscreen-next-cue-artist">{subtitleLine}</div>
         </div>

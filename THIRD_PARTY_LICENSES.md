@@ -1,6 +1,6 @@
 # Third-Party Licenses
 
-Astra is licensed under the GNU General Public License v3.0 (see `LICENSE`).
+Musaic is licensed under the GNU General Public License v3.0 (see `LICENSE`).
 It incorporates the third-party components below. Full corresponding source
 for everything listed here is available in this repository (including the
 `third_party/` submodules and the build scripts under `scripts/build/`).
@@ -115,9 +115,9 @@ The files under `src/shared/iamf/__fixtures__/` are conformance vectors from
 the libiamf repository (`tests/` directory), used by the automated tests and
 covered by the same BSD 3-Clause Clear License.
 
-## Astra Signal (`@boof2015/astra-signal`)
+## Musaic Signal (`@boof2015/astra-signal`)
 
-Copyright © 2026 Boof2015.
+Copyright © 2026 solder3t.
 Licensed under the MIT License:
 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -140,6 +140,6 @@ Licensed under the MIT License:
 
 ## Bundled decoder binaries
 
-Astra bundles `ffmpeg` and `ffprobe` binaries via the `ffmpeg-static` and
+Musaic bundles `ffmpeg` and `ffprobe` binaries via the `ffmpeg-static` and
 `ffprobe-static` npm packages. FFmpeg is a trademark of Fabrice Bellard;
 the binaries are licensed under the GPL (see https://ffmpeg.org/legal.html).

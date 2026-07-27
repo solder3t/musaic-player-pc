@@ -1,21 +1,21 @@
-# Astra Parallax receiver — Parallax OS appliance variant.
+# Listen Together receiver — Parallax OS appliance variant.
 # Differences from the install.sh unit: AmbientCapabilities (status page on :80) and absolute
 # /usr/bin/node (the image bakes NodeSource Node 24 there; 01-node asserts it).
 # Type=notify + WatchdogSec: the daemon sends READY=1/WATCHDOG=1 via the addon's sd_notify;
 # a hung process misses the keepalive and systemd kills + restarts it.
 
 [Unit]
-Description=Astra Parallax receiver (Parallax OS appliance)
+Description=Listen Together receiver (Parallax OS appliance)
 After=network-online.target sound.target
 Wants=network-online.target
 StartLimitIntervalSec=0
 
 [Service]
 Type=notify
-User=astra-receiver
-ExecStart=/usr/bin/node /opt/astra-receiver/current/astra-receiver.mjs
-Environment=ASTRA_RECEIVER_CONFIG=/opt/astra-receiver/config.json
-Environment=ASTRA_RECEIVER_ALSA_ADDON=/opt/astra-receiver/current/astra_receiver_alsa.node
+User=musaic-receiver
+ExecStart=/usr/bin/node /opt/musaic-receiver/current/musaic-receiver.mjs
+Environment=MUSAIC_RECEIVER_CONFIG=/opt/musaic-receiver/config.json
+Environment=MUSAIC_RECEIVER_ALSA_ADDON=/opt/musaic-receiver/current/musaic_receiver_alsa.node
 Restart=always
 RestartSec=3
 WatchdogSec=30

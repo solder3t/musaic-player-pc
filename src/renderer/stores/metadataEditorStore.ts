@@ -51,7 +51,7 @@ interface UndoSnapshot {
   trackPaths: string[]
 }
 
-const METADATA_SAVE_MODE_STORAGE_KEY = 'astra-metadata-save-mode-v1'
+const METADATA_SAVE_MODE_STORAGE_KEY = 'musaic-metadata-save-mode-v1'
 const MAX_UNDO_STACK_SIZE = 20
 let nextPanelRequestId = 0
 

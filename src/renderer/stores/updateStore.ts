@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export const UPDATES_AUTO_CHECK_STORAGE_KEY = 'astra-updates-auto-check-enabled'
+export const UPDATES_AUTO_CHECK_STORAGE_KEY = 'musaic-updates-auto-check-enabled'
 
 export type UpdateCheckState = 'idle' | 'checking' | 'up-to-date' | 'update-available' | 'error'
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useUIStore } from '../../stores/uiStore'
 import { useUpdateStore } from '../../stores/updateStore'
-import AstraLogo from '../icons/AstraLogo'
+import MusaicLogo from '../icons/MusaicLogo'
 
 type CueVisibility = 'hidden' | 'visible'
 
@@ -51,7 +51,7 @@ export default function UpdateAvailableCue() {
     >
       <div className="fullscreen-next-cue-card">
         <div className="fullscreen-next-cue-artwork update-available-cue-artwork" aria-hidden="true">
-          <AstraLogo size={52} includeBackground className="update-available-cue-icon" />
+          <MusaicLogo size={52} includeBackground className="update-available-cue-icon" />
         </div>
 
         <div className="fullscreen-next-cue-meta">

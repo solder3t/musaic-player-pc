@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import {
-  ASTRA_APP_ICON_SQUIRCLE_INSET_RATIO,
-  ASTRA_APP_ICON_SQUIRCLE_RADIUS_RATIO,
-  ASTRA_APP_ICON_SYMBOL_SCALE,
-  renderAstraLogoPngDataUrl,
-} from '../components/icons/astraLogoShared'
+  MUSAIC_APP_ICON_SQUIRCLE_INSET_RATIO,
+  MUSAIC_APP_ICON_SQUIRCLE_RADIUS_RATIO,
+  MUSAIC_APP_ICON_SYMBOL_SCALE,
+  renderMusaicLogoPngDataUrl,
+} from '../components/icons/musaicLogoShared'
 import { deriveAccentHue, useThemeStore } from '../stores/themeStore'
 
 const ICON_SYNC_DEBOUNCE_MS = 140
@@ -19,12 +19,12 @@ interface RuntimeIconImageSetPayload {
 
 async function renderRuntimeIconImageSet(hue: number): Promise<RuntimeIconImageSetPayload | null> {
   const images = await Promise.all(ICON_RENDER_SIZES.map(async (size) => {
-    const dataUrl = await renderAstraLogoPngDataUrl({
+    const dataUrl = await renderMusaicLogoPngDataUrl({
       includeBackground: false,
       backgroundMode: 'squircle',
-      symbolScale: ASTRA_APP_ICON_SYMBOL_SCALE,
-      squircleInsetRatio: ASTRA_APP_ICON_SQUIRCLE_INSET_RATIO,
-      squircleRadiusRatio: ASTRA_APP_ICON_SQUIRCLE_RADIUS_RATIO,
+      symbolScale: MUSAIC_APP_ICON_SYMBOL_SCALE,
+      squircleInsetRatio: MUSAIC_APP_ICON_SQUIRCLE_INSET_RATIO,
+      squircleRadiusRatio: MUSAIC_APP_ICON_SQUIRCLE_RADIUS_RATIO,
       mainFill: `hsl(${hue} 100% 50%)`,
       shadowFill: `hsl(${hue} 40% 14%)`,
     }, size)

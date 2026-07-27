@@ -1347,7 +1347,7 @@ export class ParallaxService {
     const requestBody: ParallaxPairRequestBody = {
       version: PARALLAX_PROTOCOL_VERSION,
       pairingId,
-      hostName: this.getHostDisplayName?.() ?? 'Astra Host',
+      hostName: this.getHostDisplayName?.() ?? 'Musaic Host',
       hostPort: this.config.port,
       parallaxEndpointUuid: this.getEndpointUuid?.() ?? '',
       hostEphemeralPublicKey: ephemeral.publicKey,
@@ -1497,7 +1497,7 @@ export class ParallaxService {
     const finalName = sinkName?.trim() || pickStringTrim(ok.sinkName) || candidate.sinkName
     const sink: PersistedParallaxPairedSink = {
       id: candidate.sinkId,
-      name: normalizeDeviceLabel(finalName, 'Astra Sink'),
+      name: normalizeDeviceLabel(finalName, 'Musaic Sink'),
       tokenHash: hashToken(candidate.token),
       tokenPrefix: candidate.token.slice(0, TOKEN_PREFIX_LENGTH),
       createdAt: now,

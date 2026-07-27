@@ -3,9 +3,9 @@ import { createHash } from 'crypto'
 const DEFAULT_TIMEOUT_MS = 12_000
 const DEFAULT_RETRIES = 1
 const DEFAULT_PAGE_SIZE = 500
-const CLIENT_NAME = 'Astra'
+const CLIENT_NAME = 'Musaic'
 const CLIENT_VERSION = '0.4.0'
-const DEVICE_NAME = 'Astra Desktop'
+const DEVICE_NAME = 'Musaic Desktop'
 const TRANSCODE_AUDIO_CODEC = 'mp3'
 const TRANSCODE_CONTAINER = 'mp3'
 

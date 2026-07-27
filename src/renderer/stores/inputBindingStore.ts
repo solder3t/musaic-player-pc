@@ -12,8 +12,8 @@ import {
 } from '../constants/keyboardShortcuts'
 import { cloneInputBinding, inputBindingsEqual, sanitizeInputBinding } from '../utils/inputBindings'
 
-export const INPUT_BINDINGS_STORAGE_KEY = 'astra-input-bindings-v1'
-export const GLOBAL_INPUT_BINDINGS_STORAGE_KEY = 'astra-global-input-bindings-v1'
+export const INPUT_BINDINGS_STORAGE_KEY = 'musaic-input-bindings-v1'
+export const GLOBAL_INPUT_BINDINGS_STORAGE_KEY = 'musaic-global-input-bindings-v1'
 
 export type InputBindingSlots = [InputBinding | null, InputBinding | null]
 export type InputBindingOverrides = Partial<Record<InputActionId, InputBindingSlots>>

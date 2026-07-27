@@ -180,10 +180,10 @@ export default function StatsView() {
         void loadDashboard()
       }, 350)
     }
-    window.addEventListener('astra:listening-history-checkpoint', handleCheckpoint)
+    window.addEventListener('musaic:listening-history-checkpoint', handleCheckpoint)
     return () => {
       window.clearInterval(refreshInterval)
-      window.removeEventListener('astra:listening-history-checkpoint', handleCheckpoint)
+      window.removeEventListener('musaic:listening-history-checkpoint', handleCheckpoint)
       if (checkpointRefreshTimeout != null) window.clearTimeout(checkpointRefreshTimeout)
     }
   }, [artistBrowseMode, loadDashboard])

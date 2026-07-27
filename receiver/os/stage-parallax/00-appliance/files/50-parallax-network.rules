@@ -4,7 +4,7 @@
 // the maintenance card's "Reboot device". (Filename says "network" for historical reasons —
 // v1.x images shipped it before it grew the rest.)
 polkit.addRule(function (action, subject) {
-  if (subject.user !== "astra-receiver") {
+  if (subject.user !== "musaic-receiver") {
     return polkit.Result.NOT_HANDLED;
   }
   if (action.id.indexOf("org.freedesktop.NetworkManager.") === 0
@@ -14,7 +14,7 @@ polkit.addRule(function (action, subject) {
   }
   // "Check for updates now" — may start ONLY the updater unit, nothing else.
   if (action.id === "org.freedesktop.systemd1.manage-units"
-      && action.lookup("unit") === "astra-receiver-update.service"
+      && action.lookup("unit") === "musaic-receiver-update.service"
       && action.lookup("verb") === "start") {
     return polkit.Result.YES;
   }

@@ -156,7 +156,7 @@ export interface ThemeSettingsState {
   initFromSaved: () => void
 }
 
-export const THEME_STORAGE_KEY = 'astra-theme-settings-v1'
+export const THEME_STORAGE_KEY = 'musaic-theme-settings-v1'
 const DEFAULT_PRESET_ID: ThemePresetId = 'default'
 const DEFAULT_ACCENT_SOURCE: AccentSource = 'theme'
 const DEFAULT_COVER_ART_ACCENT_METHOD: CoverArtAccentMethod = 'dominant'
@@ -168,7 +168,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   default: {
     id: 'default',
     label: 'Default',
-    description: 'Current Astra look',
+    description: 'Current Musaic look',
     tokens: {
       bgPrimary: '#000000',
       bgSecondary: '#050505',

@@ -19,14 +19,14 @@ export interface AlsaAddon {
 
 export function loadAlsaAddon(): AlsaAddon {
   const require = createRequire(import.meta.url)
-  const override = process.env.ASTRA_RECEIVER_ALSA_ADDON?.trim()
+  const override = process.env.MUSAIC_RECEIVER_ALSA_ADDON?.trim()
   const here = dirname(fileURLToPath(import.meta.url))
   const candidates = [
     override,
-    // From the bundled receiver/dist/astra-receiver.mjs
-    join(here, '../native/build/Release/astra_receiver_alsa.node'),
+    // From the bundled receiver/dist/musaic-receiver.mjs
+    join(here, '../native/build/Release/musaic_receiver_alsa.node'),
     // From receiver/src/output/ when running unbundled in dev
-    join(here, '../../native/build/Release/astra_receiver_alsa.node')
+    join(here, '../../native/build/Release/musaic_receiver_alsa.node')
   ].filter((candidate): candidate is string => Boolean(candidate))
   for (const candidate of candidates) {
     if (existsSync(candidate)) {

@@ -104,28 +104,28 @@ for unit in cloud-init-main.service cloud-init-local.service cloud-init-network.
 done
 
 check "daemon installed under current/"
-CURRENT_TARGET="$(readlink "$MOUNT_DIR/opt/astra-receiver/current")" || fail "current symlink missing"
+CURRENT_TARGET="$(readlink "$MOUNT_DIR/opt/musaic-receiver/current")" || fail "current symlink missing"
 case "$CURRENT_TARGET" in
   releases/receiver-v*) ;;
   *) fail "current -> $CURRENT_TARGET (expected releases/receiver-v<version>)" ;;
 esac
-[ -f "$MOUNT_DIR/opt/astra-receiver/current/astra-receiver.mjs" ] || fail "astra-receiver.mjs missing"
-[ -f "$MOUNT_DIR/opt/astra-receiver/current/astra_receiver_alsa.node" ] || fail "ALSA addon missing"
-[ -x "$MOUNT_DIR/opt/astra-receiver/current/update.sh" ] || fail "update.sh missing or not executable"
+[ -f "$MOUNT_DIR/opt/musaic-receiver/current/musaic-receiver.mjs" ] || fail "musaic-receiver.mjs missing"
+[ -f "$MOUNT_DIR/opt/musaic-receiver/current/musaic_receiver_alsa.node" ] || fail "ALSA addon missing"
+[ -x "$MOUNT_DIR/opt/musaic-receiver/current/update.sh" ] || fail "update.sh missing or not executable"
 
 check "units enabled with appliance settings"
-UNIT="$MOUNT_DIR/etc/systemd/system/astra-receiver.service"
+UNIT="$MOUNT_DIR/etc/systemd/system/musaic-receiver.service"
 grep -q '^Type=notify' "$UNIT" || fail "unit is not Type=notify"
 grep -q '^TimeoutStopSec=15s$' "$UNIT" || fail "unit stop timeout is not 15 seconds"
 grep -q '^AmbientCapabilities=CAP_NET_BIND_SERVICE' "$UNIT" || fail "unit lacks CAP_NET_BIND_SERVICE"
-[ -L "$MOUNT_DIR/etc/systemd/system/multi-user.target.wants/astra-receiver.service" ] \
-  || fail "astra-receiver.service not enabled"
-[ -L "$MOUNT_DIR/etc/systemd/system/timers.target.wants/astra-receiver-update.timer" ] \
+[ -L "$MOUNT_DIR/etc/systemd/system/multi-user.target.wants/musaic-receiver.service" ] \
+  || fail "musaic-receiver.service not enabled"
+[ -L "$MOUNT_DIR/etc/systemd/system/timers.target.wants/musaic-receiver-update.timer" ] \
   || fail "update timer not enabled"
 
 check "baked config"
-grep -q '"webPort": 80' "$MOUNT_DIR/opt/astra-receiver/config.json" || fail "config.json lacks webPort 80"
-grep -q '"endpointUuid"' "$MOUNT_DIR/opt/astra-receiver/config.json" \
+grep -q '"webPort": 80' "$MOUNT_DIR/opt/musaic-receiver/config.json" || fail "config.json lacks webPort 80"
+grep -q '"endpointUuid"' "$MOUNT_DIR/opt/musaic-receiver/config.json" \
   && fail "config.json must not bake an endpointUuid"
 
 check "hostname + appliance drop-ins"
@@ -225,7 +225,7 @@ grep -q 'org.freedesktop.login1.reboot' "$MOUNT_DIR/etc/polkit-1/rules.d/50-para
   || fail "polkit rule lacks the reboot grant"
 grep -q 'address=/#/10.42.0.1' "$MOUNT_DIR/etc/NetworkManager/dnsmasq-shared.d/parallax-captive.conf" \
   || fail "captive dnsmasq drop-in missing"
-grep -q '"apSetup": true' "$MOUNT_DIR/opt/astra-receiver/config.json" || fail "config.json lacks apSetup"
+grep -q '"apSetup": true' "$MOUNT_DIR/opt/musaic-receiver/config.json" || fail "config.json lacks apSetup"
 grep -q '^parallax:!' "$MOUNT_DIR/etc/shadow" || fail "parallax user is not locked"
 if [ -f "$MOUNT_DIR/var/lib/NetworkManager/NetworkManager.state" ]; then
   grep -q 'WirelessEnabled=false' "$MOUNT_DIR/var/lib/NetworkManager/NetworkManager.state" \
@@ -242,7 +242,7 @@ check "TV mode: kiosk detect enabled, kiosk unit present but not enabled"
 [ ! -e "$MOUNT_DIR/etc/systemd/system/multi-user.target.wants/parallax-kiosk.service" ] \
   || fail "kiosk unit must not be enabled directly (detect service starts it)"
 [ -x "$MOUNT_DIR/usr/local/lib/parallax/hdmi-connected.sh" ] || fail "hdmi-connected.sh missing"
-grep -q '"cecControl": true' "$MOUNT_DIR/opt/astra-receiver/config.json" \
+grep -q '"cecControl": true' "$MOUNT_DIR/opt/musaic-receiver/config.json" \
   || fail "config.json lacks cecControl"
 
 check "OK — image verified"

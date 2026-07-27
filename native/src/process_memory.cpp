@@ -44,7 +44,7 @@ const char* PlatformSource() {
 }
 
 #if defined(_WIN32)
-struct AstraProcessMemoryCountersEx2 {
+struct MusaicProcessMemoryCountersEx2 {
     DWORD cb;
     DWORD PageFaultCount;
     SIZE_T PeakWorkingSetSize;
@@ -61,7 +61,7 @@ struct AstraProcessMemoryCountersEx2 {
 };
 
 bool TryGetPrivateWorkingSetFromCounters(HANDLE process, uint64_t& bytes) {
-    AstraProcessMemoryCountersEx2 counters {};
+    MusaicProcessMemoryCountersEx2 counters {};
     counters.cb = sizeof(counters);
     if (!GetProcessMemoryInfo(
         process,

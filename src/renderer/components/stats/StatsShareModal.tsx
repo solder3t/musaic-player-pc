@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ListeningStatsDashboard } from '../../../types/listeningStats'
-import astraWordmarkUrl from '../../assets/astra-wordmark.svg'
+import musaicWordmarkUrl from '../../assets/musaic-wordmark.svg'
 import { usePresence } from '../../hooks/usePresence'
 import { useLibraryStore } from '../../stores/libraryStore'
-import { createAstraLogoSvgDataUrl } from '../icons/astraLogoShared'
+import { createMusaicLogoSvgDataUrl } from '../icons/musaicLogoShared'
 import {
   buildListeningStatsShareModel,
   type ListeningStatsShareLens
@@ -86,14 +86,14 @@ export default function StatsShareModal({ isOpen, snapshot, onClose }: StatsShar
         ])
       }
       const accentColor = shareAccentColor()
-      const logoDataUrl = createAstraLogoSvgDataUrl({
+      const logoDataUrl = createMusaicLogoSvgDataUrl({
         includeBackground: false,
         mainFill: accentColor,
         shadowFill: '#14202a'
       })
-      const [astraLogo, astraWordmark] = await Promise.all([
+      const [musaicLogo, musaicWordmark] = await Promise.all([
         loadListeningStatsShareImage(logoDataUrl).catch(() => null),
-        loadListeningStatsShareImage(astraWordmarkUrl).catch(() => null)
+        loadListeningStatsShareImage(musaicWordmarkUrl).catch(() => null)
       ])
       const artworkEntries = await Promise.all(model.artworkHashes.map(async (hash) => {
         const dataUrl = await getArtwork(hash, { variant: 'full', format: 'data-url' })
@@ -105,8 +105,8 @@ export default function StatsShareModal({ isOpen, snapshot, onClose }: StatsShar
       renderListeningStatsShareCard(canvasRef.current, model, {
         accentColor,
         artworkByHash: new Map(artworkEntries.filter((entry): entry is readonly [string, HTMLImageElement] => entry[1] !== null)),
-        astraLogo,
-        astraWordmark
+        musaicLogo,
+        musaicWordmark
       })
       setIsPreparing(false)
     }

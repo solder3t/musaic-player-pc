@@ -204,8 +204,8 @@ export default function InfoSidebar() {
                 title: currentTrack.title,
                 duration: currentTrack.duration
               })}
-              title="Create Astra Signal"
-              aria-label="Create Astra Signal for the current track"
+              title="Create Musaic Signal"
+              aria-label="Create Musaic Signal for the current track"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 12h3l2-6 4 12 3-9 2 3h4" />

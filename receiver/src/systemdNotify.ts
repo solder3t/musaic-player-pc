@@ -24,7 +24,7 @@ const MIN_WATCHDOG_PING_MS = 1_000
 
 export function createSystemdNotifier(options: SystemdNotifierOptions = {}): SystemdNotifier {
   const env = options.env ?? process.env
-  const log = options.log ?? ((message) => console.error(`[astra-receiver] ${message}`))
+  const log = options.log ?? ((message) => console.error(`[musaic-receiver] ${message}`))
   const notifySocket = env.NOTIFY_SOCKET?.trim()
 
   if (!notifySocket) {

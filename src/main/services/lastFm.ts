@@ -25,7 +25,7 @@ import {
 } from '../../shared/library/artistCredits'
 
 const LASTFM_AUTH_URL = 'https://www.last.fm/api/auth/'
-const LASTFM_USER_AGENT = 'Astra-LastFM/0.1.0 (https://github.com/Boof2015/astra)'
+const LASTFM_USER_AGENT = 'Musaic-LastFM/0.1.0 (https://github.com/solder3t/musaic-player-linux)'
 const LASTFM_REQUEST_TIMEOUT_MS = 12_000
 const LASTFM_MAX_SCROBBLES_PER_BATCH = 50
 const LASTFM_MAX_PENDING_SCROBBLES = 1000
@@ -479,7 +479,7 @@ export class LastFmService {
 
     let statusMessage = 'No scrobble destinations connected.'
     if (this.pendingAuthToken) {
-      statusMessage = 'Last.fm authorization pending. Approve Astra in your browser; Astra will complete connection automatically.'
+      statusMessage = 'Last.fm authorization pending. Approve Musaic in your browser; Musaic will complete connection automatically.'
     } else if (connectedProfiles.length > 0 && !this.config.enabled) {
       statusMessage = 'Scrobbling is disabled.'
     } else if (connectedProfiles.length > 0 && enabledProfiles.length === 0) {
@@ -678,7 +678,7 @@ export class LastFmService {
       return {
         ok: true,
         authPending: true,
-        message: 'Authorization is already pending. Approve Astra in your browser; Astra will complete connection automatically.'
+        message: 'Authorization is already pending. Approve Musaic in your browser; Musaic will complete connection automatically.'
       }
     }
 
@@ -715,7 +715,7 @@ export class LastFmService {
     return {
       ok: true,
       authPending: true,
-      message: 'Authorization page opened. Approve Astra in Last.fm; Astra will complete connection automatically.',
+      message: 'Authorization page opened. Approve Musaic in Last.fm; Musaic will complete connection automatically.',
       authUrl
     }
   }
@@ -750,7 +750,7 @@ export class LastFmService {
           ok: false,
           connected: this.isConnected(),
           username: fallbackProfile.username,
-          message: 'Authorization still pending. Approve Astra in your browser.'
+          message: 'Authorization still pending. Approve Musaic in your browser.'
         }
       }
 
@@ -1599,8 +1599,8 @@ export class LastFmService {
 
     const payload = items.map((item) => {
       const additionalInfo: Record<string, string | number | string[]> = {
-        media_player: 'Astra',
-        submission_client: 'Astra'
+        media_player: 'Musaic',
+        submission_client: 'Musaic'
       }
       const artistNames = normalizeArtistNames(item.artistNames)
       if (artistNames.length > 0) {

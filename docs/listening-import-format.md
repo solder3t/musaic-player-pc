@@ -1,15 +1,15 @@
-# Astra listening import format
+# Musaic listening import format
 
-Astra can import listening history gathered outside the app — a Last.fm export, another
-player's database, a spreadsheet. Astra does not ship converters; this document is the
+Musaic can import listening history gathered outside the app — a Last.fm export, another
+player's database, a spreadsheet. Musaic does not ship converters; this document is the
 contract so you can write one.
 
 Import it from **Settings → Info → Imported Listening Data → Import Listening Data**.
 
 ## Guarantees
 
-- **Merged, never replacing.** Imported plays add to what Astra already recorded. Nothing you
-  listened to in Astra is overwritten or lowered.
+- **Merged, never replacing.** Imported plays add to what Musaic already recorded. Nothing you
+  listened to in Musaic is overwritten or lowered.
 - **Removable.** Every import is tagged with its `source`, and Settings offers a per-source
   Remove that deletes exactly what that import contributed.
 - **Idempotent.** Import the same file twice and nothing changes, as long as your `playKey`
@@ -19,7 +19,7 @@ Import it from **Settings → Info → Imported Listening Data → Import Listen
 
 ```json
 {
-  "kind": "astra-listening-import",
+  "kind": "musaic-listening-import",
   "formatVersion": 1,
   "source": "lastfm",
   "generator": "my-converter 1.0",
@@ -44,13 +44,13 @@ are optional individually, but the file must contain at least one of them.
 
 **All timestamps are epoch milliseconds.**
 
-Ratings and favorites are intentionally outside this format. They can move between Astra
+Ratings and favorites are intentionally outside this format. They can move between Musaic
 installs through Settings Transfer, but an external listening import contains only data that
 can later be removed cleanly by `source`.
 
 ## Five things that will bite you
 
-**1. Milliseconds, not seconds.** Last.fm's `uts` is in seconds — multiply by 1000. Astra
+**1. Milliseconds, not seconds.** Last.fm's `uts` is in seconds — multiply by 1000. Musaic
 rejects implausible timestamps rather than silently filing everything under January 1970, so
 a whole file in seconds fails with a message naming this exact mistake.
 
@@ -60,11 +60,11 @@ computed from `events`. Supply only `plays` and you get play counts with zero li
 
 **3. `playKey` must be stable across runs.** It is how re-importing merges instead of
 duplicating. Derive it from the data (`"lastfm-1750000000"`), never from a random value or a
-loop counter that could shift. It only needs to be unique within your file — Astra namespaces
-it internally so it cannot collide with a listen Astra recorded itself.
+loop counter that could shift. It only needs to be unique within your file — Musaic namespaces
+it internally so it cannot collide with a listen Musaic recorded itself.
 
 **4. Do not let listens overlap.** One person cannot play two things at once, so overlapping
-events are evidence that your durations are guesses that ran too long. Astra sums them anyway
+events are evidence that your durations are guesses that ran too long. Musaic sums them anyway
 and listening time reads high. If you are estimating duration, cap each listen at the gap
 until the next one:
 
@@ -72,14 +72,14 @@ until the next one:
 listenedSeconds = Math.min(assumedDuration, nextStartedAt - startedAt)
 ```
 
-Astra warns when it sees overlaps, but it will still import the file.
+Musaic warns when it sees overlaps, but it will still import the file.
 
 **5. `countsAsPlay: false` records time without a play.** Use it for partial listens you know
 did not finish. `true` marks it as a play on the Stats page.
 
 ## Matching
 
-Astra matches your rows against the local library on normalized title, then artist, then
+Musaic matches your rows against the local library on normalized title, then artist, then
 album, falling back to title+artist and then title alone. Ambiguous matches are skipped.
 
 Tracks not in the library **still import** — they appear on the Stats page with their title,
@@ -90,11 +90,11 @@ artist and album, without artwork, and are not clickable. A partial library is n
 The format deliberately excludes internal identities and library state:
 
 - **Which install a play belongs to.** Everything is attributed to `import:<source>`, so a
-  file cannot claim to be an Astra install and overwrite its counts.
+  file cannot claim to be an Musaic install and overwrite its counts.
 - **Session keys.** Namespaced with the same prefix, so a file cannot collide with local data.
 - **File paths.** External data has no meaningful local paths; matching is metadata-only.
 - **Ratings and favorites.** Those are library state rather than listening history and remain
-  exclusive to Astra-to-Astra Settings Transfer.
+  exclusive to Musaic-to-Musaic Settings Transfer.
 
 ## `source`
 
@@ -106,23 +106,23 @@ Put your tool's name in `generator` instead; it is shown alongside the source an
 
 ## Versioning
 
-`formatVersion` is checked exactly. If Astra reads a different version it refuses the file and
+`formatVersion` is checked exactly. If Musaic reads a different version it refuses the file and
 names both numbers. A major version bump may break existing converters — pin the version you
-built against and re-check after Astra upgrades.
+built against and re-check after Musaic upgrades.
 
 ## Before you run it on a real library
 
-Back up `library.db` from Astra's user data folder. Import is designed to be reversible via
-per-source removal, but a backup costs nothing and the conversion is your code, not Astra's.
+Back up `library.db` from Musaic's user data folder. Import is designed to be reversible via
+per-source removal, but a backup costs nothing and the conversion is your code, not Musaic's.
 
 ## Example
 
-[`examples/lastfm-to-astra.mjs`](examples/lastfm-to-astra.mjs) is a worked converter for
+[`examples/lastfm-to-musaic.mjs`](examples/lastfm-to-musaic.mjs) is a worked converter for
 Last.fm scrobbles. It is a reference for this document rather than a supported tool — adapt it
 rather than depending on it. No package install is required.
 
 ```sh
-node docs/examples/lastfm-to-astra.mjs docs/examples/lastfm-scrobbles.sample.json out.json
+node docs/examples/lastfm-to-musaic.mjs docs/examples/lastfm-scrobbles.sample.json out.json
 ```
 
 It demonstrates the two judgement calls a converter has to make: converting Last.fm's seconds

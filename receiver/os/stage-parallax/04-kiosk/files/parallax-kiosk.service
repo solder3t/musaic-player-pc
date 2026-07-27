@@ -6,8 +6,8 @@
 
 [Unit]
 Description=Parallax TV display (Cage + WPE kiosk)
-After=astra-receiver.service systemd-user-sessions.service getty@tty1.service
-Wants=astra-receiver.service
+After=musaic-receiver.service systemd-user-sessions.service getty@tty1.service
+Wants=musaic-receiver.service
 Conflicts=getty@tty1.service
 
 [Service]

@@ -3,7 +3,7 @@
 // favorites and playlist entries travel as normalized metadata keys and each
 // side resolves them against its own library. Normalization mirrors library.ts
 // normalizeKey (whitespace-collapse + locale lowercase).
-// This file is ported verbatim to astra-mobile/src/shared/sync/identity.ts —
+// This file is ported verbatim to musaic-mobile/src/shared/sync/identity.ts —
 // keep the two copies identical.
 
 export const TRACK_SYNC_KEY_SEPARATOR = '\u001f'

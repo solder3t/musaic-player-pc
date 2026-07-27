@@ -28,7 +28,7 @@ export default function SignalShareModal() {
     } catch (error) {
       return {
         model: null,
-        error: error instanceof Error ? error.message : 'This track could not be encoded as an Astra Signal.'
+        error: error instanceof Error ? error.message : 'This track could not be encoded as a Musaic Signal.'
       }
     }
   }, [displayedTarget])
@@ -120,15 +120,15 @@ export default function SignalShareModal() {
       >
         <div className="modal-header signal-share-header">
           <div className="signal-share-heading">
-            <p>ASTRA SIGNAL • V3</p>
-            <h2 id="signal-share-title">Create Astra Signal</h2>
+            <p>MUSAIC SIGNAL • V3</p>
+            <h2 id="signal-share-title">Create Musaic Signal</h2>
           </div>
           <button
             ref={closeButtonRef}
             className="modal-close"
             type="button"
             onClick={closeSignalShare}
-            aria-label="Close Astra Signal"
+            aria-label="Close Musaic Signal"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -148,12 +148,12 @@ export default function SignalShareModal() {
                 ref={canvasRef}
                 className="signal-share-canvas"
                 role="img"
-                aria-label={`Astra Signal for ${model.layout.payload.title} by ${model.layout.payload.artist}`}
+                aria-label={`Musaic Signal for ${model.layout.payload.title} by ${model.layout.payload.artist}`}
               />
             </div>
           ) : (
             <div className="signal-share-generation-error" role="alert">
-              {generated.error ?? 'This track could not be encoded as an Astra Signal.'}
+              {generated.error ?? 'This track could not be encoded as a Musaic Signal.'}
             </div>
           )}
 

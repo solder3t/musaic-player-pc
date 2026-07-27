@@ -1,20 +1,20 @@
-# Astra Companion API v2
+# Musaic Companion API v2
 
-The Companion API lets small tools, hardware controllers, dashboards, and automations work with a running Astra desktop app. It is deliberately bounded: clients can observe and control playback, search for named library items, act on opaque references, edit the upcoming queue, set favorites, and maintain local normal playlists. It is not a replacement Astra client and cannot browse the whole catalog or retrieve audio files.
+The Companion API lets small tools, hardware controllers, dashboards, and automations work with a running Musaic desktop app. It is deliberately bounded: clients can observe and control playback, search for named library items, act on opaque references, edit the upcoming queue, set favorites, and maintain local normal playlists. It is not a replacement Musaic client and cannot browse the whole catalog or retrieve audio files.
 
 The API is disabled by default. Existing `/v1` integrations continue to work unchanged.
 
 ## Enable loopback access
 
-In Astra, open **Settings → Integrations → Local API** and enable the API. The bearer token shown there works only on `127.0.0.1`. Observation is granted when the API is enabled; playback control, library search, and library writes each have a separate switch and are off until enabled.
+In Musaic, open **Settings → Integrations → Local API** and enable the API. The bearer token shown there works only on `127.0.0.1`. Observation is granted when the API is enabled; playback control, library search, and library writes each have a separate switch and are off until enabled.
 
 ```sh
-export ASTRA_API_URL=http://127.0.0.1:38401
-export ASTRA_API_TOKEN='token copied from Astra settings'
-curl -H "Authorization: Bearer $ASTRA_API_TOKEN" "$ASTRA_API_URL/v2/capabilities"
+export MUSAIC_API_URL=http://127.0.0.1:38401
+export MUSAIC_API_TOKEN='token copied from Musaic settings'
+curl -H "Authorization: Bearer $MUSAIC_API_TOKEN" "$MUSAIC_API_URL/v2/capabilities"
 ```
 
-LAN clients use Astra's pinned-HTTPS pairing flow. A client requests companion scopes and the person at Astra approves a subset for that device. Each paired credential can be revoked, expires after inactivity, and follows the existing rotation policy. There is no copyable LAN master token.
+LAN clients use Musaic's pinned-HTTPS pairing flow. A client requests companion scopes and the person at Musaic approves a subset for that device. Each paired credential can be revoked, expires after inactivity, and follows the existing rotation policy. There is no copyable LAN master token.
 
 ## Scopes
 
@@ -29,7 +29,7 @@ Use `GET /v2/capabilities` after connecting. It reports the transport, actual gr
 
 ## References and privacy
 
-Search and playback responses use signed opaque `AstraRef` strings for tracks, albums, artists, and playlists. Treat a reference as an indivisible value: do not parse it, construct it, or persist it as a permanent library identifier. A valid reference may later return `404` if its target was deleted.
+Search and playback responses use signed opaque `MusaicRef` strings for tracks, albums, artists, and playlists. Treat a reference as an indivisible value: do not parse it, construct it, or persist it as a permanent library identifier. A valid reference may later return `404` if its target was deleted.
 
 Public responses do not include filesystem paths, source IDs, credentials, raw artwork hashes, or audio streams. Artwork URLs return bounded thumbnails only. Search requires a non-empty query, defaults to 20 results, caps at 50, and has no pagination or empty-query catalog mode.
 
@@ -38,8 +38,8 @@ Public responses do not include filesystem paths, source IDs, credentials, raw a
 - Send `Authorization: Bearer <token>` on every endpoint except `GET /v2/openapi.json`.
 - JSON errors are always shaped as `{ "error": { "code": "...", "message": "..." } }`.
 - Timestamps are Unix epoch milliseconds. Playback positions and media durations are seconds.
-- Renderer-executed playback, intent, and queue commands return `202 Accepted`. A `202` means Astra accepted the command, not that playback has already changed.
-- If Astra's renderer is not ready, renderer-executed commands return `503 renderer_unavailable`.
+- Renderer-executed playback, intent, and queue commands return `202 Accepted`. A `202` means Musaic accepted the command, not that playback has already changed.
+- If Musaic's renderer is not ready, renderer-executed commands return `503 renderer_unavailable`.
 - State-setting actions (`set-volume`, `set-muted`, `set-shuffle`, and `set-repeat`) and favorite writes explicitly set state and are safe to retry.
 - JSON request bodies are capped at 64 KiB. Playlist additions accept 1–100 track references per request.
 - CORS preflight is supported without cookies or credentialed CORS. Credentials still belong in the bearer header.

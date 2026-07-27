@@ -146,7 +146,7 @@ async function createHarness(options: HarnessOptions = {}) {
     }),
     pairedDevices: options.pairedDevices
   })
-  const tlsIdentity = await createPhoneRemoteTlsIdentity('Astra Phone Remote Test')
+  const tlsIdentity = await createPhoneRemoteTlsIdentity('Musaic Phone Remote Test')
   service.setTlsIdentity(tlsIdentity)
 
   await service.applyConfig(config)
@@ -208,7 +208,7 @@ test('phone remote binds to the LAN host when enabled', async (t) => {
     getSnapshot: () => createSnapshot(),
     dispatchCommand: () => {}
   })
-  service.setTlsIdentity(await createPhoneRemoteTlsIdentity('Astra Phone Remote Test'))
+  service.setTlsIdentity(await createPhoneRemoteTlsIdentity('Musaic Phone Remote Test'))
 
   t.after(async () => {
     await service.stop()
@@ -241,8 +241,8 @@ test('replacing the desktop certificate invalidates every pairing and cannot hap
     dispatchCommand: () => {},
     pairedDevices: [pairedNativeDevice(token)]
   })
-  const originalIdentity = await createPhoneRemoteTlsIdentity('Astra Phone Remote Original')
-  const replacementIdentity = await createPhoneRemoteTlsIdentity('Astra Phone Remote Replacement')
+  const originalIdentity = await createPhoneRemoteTlsIdentity('Musaic Phone Remote Original')
+  const replacementIdentity = await createPhoneRemoteTlsIdentity('Musaic Phone Remote Replacement')
   service.setTlsIdentity(originalIdentity)
   assert.equal(service.listPairedDevices().length, 1)
 
@@ -280,7 +280,7 @@ test('pairing ticket flow issues a per-device token after approval', async (t) =
 
   const ticket = harness.service.createPairingTicket(`https://127.0.0.1:${harness.port}`)
   assert.equal(ticket.identity.desktopName, 'Test Desktop')
-  assert.match(ticket.pairingUrl, /^astra:\/\/desktop-remote\?/)
+  assert.match(ticket.pairingUrl, /^musaic:\/\/desktop-remote\?/)
   assert.match(ticket.pairingUrl, /protocolVersion=3/)
   assert.match(ticket.pairingUrl, /fingerprint=/)
 
@@ -635,7 +635,7 @@ test('phone remote discovery advertises only non-secret identity fields', () => 
   })
 
   assert.equal(published.length, 1)
-  assert.equal(published[0].type, 'astra-remote')
+  assert.equal(published[0].type, 'musaic-remote')
   assert.equal(published[0].protocol, 'tcp')
   assert.equal(published[0].txt.endpoint_uuid, 'uuid-1')
   assert.equal(published[0].txt.protocol_version, String(PHONE_REMOTE_PROTOCOL_VERSION))
@@ -653,8 +653,8 @@ test('PWA uses v3 token storage and explains the private HTTPS certificate warni
     readFile(new URL('../../renderer/public/remote/app.js', import.meta.url), 'utf8'),
     readFile(new URL('../../renderer/public/remote/index.html', import.meta.url), 'utf8')
   ])
-  assert.match(appSource, /astra-remote-api-token-v3/)
-  assert.doesNotMatch(appSource, /astra-remote-api-token-v1/)
+  assert.match(appSource, /musaic-remote-api-token-v3/)
+  assert.doesNotMatch(appSource, /musaic-remote-api-token-v1/)
   assert.match(html, /private HTTPS certificate/i)
   assert.match(html, /SHA-256 fingerprint/i)
 })

@@ -1,4 +1,4 @@
-export interface AstraViewTransition {
+export interface MusaicViewTransition {
   finished: Promise<void>
   ready: Promise<void>
   updateCallbackDone: Promise<void>
@@ -6,10 +6,10 @@ export interface AstraViewTransition {
 }
 
 type ViewTransitionDocument = Document & {
-  startViewTransition?: (update: () => void | Promise<void>) => AstraViewTransition
+  startViewTransition?: (update: () => void | Promise<void>) => MusaicViewTransition
 }
 
-const activeScopedTransitions = new Map<string, AstraViewTransition>()
+const activeScopedTransitions = new Map<string, MusaicViewTransition>()
 let transitionUpdateDepth = 0
 
 type ViewTransitionScope = string | string[] | undefined
@@ -58,7 +58,7 @@ export async function runViewTransition(
     document.documentElement.classList.add(...scopeClassNames)
   }
 
-  let transition: AstraViewTransition
+  let transition: MusaicViewTransition
   try {
     transition = startViewTransition.call(document, async () => {
       transitionUpdateDepth += 1

@@ -1,13 +1,13 @@
-# astra-receiver
+# musaic-receiver
 
 Standalone headless Parallax receiver ("parallax headless node"): a 24/7 daemon for Raspberry
-Pi–class Linux devices that pairs with an Astra host and plays zone audio in sync — no Electron,
+Pi–class Linux devices that pairs with a Musaic host and plays zone audio in sync — no Electron,
 no screen. It speaks Parallax protocol v2 unchanged and reuses the app's protocol, crypto,
 pairing-listener, and mDNS modules directly from `../src`.
 
 ## How it fits together
 
-- `src/main.ts` — daemon assembly: config, mDNS advertise (`_astra-zone._tcp`, role=sink),
+- `src/main.ts` — daemon assembly: config, mDNS advertise (`_musaic-zone._tcp`, role=sink),
   pairing listener (:38404), status/pairing web page (:38405), boot connect-retry loop.
 - `src/sinkClient.ts` — host network client (join / SSE events / PXLX audio / clock probes /
   telemetry, watchdogs + reconnect-forever + mDNS host relocation), ported from the app's
@@ -19,10 +19,10 @@ pairing-listener, and mDNS modules directly from `../src`.
 - `src/output/` — `AlsaOutput` (Linux, via `receiver/native` addon, `snd_pcm_delay` as the
   latency source) and `NullOutput` (mac dev / tests).
 
-Pairing works exactly like an Astra sink: the host's wizard discovers this device, and the PIN
+Pairing works exactly like a Musaic sink: the host's wizard discovers this device, and the PIN
 and explicit Approve/Reject controls appear on the receiver web page. For a standalone install,
 open `http://<pi>:38405/`; Parallax OS exposes the same page at `http://parallax.local/`. The
-credential persists in `~/.config/astra-receiver/config.json` only after approval.
+credential persists in `~/.config/musaic-receiver/config.json` only after approval.
 
 Approval must happen before the pairing window expires, but HDMI-CEC and a TV remote are
 optional:
@@ -31,7 +31,7 @@ optional:
 - **TV with working CEC:** read the PIN on the display and use the TV remote to approve or reject;
   the web page remains available as an alternative.
 - **TV without CEC or without a usable remote:** read the PIN on the display or web page, enter it
-  in Astra, then approve or reject from the web page on another device on the same LAN.
+  in Musaic, then approve or reject from the web page on another device on the same LAN.
 
 ## Dev (any OS, no audio)
 
@@ -41,7 +41,7 @@ npm run typecheck:receiver
 npm test                    # includes receiver unit tests
 ```
 
-Protocol-level end-to-end on the dev machine: run `receiver:dev`, then pair + stream from Astra —
+Protocol-level end-to-end on the dev machine: run `receiver:dev`, then pair + stream from Musaic —
 join/SSE/audio/clock/telemetry all flow; only the DAC is fake.
 
 ## Install on a Raspberry Pi (the normal way)
@@ -49,7 +49,7 @@ join/SSE/audio/clock/telemetry all flow; only the DAC is fake.
 One line, on any 64-bit Pi OS (or other arm64 Linux):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Boof2015/astra/dev/receiver/deploy/install.sh -o /tmp/astra-receiver-install.sh && sudo bash /tmp/astra-receiver-install.sh
+curl -fsSL https://raw.githubusercontent.com/solder3t/musaic-player-linux/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh
 ```
 
 (Download-then-run, not `| sudo bash` — modern sudo puts commands on a private pty, and a
@@ -60,8 +60,8 @@ addon — ABI-stable, so one arm64 binary serves any modern Node), installs Node
 Node ≥ 22.19 is present (the bundled undici requires it), **asks which audio output to use when
 the device has more than one** (HDMI vs. headphone jack vs. USB DAC), sets up a service user in
 the `audio` group, and enables a systemd service. Then open `http://<pi>:38405/` and pair from
-Astra (Parallax → Add Sink). **Updating — or changing the audio output — = re-run the same
-line** (it merges config, so pairing survives). Logs: `journalctl -u astra-receiver -f`.
+Musaic (Parallax → Add Sink). **Updating — or changing the audio output — = re-run the same
+line** (it merges config, so pairing survives). Logs: `journalctl -u musaic-receiver -f`.
 
 Since 0.2.0 the audio output can also be switched from the web page (Audio output → Apply); the
 daemon persists the choice and restarts itself onto the new device — the ALSA handle and the
@@ -73,7 +73,7 @@ frames-written emission clock can't be swapped live, so a ~10 s blip is expected
 appliance runs from a daily systemd timer. It keeps releases side by side and swaps atomically:
 
 ```
-/opt/astra-receiver/
+/opt/musaic-receiver/
   config.json                    # pairing + device config (never touched by updates)
   current -> releases/<tag>      # the installed version IS this symlink's target
   releases/<tag>/                # bundle + addon + update.sh (each release carries its updater)
@@ -92,8 +92,8 @@ hung process is killed and restarted by systemd.
 On the dev machine:
 
 ```sh
-npm run receiver:build      # → receiver/dist/astra-receiver.mjs (single file, deps bundled)
-rsync -a receiver/dist/astra-receiver.mjs receiver/native pi@<pi>:~/astra-receiver/
+npm run receiver:build      # → receiver/dist/musaic-receiver.mjs (single file, deps bundled)
+rsync -a receiver/dist/musaic-receiver.mjs receiver/native pi@<pi>:~/musaic-receiver/
 ```
 
 On the Pi (Node ≥ 22.19 — undici's floor — once; needed only on 32-bit/armv7 systems the
@@ -101,13 +101,13 @@ prebuilds don't cover, or when hacking on the addon):
 
 ```sh
 sudo apt install -y build-essential libasound2-dev
-cd ~/astra-receiver/native && npm install && npx node-gyp rebuild
-cp build/Release/astra_receiver_alsa.node ~/astra-receiver/
-node ~/astra-receiver/astra-receiver.mjs   # first run; then install the systemd unit
+cd ~/musaic-receiver/native && npm install && npx node-gyp rebuild
+cp build/Release/musaic_receiver_alsa.node ~/musaic-receiver/
+node ~/musaic-receiver/musaic-receiver.mjs   # first run; then install the systemd unit
 ```
 
-Systemd template for manual installs: `deploy/astra-receiver.service`. Config lives at
-`~/.config/astra-receiver/config.json` for manual runs, `/opt/astra-receiver/config.json` for
+Systemd template for manual installs: `deploy/musaic-receiver.service`. Config lives at
+`~/.config/musaic-receiver/config.json` for manual runs, `/opt/musaic-receiver/config.json` for
 installer-managed services (`audioDevice`: use `default` or `plughw:…` — the plug layer converts
 Float32 for DACs that don't take it natively).
 
@@ -115,8 +115,8 @@ Float32 for DACs that don't take it natively).
 
 - `PARALLAX_DISABLE_HOST_PREDICTOR=1` — fall back to the Phase-1 nominal-timeline loop.
 - `PARALLAX_DISCOVERY_INTERFACE=<ip>` — pin mDNS to an interface.
-- `ASTRA_RECEIVER_CONFIG=<path>` — config file override.
-- `ASTRA_RECEIVER_ALSA_ADDON=<path>` — explicit .node addon path (used by the systemd unit).
+- `MUSAIC_RECEIVER_CONFIG=<path>` — config file override.
+- `MUSAIC_RECEIVER_ALSA_ADDON=<path>` — explicit .node addon path (used by the systemd unit).
 
 ## TV display + CEC (0.2.0+)
 
