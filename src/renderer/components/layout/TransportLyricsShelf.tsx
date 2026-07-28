@@ -39,6 +39,11 @@ export default function TransportLyricsShelf() {
   const lyricsStoreError = useLyricsStore((s) => s.errorMessage)
   const loadLyricsForTrack = useLyricsStore((s) => s.loadForTrack)
   const refreshLyricsForTrack = useLyricsStore((s) => s.refreshForTrack)
+  const isRomanized = useLyricsStore((s) => s.isRomanized)
+  const isTranslated = useLyricsStore((s) => s.isTranslated)
+  const aiProcessing = useLyricsStore((s) => s.aiProcessing)
+  const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
+  const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
   const lastLyricsRequestKeyRef = useRef<string | null>(null)
 
@@ -338,6 +343,28 @@ export default function TransportLyricsShelf() {
               >
                 Recenter
               </button>
+            )}
+            {activeLyricsResult?.status === 'hit' && (
+              <>
+                <button
+                  type="button"
+                  className={['transport-lyrics-inline-action', isRomanized ? 'is-active' : ''].join(' ').trim()}
+                  onClick={() => void toggleRomanized()}
+                  disabled={aiProcessing || isTranslated}
+                  title="Romanize Lyrics"
+                >
+                  {aiProcessing && !isTranslated ? '...' : 'Aa'}
+                </button>
+                <button
+                  type="button"
+                  className={['transport-lyrics-inline-action', isTranslated ? 'is-active' : ''].join(' ').trim()}
+                  onClick={() => void toggleTranslated()}
+                  disabled={aiProcessing || isRomanized}
+                  title="Translate Lyrics"
+                >
+                  {aiProcessing && !isRomanized ? '...' : 'A文'}
+                </button>
+              </>
             )}
             <button
               type="button"

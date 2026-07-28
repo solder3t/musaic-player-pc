@@ -56,6 +56,9 @@ function createSnapshot(
   return {
     capturedAt: 10_000,
     preferredExpanded: true,
+    isRomanized: false,
+    isTranslated: false,
+    aiProcessing: false,
     playbackState: 'playing',
     currentTime: 42,
     duration: 180,

@@ -650,15 +650,20 @@ export function resolveLyricsBodyState(options: ResolveLyricsBodyStateOptions): 
     const cached = activeLyricsResult.cached
     const syncedLines = activeLyricsResult.lyrics.syncedLines
     if (hasRenderableSyncedLines(syncedLines)) {
+      const cleanSyncedLines = syncedLines.map(line => ({
+        ...line,
+        text: line.text.replace(/v\d+:/g, '').replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '').trim()
+      }))
       return {
         kind: 'hit_synced',
         sourceLabel,
         cached,
-        syncedLines
+        syncedLines: cleanSyncedLines
       }
     }
 
-    const plainLyrics = activeLyricsResult.lyrics.plainLyrics?.trim() ?? ''
+    const rawPlainLyrics = activeLyricsResult.lyrics.plainLyrics?.trim() ?? ''
+    const plainLyrics = rawPlainLyrics.replace(/v\d+:/g, '').replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '').trim()
     if (plainLyrics.length > 0) {
       return {
         kind: 'hit_plain',

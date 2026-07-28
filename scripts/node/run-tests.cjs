@@ -70,6 +70,21 @@ function runNodeTests(files) {
   // --experimental-default-type was removed in Node 23+ (module syntax
   // detection is the default there).
   const nodeMajor = Number(process.versions.node.split('.')[0])
+  if (nodeMajor < 22) {
+    console.log('[test] System Node (<22) does not support --experimental-strip-types. Using Electron runtime for Node tests.')
+    const electron = require('electron')
+    return run('Node tests (via Electron)', electron, [
+      '--experimental-strip-types',
+      '--loader',
+      './scripts/node/electron-test-loader.mjs',
+      '--test',
+      '--test-concurrency=1',
+      ...files
+    ], {
+      ELECTRON_RUN_AS_NODE: '1'
+    })
+  }
+
   return run('Node tests', process.execPath, [
     '--experimental-strip-types',
     ...(nodeMajor >= 23 ? [] : ['--experimental-default-type=module']),

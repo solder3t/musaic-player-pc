@@ -60,6 +60,7 @@ const baseNavItems: { id: AppView; label: string; icon: ReactNode }[] = [
       </svg>
     ),
   },
+
   {
     id: 'eq',
     label: 'Equalizer',

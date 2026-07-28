@@ -684,6 +684,17 @@ async function getAllLibraryTracksPaged(): Promise<DbTrack[]> {
 
 // Expose APIs to renderer
 contextBridge.exposeInMainWorld('electronAPI', {
+  app: {
+    getSystemAccentColor: () => ipcRenderer.invoke('app:getSystemAccentColor')
+  },
+  ai: {
+    generateEqProfile: (prompt: string, settings: any, customOptions: any) => 
+      ipcRenderer.invoke('ai:generateEqProfile', prompt, settings, customOptions),
+    romanizeLyrics: (text: string, settings: any) => 
+      ipcRenderer.invoke('ai:romanizeLyrics', text, settings),
+    translateLyrics: (text: string, settings: any, lang: string) => 
+      ipcRenderer.invoke('ai:translateLyrics', text, settings, lang)
+  },
   // Window controls
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
@@ -785,6 +796,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   getAppBuildInfo: (): Promise<AppBuildInfo> => ipcRenderer.invoke('app:getBuildInfo'),
+  getSystemAccentColor: (): Promise<string> => ipcRenderer.invoke('app:getSystemAccentColor'),
   getAppPerformanceStats: () => ipcRenderer.invoke('app:getPerformanceStats'),
   getMainProcessMemoryStats: (): Promise<MainProcessMemoryStats> => ipcRenderer.invoke('app:getMainProcessMemoryStats'),
   getRendererMemoryStats: async (): Promise<RendererMemoryStats> => {
@@ -1088,6 +1100,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lastFm: {
     getStatus: (): Promise<LastFmStatus> => ipcRenderer.invoke('lastfm:getStatus'),
     setEnabled: (enabled: boolean): Promise<LastFmStatus> => ipcRenderer.invoke('lastfm:setEnabled', enabled),
+    setCustomCredentials: (apiKey: string | null, sharedSecret: string | null): Promise<LastFmStatus> =>
+      ipcRenderer.invoke('lastfm:setCustomCredentials', apiKey, sharedSecret),
     createCustomProfile: (input: LastFmCustomProfileInput): Promise<LastFmStatus> =>
       ipcRenderer.invoke('lastfm:createCustomProfile', input),
     updateCustomProfile: (profileId: string, input: LastFmCustomProfileInput): Promise<LastFmStatus> =>
@@ -1499,6 +1513,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPlaylistsContainingTracks: (trackPaths: string[]) => ipcRenderer.invoke('library:getPlaylistsContainingTracks', trackPaths) as Promise<Array<{ playlistId: number; matchedTrackCount: number }>>,
     importPlaylistFromFile: (filePath: string) => ipcRenderer.invoke('library:importPlaylistFromFile', filePath),
     exportPlaylistToM3u: (playlistId: number, filePath: string) => ipcRenderer.invoke('library:exportPlaylistToM3u', playlistId, filePath),
+
+    // AI
+    ai: {
+      romanizeLyrics: (text: string, options: any) => ipcRenderer.invoke('ai:romanizeLyrics', text, options),
+      translateLyrics: (text: string, options: any, targetLang?: string) => ipcRenderer.invoke('ai:translateLyrics', text, options, targetLang),
+      generateEqProfile: (prompt: string, currentEq: any, options: any) => ipcRenderer.invoke('ai:generateEqProfile', prompt, currentEq, options)
+    }
   }
 })
 
@@ -1567,6 +1588,14 @@ declare global {
       onEvent: (callback: (event: NativeAudioEvent) => void) => () => void
     }
     electronAPI: {
+      app: {
+        getSystemAccentColor: () => Promise<string>
+      }
+      ai: {
+        generateEqProfile: (prompt: string, ...args: any[]) => Promise<any>
+        romanizeLyrics: (text: string, settings: any) => Promise<any>
+        translateLyrics: (text: string, settings: any, lang: string) => Promise<any>
+      }
       // Window controls
       minimize: () => void
       maximize: () => void
@@ -1620,6 +1649,7 @@ declare global {
       platform: NodeJS.Platform
       getAppVersion: () => Promise<string>
       getAppBuildInfo: () => Promise<AppBuildInfo>
+      getSystemAccentColor: () => Promise<string>
       getAppPerformanceStats: () => Promise<AppPerformanceStats>
       getMainProcessMemoryStats: () => Promise<MainProcessMemoryStats>
       getRendererMemoryStats: () => Promise<RendererMemoryStats>
@@ -1757,6 +1787,7 @@ declare global {
       lastFm: {
         getStatus: () => Promise<LastFmStatus>
         setEnabled: (enabled: boolean) => Promise<LastFmStatus>
+        setCustomCredentials: (apiKey: string | null, sharedSecret: string | null) => Promise<LastFmStatus>
         createCustomProfile: (input: LastFmCustomProfileInput) => Promise<LastFmStatus>
         updateCustomProfile: (profileId: string, input: LastFmCustomProfileInput) => Promise<LastFmStatus>
         deleteCustomProfile: (profileId: string) => Promise<LastFmStatus>
@@ -2016,6 +2047,13 @@ declare global {
         getPlaylistsContainingTracks: (trackPaths: string[]) => Promise<Array<{ playlistId: number; matchedTrackCount: number }>>
         importPlaylistFromFile: (filePath: string) => Promise<PlaylistImportResult>
         exportPlaylistToM3u: (playlistId: number, filePath: string) => Promise<PlaylistExportResult>
+
+        // AI
+        ai: {
+          romanizeLyrics: (text: string, options: any) => Promise<{ text: string; tokens: number; fromCache: boolean; payload: any }>
+          translateLyrics: (text: string, options: any, targetLang?: string) => Promise<{ text: string; tokens: number; fromCache: boolean; payload: any }>
+          generateEqProfile: (prompt: string, currentEq: any, options: any) => Promise<any>
+        }
       }
     }
 

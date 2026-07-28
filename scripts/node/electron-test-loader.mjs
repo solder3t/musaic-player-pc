@@ -47,7 +47,14 @@ export async function resolve(specifier, context, nextResolve) {
       && error.code === 'ERR_MODULE_NOT_FOUND'
       && isExtensionlessRelativeSpecifier(specifier)
     ) {
-      return nextResolve(`${specifier}.ts`, context)
+      try {
+        return await nextResolve(`${specifier}.js`, context)
+      } catch (jsError) {
+        if (jsError && jsError.code === 'ERR_MODULE_NOT_FOUND') {
+          return await nextResolve(`${specifier}.ts`, context)
+        }
+        throw jsError
+      }
     }
 
     throw error

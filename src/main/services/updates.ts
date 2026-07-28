@@ -1,3 +1,5 @@
+import { app } from 'electron'
+
 const RELEASES_API_URL = 'https://api.github.com/repos/solder3t/musaic-player-linux/releases?per_page=20'
 export const RELEASES_PAGE_URL = 'https://github.com/solder3t/musaic-player-linux/releases'
 const RELEASES_FETCH_TIMEOUT_MS = 10_000
@@ -134,7 +136,7 @@ async function fetchGitHubReleases(): Promise<GitHubReleaseResponse[]> {
     const response = await fetch(RELEASES_API_URL, {
       headers: {
         Accept: 'application/vnd.github+json',
-        'User-Agent': 'Musaic-Update-Check',
+        'User-Agent': `Musaic-Update-Check/${app.getVersion()}`,
       },
       signal: controller.signal,
     })

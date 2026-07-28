@@ -1,5 +1,6 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import crypto from 'node:crypto'
 
 if (typeof (crypto as any).hash !== 'function') {
@@ -17,6 +18,6 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
-    plugins: [react()]
+    plugins: [tailwindcss(), react()]
   }
 })

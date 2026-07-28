@@ -235,6 +235,14 @@ declare global {
             onEvent: (callback: (event: NativeAudioEvent) => void) => () => void
         }
         electronAPI: {
+            app: {
+                getSystemAccentColor: () => Promise<string>
+            }
+            ai: {
+                generateEqProfile: (prompt: string, ...args: any[]) => Promise<any>
+                romanizeLyrics: (text: string, settings: any) => Promise<any>
+                translateLyrics: (text: string, settings: any, lang: string) => Promise<any>
+            }
             minimize: () => void
             maximize: () => void
             close: () => void

@@ -25,7 +25,7 @@ import {
 } from '../../shared/library/artistCredits'
 
 const LASTFM_AUTH_URL = 'https://www.last.fm/api/auth/'
-const LASTFM_USER_AGENT = 'Musaic-LastFM/0.1.0 (https://github.com/solder3t/musaic-player-linux)'
+
 const LASTFM_REQUEST_TIMEOUT_MS = 12_000
 const LASTFM_MAX_SCROBBLES_PER_BATCH = 50
 const LASTFM_MAX_PENDING_SCROBBLES = 1000
@@ -39,14 +39,14 @@ const LASTFM_TRANSIENT_ERROR_CODES = new Set([8, 11, 16, 29])
 const LASTFM_SESSION_INVALID_CODES = new Set([9])
 const LASTFM_AUTH_NOT_COMPLETED_CODE = 14
 const AUDIOSCROBBLER_PROTOCOL_VERSION = '1.2.1'
-const AUDIOSCROBBLER_CLIENT_ID = 'ast'
-const AUDIOSCROBBLER_CLIENT_VERSION = '0.6.0'
+const AUDIOSCROBBLER_CLIENT_ID = 'mus'
 const LISTENBRAINZ_SUBMIT_PATH = '/1/submit-listens'
 
 interface LastFmServiceOptions {
   config: LastFmServiceConfig
   apiKey: string
   sharedSecret: string
+  appVersion: string
   openExternal: (url: string) => Promise<void>
   onConfigChange?: (config: LastFmServiceConfig) => Promise<void> | void
   onStatusChange?: (status: LastFmStatus) => void
@@ -435,9 +435,9 @@ export function sanitizePendingScrobbles(raw: unknown): LastFmPendingScrobble[] 
 
 export class LastFmService {
   private config: LastFmServiceConfig
-  private readonly apiKey: string
-  private readonly sharedSecret: string
-  private readonly hasApiCredentials: boolean
+  private readonly _defaultApiKey: string
+  private readonly _defaultSharedSecret: string
+  private readonly appVersion: string
   private readonly openExternal: (url: string) => Promise<void>
   private readonly onConfigChange?: (config: LastFmServiceConfig) => Promise<void> | void
   private readonly onStatusChange?: (status: LastFmStatus) => void
@@ -452,13 +452,31 @@ export class LastFmService {
   private profileErrors = new Map<string, string>()
 
   constructor(options: LastFmServiceOptions) {
-    this.apiKey = options.apiKey.trim()
-    this.sharedSecret = options.sharedSecret.trim()
-    this.hasApiCredentials = this.apiKey.length > 0 && this.sharedSecret.length > 0
+    this._defaultApiKey = options.apiKey.trim()
+    this._defaultSharedSecret = options.sharedSecret.trim()
+    this.appVersion = options.appVersion
     this.openExternal = options.openExternal
     this.onConfigChange = options.onConfigChange
     this.onStatusChange = options.onStatusChange
     this.config = normalizeConfig(options.config, this.hasApiCredentials)
+  }
+
+  private get apiKey(): string {
+    if (this.config && this.config.customApiKey && this.config.customApiKey.trim().length > 0) {
+      return this.config.customApiKey.trim()
+    }
+    return this._defaultApiKey
+  }
+
+  private get sharedSecret(): string {
+    if (this.config && this.config.customSharedSecret && this.config.customSharedSecret.trim().length > 0) {
+      return this.config.customSharedSecret.trim()
+    }
+    return this._defaultSharedSecret
+  }
+
+  private get hasApiCredentials(): boolean {
+    return this.apiKey.length > 0 && this.sharedSecret.length > 0
   }
 
   getStatus(): LastFmStatus {
@@ -501,6 +519,8 @@ export class LastFmService {
       enabled: this.config.enabled,
       connected: connectedProfiles.length > 0,
       username: activeProfile.username,
+      customApiKey: this.config.customApiKey ?? null,
+      customSharedSecret: this.config.customSharedSecret ?? null,
       apiBaseUrl,
       usingCustomEndpoint,
       authPending: Boolean(this.pendingAuthToken),
@@ -1414,7 +1434,7 @@ export class LastFmService {
     handshakeUrl.searchParams.set('hs', 'true')
     handshakeUrl.searchParams.set('p', AUDIOSCROBBLER_PROTOCOL_VERSION)
     handshakeUrl.searchParams.set('c', AUDIOSCROBBLER_CLIENT_ID)
-    handshakeUrl.searchParams.set('v', AUDIOSCROBBLER_CLIENT_VERSION)
+    handshakeUrl.searchParams.set('v', this.appVersion)
     handshakeUrl.searchParams.set('u', profile.username)
     handshakeUrl.searchParams.set('t', String(timestamp))
     handshakeUrl.searchParams.set('a', authToken)
@@ -1427,7 +1447,7 @@ export class LastFmService {
         method: 'GET',
         headers: {
           Accept: 'text/plain',
-          'User-Agent': LASTFM_USER_AGENT
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
         },
         signal: controller.signal
       })
@@ -1512,7 +1532,7 @@ export class LastFmService {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           Accept: 'text/plain',
-          'User-Agent': LASTFM_USER_AGENT
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
         },
         body: body.toString(),
         signal: controller.signal
@@ -1644,7 +1664,7 @@ export class LastFmService {
           Authorization: `Token ${profile.sessionKey}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'User-Agent': LASTFM_USER_AGENT
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
         },
         body: JSON.stringify({
           listen_type: listenType,
@@ -1783,7 +1803,7 @@ export class LastFmService {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           Accept: 'application/json',
-          'User-Agent': LASTFM_USER_AGENT
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
         },
         body: body.toString(),
         signal: controller.signal

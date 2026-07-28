@@ -52,12 +52,16 @@ export interface LastFmServiceConfig {
   enabled: boolean
   activeProfileId: string
   profiles: LastFmProfileConfig[]
+  customApiKey?: string | null
+  customSharedSecret?: string | null
 }
 
 export interface LastFmStatus {
   enabled: boolean
   connected: boolean
   username: string | null
+  customApiKey: string | null
+  customSharedSecret: string | null
   apiBaseUrl: string
   usingCustomEndpoint: boolean
   activeProfileId: string

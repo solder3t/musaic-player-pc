@@ -22,7 +22,11 @@ const MAX_PAUSE_CLEAR_MINUTES = 1440
 const DISCORD_APP_INFO_LOOKUP_URL = `https://discord.com/api/v10/oauth2/applications/${DISCORD_RPC_CLIENT_ID}/rpc`
 const DISCORD_APP_ASSETS_LOOKUP_URL = `https://discord.com/api/v10/oauth2/applications/${DISCORD_RPC_CLIENT_ID}/assets`
 const DISCORD_APP_ICON_LOOKUP_TIMEOUT_MS = 5000
-const DISCORD_RPC_USER_AGENT = 'Musaic-Discord-RPC/0.2.0 (https://github.com/solder3t/musaic-player-linux)'
+let appVersion = '0.0.0'
+export function setDiscordRpcAppVersion(v: string) {
+  appVersion = v
+}
+const getDiscordRpcUserAgent = () => `Musaic-Discord-RPC/${appVersion} (https://github.com/solder3t/musaic-player-linux)`
 const DISCORD_SET_ACTIVITY_COALESCE_MS = 150
 const DISCORD_SET_ACTIVITY_ACK_TIMEOUT_MS = 1500
 
@@ -649,7 +653,7 @@ export class DiscordRpcService {
         method: 'GET',
         headers: {
           Accept: 'application/json',
-          'User-Agent': DISCORD_RPC_USER_AGENT
+          'User-Agent': getDiscordRpcUserAgent()
         },
         signal: controller.signal
       })
@@ -704,7 +708,7 @@ export class DiscordRpcService {
         method: 'GET',
         headers: {
           Accept: 'application/json',
-          'User-Agent': DISCORD_RPC_USER_AGENT
+          'User-Agent': getDiscordRpcUserAgent()
         },
         signal: controller.signal
       })
