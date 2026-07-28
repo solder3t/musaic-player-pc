@@ -29,7 +29,7 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   provider: 'gemini',
   apiKey: '',
   serverUrl: 'http://localhost:11434',
-  model: 'gemini-2.5-flash',
+  model: 'gemini-2.0-flash',
   autoRomanize: true,
   autoTranslate: false,
   targetLanguage: 'English',
@@ -42,11 +42,16 @@ function readSettings(): AiSettings {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(AI_SETTINGS_STORAGE_KEY) : null;
     if (!raw) return { ...DEFAULT_AI_SETTINGS };
     const parsed = JSON.parse(raw);
+    let loadedModel = typeof parsed?.model === 'string' ? parsed.model : DEFAULT_AI_SETTINGS.model;
+    if (loadedModel === 'gemini-2.5-flash') {
+      loadedModel = 'gemini-2.0-flash';
+    }
+
     return {
       provider: parsed?.provider || DEFAULT_AI_SETTINGS.provider,
       apiKey: typeof parsed?.apiKey === 'string' ? parsed.apiKey : DEFAULT_AI_SETTINGS.apiKey,
       serverUrl: typeof parsed?.serverUrl === 'string' ? parsed.serverUrl : DEFAULT_AI_SETTINGS.serverUrl,
-      model: typeof parsed?.model === 'string' ? parsed.model : DEFAULT_AI_SETTINGS.model,
+      model: loadedModel,
       autoRomanize: typeof parsed?.autoRomanize === 'boolean' ? parsed.autoRomanize : DEFAULT_AI_SETTINGS.autoRomanize,
       autoTranslate: typeof parsed?.autoTranslate === 'boolean' ? parsed.autoTranslate : DEFAULT_AI_SETTINGS.autoTranslate,
       targetLanguage: typeof parsed?.targetLanguage === 'string' ? parsed.targetLanguage : DEFAULT_AI_SETTINGS.targetLanguage,
