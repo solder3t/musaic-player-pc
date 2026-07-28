@@ -14,7 +14,7 @@ export interface AiRequestOptions {
 }
 
 const DEFAULT_MODELS: Record<AiProviderType, string> = {
-  gemini: 'gemini-2.5-flash',
+  gemini: 'gemini-2.0-flash',
   openai: 'gpt-4o-mini',
   claude: 'claude-3-5-haiku-latest',
   deepseek: 'deepseek-chat',
