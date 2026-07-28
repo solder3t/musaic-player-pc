@@ -164,6 +164,7 @@ function createService(configOverrides: Partial<LastFmServiceConfig> = {}) {
     config: createConfig(configOverrides),
     apiKey: 'test-api-key',
     sharedSecret: 'test-shared-secret',
+    appVersion: '0.0.0-test',
     openExternal: async () => {},
     onConfigChange: (config) => {
       persisted.push(cloneConfig(config))
@@ -244,6 +245,7 @@ test('Last.fm service migrates legacy configs into the official profile', () => 
     config: legacyConfig,
     apiKey: 'test-api-key',
     sharedSecret: 'test-shared-secret',
+    appVersion: '0.0.0-test',
     openExternal: async () => {}
   })
 
@@ -554,6 +556,7 @@ test('custom Last.fm 2.0 scrobbles submit without official app credentials', asy
     }),
     apiKey: '',
     sharedSecret: '',
+    appVersion: '0.0.0-test',
     openExternal: async () => {}
   })
   t.after(() => {
@@ -858,7 +861,7 @@ test('ListenBrainz native submissions use token auth and omit timestamps for pla
     Authorization: 'Token listenbrainz-token',
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    'User-Agent': 'Musaic-LastFM/0.1.0 (https://github.com/solder3t/musaic-player-linux)'
+    'User-Agent': 'Musaic-LastFM/0.0.0-test (https://github.com/solder3t/musaic-player-linux)'
   })
 
   const nowPlayingBody = JSON.parse(requests[0].body) as Record<string, unknown>
@@ -919,6 +922,7 @@ test('missing Last.fm app credentials only block the official Last.fm profile', 
     }),
     apiKey: '',
     sharedSecret: '',
+    appVersion: '0.0.0-test',
     openExternal: async () => {}
   })
   const customLastFmProfile = createCustomProfile({
@@ -941,6 +945,7 @@ test('missing Last.fm app credentials only block the official Last.fm profile', 
     }),
     apiKey: '',
     sharedSecret: '',
+    appVersion: '0.0.0-test',
     openExternal: async () => {}
   })
 

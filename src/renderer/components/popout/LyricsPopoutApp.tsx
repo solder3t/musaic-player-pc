@@ -27,6 +27,9 @@ const EMPTY_SNAPSHOT: LyricsPopoutSnapshot = {
   lyricsQuery: null,
   lyricsResult: null,
   isLoading: false,
+  isRomanized: false,
+  isTranslated: false,
+  aiProcessing: false,
   errorMessage: ''
 }
 
@@ -317,6 +320,28 @@ export default function LyricsPopoutApp() {
                 >
                   Recenter
                 </button>
+              )}
+              {snapshot.lyricsResult?.status === 'hit' && (
+                <>
+                  <button
+                    type="button"
+                    className={['transport-lyrics-inline-action', snapshot.isRomanized ? 'is-active' : ''].join(' ').trim()}
+                    onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'toggleRomanized' })}
+                    disabled={snapshot.aiProcessing || snapshot.isTranslated}
+                    title="Romanize Lyrics"
+                  >
+                    {snapshot.aiProcessing && !snapshot.isTranslated ? '...' : 'Aa'}
+                  </button>
+                  <button
+                    type="button"
+                    className={['transport-lyrics-inline-action', snapshot.isTranslated ? 'is-active' : ''].join(' ').trim()}
+                    onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'toggleTranslated' })}
+                    disabled={snapshot.aiProcessing || snapshot.isRomanized}
+                    title="Translate Lyrics"
+                  >
+                    {snapshot.aiProcessing && !snapshot.isRomanized ? '...' : 'A文'}
+                  </button>
+                </>
               )}
               <button
                 type="button"

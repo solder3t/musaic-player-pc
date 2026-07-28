@@ -12,6 +12,7 @@ export interface LyricsPopoutTrackSnapshot {
 export interface LyricsPopoutSnapshot {
   capturedAt: number
   preferredExpanded: boolean
+
   playbackState: LyricsPopoutPlaybackState
   currentTime: number
   duration: number
@@ -20,6 +21,9 @@ export interface LyricsPopoutSnapshot {
   lyricsQuery: LyricsTrackQuery | null
   lyricsResult: LyricsLookupResult | null
   isLoading: boolean
+  isRomanized: boolean
+  isTranslated: boolean
+  aiProcessing: boolean
   errorMessage: string
 }
 
@@ -37,6 +41,8 @@ export interface LyricsPopoutWindowPrefs {
 export type LyricsPopoutCommand =
   | { type: 'refresh' }
   | { type: 'seek'; time: number }
+  | { type: 'toggleRomanized' }
+  | { type: 'toggleTranslated' }
 
 export const LYRICS_POPOUT_WINDOW_MIN_WIDTH = 360
 export const LYRICS_POPOUT_WINDOW_MIN_HEIGHT = 220

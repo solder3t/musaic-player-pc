@@ -7,10 +7,10 @@ const SECRET = Buffer.from('0123456789abcdef0123456789abcdef', 'utf8')
 test('MusaicRefs round-trip every public target type without exposing the signed key', () => {
   const signer = new CompanionApiReferenceSigner(SECRET)
   const fixtures = [
-    ['track', 42],
+    ['track', 'track-id-98765'],
     ['album', 'album:identity:key'],
     ['artist', 'Artist Name'],
-    ['playlist', 7]
+    ['playlist', 'playlist-id-8888']
   ] as const
 
   for (const [type, key] of fixtures) {
@@ -24,9 +24,9 @@ test('MusaicRefs round-trip every public target type without exposing the signed
 
 test('MusaicRefs reject tampering, type substitution, malformed payloads, and another signing secret', () => {
   const signer = new CompanionApiReferenceSigner(SECRET)
-  const ref = signer.create('track', 42)
+  const ref = signer.create('track', 4321)
   const parts = ref.split('.')
-  const tamperedPayload = [parts[0], parts[1], Buffer.from('43').toString('base64url'), parts[3]].join('.')
+  const tamperedPayload = [parts[0], parts[1], Buffer.from('4322').toString('base64url'), parts[3]].join('.')
   const tamperedType = [parts[0], 'album', parts[2], parts[3]].join('.')
 
   assert.equal(signer.parse(tamperedPayload), null)

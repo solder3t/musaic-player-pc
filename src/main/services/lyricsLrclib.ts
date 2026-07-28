@@ -113,6 +113,30 @@ function normalizeDurationSeconds(value: unknown): number | null {
   return null
 }
 
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = []
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i]
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j
+  }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        )
+      }
+    }
+  }
+  return matrix[b.length][a.length]
+}
+
 function scoreMatch(candidate: string | null, target: string): number {
   if (!candidate) return 0
   const normalizedCandidate = normalizeMatchKey(candidate)
@@ -121,6 +145,14 @@ function scoreMatch(candidate: string | null, target: string): number {
   if (normalizedCandidate === normalizedTarget) return 100
   if (normalizedCandidate.startsWith(normalizedTarget) || normalizedTarget.startsWith(normalizedCandidate)) return 60
   if (normalizedCandidate.includes(normalizedTarget) || normalizedTarget.includes(normalizedCandidate)) return 30
+
+  const distance = levenshteinDistance(normalizedCandidate, normalizedTarget)
+  const maxLength = Math.max(normalizedCandidate.length, normalizedTarget.length)
+  const similarity = 1 - (distance / maxLength)
+  if (similarity > 0.9) return 80
+  if (similarity > 0.8) return 50
+  if (similarity > 0.6) return 20
+
   return 0
 }
 

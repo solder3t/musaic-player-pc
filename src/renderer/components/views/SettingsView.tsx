@@ -32,6 +32,7 @@ import {
   type ReplayGainMode
 } from '../../stores/audioSettingsStore'
 import { useVisualizerSettingsStore } from '../../stores/visualizerSettingsStore'
+import { useAiSettingsStore } from '../../stores/aiSettingsStore'
 import {
   DISCORD_PAUSE_CLEAR_MINUTE_PRESETS,
   useDiscordSettingsStore,
@@ -420,6 +421,10 @@ export default function SettingsView() {
     setLinkDestination: setDiscordLinkDestination,
     setPauseClearMinutes: setDiscordPauseClearMinutes,
   } = useDiscordSettingsStore()
+
+  const { settings: aiSettings, setProvider: setAiProvider, setApiKey: setAiApiKey } = useAiSettingsStore()
+  const { provider, apiKey } = aiSettings
+
   const {
     status: localApiStatus,
     errorMessage: localApiErrorMessage,
@@ -462,6 +467,7 @@ export default function SettingsView() {
     setProfileEnabled: setLastFmProfileEnabled,
     beginAuth: beginLastFmAuth,
     disconnectProfile: disconnectLastFmProfile,
+    setCustomCredentials: setLastFmCustomCredentials,
   } = useLastFmSettingsStore()
   const {
     status: lyricsStatus,
@@ -510,6 +516,8 @@ export default function SettingsView() {
   const [lastFmProfileUrlInput, setLastFmProfileUrlInput] = useState('')
   const [lastFmProfileUsernameInput, setLastFmProfileUsernameInput] = useState('')
   const [lastFmProfileSessionKeyInput, setLastFmProfileSessionKeyInput] = useState('')
+  const [lastFmCustomApiKeyInput, setLastFmCustomApiKeyInput] = useState(lastFmStatus?.customApiKey ?? '')
+  const [lastFmCustomSharedSecretInput, setLastFmCustomSharedSecretInput] = useState(lastFmStatus?.customSharedSecret ?? '')
   const [localApiFeedback, setLocalApiFeedback] = useState('')
   const [phoneRemoteFeedback, setPhoneRemoteFeedback] = useState('')
   const [lastFmProfileFeedback, setLastFmProfileFeedback] = useState('')
@@ -717,6 +725,15 @@ export default function SettingsView() {
   useEffect(() => {
     setLyricsTranslationPriorityInput(lyricsDisplaySettings.translationLanguagePriority.join(', '))
   }, [lyricsDisplaySettings.translationLanguagePriority])
+
+  useEffect(() => {
+    if (lastFmStatus?.customApiKey != null) {
+      setLastFmCustomApiKeyInput(lastFmStatus.customApiKey)
+    }
+    if (lastFmStatus?.customSharedSecret != null) {
+      setLastFmCustomSharedSecretInput(lastFmStatus.customSharedSecret)
+    }
+  }, [lastFmStatus?.customApiKey, lastFmStatus?.customSharedSecret])
 
   useEffect(() => {
     if (!lyricsStatus?.lrclibBaseUrl) return
@@ -2142,6 +2159,43 @@ export default function SettingsView() {
             <div className="settings-integration-cards">
               <div className="settings-integration-card">
                 <div className="settings-integration-card-head">
+                  <h4>AI Configuration</h4>
+                  <p>Configure your preferred API provider for AI Equalizer generation.</p>
+                </div>
+                <div className="settings-grid">
+                  <div className="settings-field">
+                    <label className="settings-field-label">AI Provider</label>
+                    <select
+                      className="settings-select"
+                      value={provider}
+                      onChange={(e) => setAiProvider(e.target.value as any)}
+                    >
+                      <option value="none">None (Offline Heuristics)</option>
+                      <option value="gemini">Google Gemini</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="claude">Anthropic Claude</option>
+                      <option value="groq">Groq</option>
+                      <option value="deepseek">DeepSeek</option>
+                      <option value="ollama">Ollama (Local)</option>
+                    </select>
+                  </div>
+                  {provider !== 'none' && provider !== 'ollama' && (
+                    <div className="settings-field">
+                      <label className="settings-field-label">API Key</label>
+                      <input
+                        type="password"
+                        className="settings-input"
+                        placeholder={`Enter your ${provider} API Key`}
+                        value={apiKey}
+                        onChange={(e) => setAiApiKey(e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="settings-integration-card">
+                <div className="settings-integration-card-head">
                   <h4>Scrobbling</h4>
                   <p>Now Playing updates and scrobbles for your connected destinations.</p>
                 </div>
@@ -2290,9 +2344,51 @@ export default function SettingsView() {
                 {lastFmResolvedError && <p className="settings-note settings-note-error">{lastFmResolvedError}</p>}
                 {!lastFmHasApiCredentials && (
                   <p className="settings-note settings-note-error">
-                    Last.fm API credentials are missing in this build.
+                    Last.fm API credentials are missing in this build. Please provide custom credentials.
                   </p>
                 )}
+                <div className="settings-grid">
+                  <label className="settings-field">
+                    <span className="settings-field-label">Custom API Key</span>
+                    <input
+                      className="settings-select"
+                      type="text"
+                      placeholder="Optional overrides"
+                      value={lastFmCustomApiKeyInput}
+                      onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
+                      onBlur={() => {
+                        const nextKey = lastFmCustomApiKeyInput.trim() || null
+                        const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                        if (
+                          nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                          nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                        ) {
+                          void setLastFmCustomCredentials(nextKey, nextSecret)
+                        }
+                      }}
+                    />
+                  </label>
+                  <label className="settings-field">
+                    <span className="settings-field-label">Custom Shared Secret</span>
+                    <input
+                      className="settings-select"
+                      type="password"
+                      placeholder="Optional overrides"
+                      value={lastFmCustomSharedSecretInput}
+                      onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
+                      onBlur={() => {
+                        const nextKey = lastFmCustomApiKeyInput.trim() || null
+                        const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                        if (
+                          nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                          nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                        ) {
+                          void setLastFmCustomCredentials(nextKey, nextSecret)
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="settings-integration-card">

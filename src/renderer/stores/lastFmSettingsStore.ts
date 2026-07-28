@@ -19,6 +19,7 @@ interface LastFmSettingsStore {
   init: () => Promise<void>
   refresh: () => Promise<void>
   setEnabled: (enabled: boolean) => Promise<LastFmStatus | null>
+  setCustomCredentials: (apiKey: string | null, sharedSecret: string | null) => Promise<LastFmStatus | null>
   createCustomProfile: (input: LastFmCustomProfileInput) => Promise<LastFmStatus | null>
   updateCustomProfile: (profileId: string, input: LastFmCustomProfileInput) => Promise<LastFmStatus | null>
   deleteCustomProfile: (profileId: string) => Promise<LastFmStatus | null>
@@ -194,12 +195,30 @@ export const useLastFmSettingsStore = create<LastFmSettingsStore>((set, get) => 
     },
 
     setEnabled: async (enabled: boolean) => {
+      if (!get().isInitialized) return null
+      set({ isLoading: true, errorMessage: '' })
       try {
-        const status = await window.electronAPI.lastFm.setEnabled(enabled)
-        return applyStatus(status)
-      } catch (error) {
-        set({ errorMessage: toErrorMessage(error) })
+        const nextStatus = await window.electronAPI.lastFm.setEnabled(enabled)
+        return applyStatus(nextStatus)
+      } catch (e) {
+        set({ errorMessage: toErrorMessage(e) })
         return null
+      } finally {
+        set({ isLoading: false })
+      }
+    },
+
+    setCustomCredentials: async (apiKey: string | null, sharedSecret: string | null) => {
+      if (!get().isInitialized) return null
+      set({ isLoading: true, errorMessage: '' })
+      try {
+        const nextStatus = await window.electronAPI.lastFm.setCustomCredentials(apiKey, sharedSecret)
+        return applyStatus(nextStatus)
+      } catch (e) {
+        set({ errorMessage: toErrorMessage(e) })
+        return null
+      } finally {
+        set({ isLoading: false })
       }
     },
 

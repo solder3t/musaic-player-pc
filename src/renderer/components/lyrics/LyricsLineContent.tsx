@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react'
-import type { LyricsFurigana } from '../../../types/lyrics'
+
 import type { LyricsDisplaySettings } from '../../stores/lyricsDisplaySettingsStore'
 import {
   hasEnabledLyricsLineExtra,
@@ -10,6 +9,7 @@ import {
   resolveLyricsWordTiming,
   type SyncedLyricsDisplayLine
 } from '../../utils/lyricsPresentation'
+import { renderTextWithFurigana, hasRubyFurigana } from '../../utils/rubyParsing'
 
 interface LyricsLineContentProps {
   displayLine: SyncedLyricsDisplayLine
@@ -19,38 +19,6 @@ interface LyricsLineContentProps {
   seekTimeSeconds?: number | null
   seekTabIndex?: number
   onSeek?: (timeSeconds: number) => void
-}
-
-function renderTextWithFurigana(
-  text: string,
-  furigana: LyricsFurigana[] | undefined,
-  enabled: boolean
-): ReactNode {
-  if (!enabled || !furigana || furigana.length === 0) return text
-
-  const parts: ReactNode[] = []
-  let cursor = 0
-  const sorted = [...furigana].sort((left, right) => left.start - right.start)
-
-  sorted.forEach((entry, index) => {
-    if (entry.start < cursor || entry.end > text.length) return
-    if (entry.start > cursor) {
-      parts.push(text.slice(cursor, entry.start))
-    }
-    parts.push(
-      <ruby key={`ruby-${entry.start}-${entry.end}-${index}`}>
-        {text.slice(entry.start, entry.end)}
-        <rt>{entry.reading}</rt>
-      </ruby>
-    )
-    cursor = entry.end
-  })
-
-  if (cursor < text.length) {
-    parts.push(text.slice(cursor))
-  }
-
-  return parts.length > 0 ? parts : text
 }
 
 export default function LyricsLineContent({
@@ -81,7 +49,8 @@ export default function LyricsLineContent({
   const translation = settings.translationsEnabled
     ? getPreferredLyricsTranslation(line, settings.translationLanguagePriority)
     : null
-  const hasRichExtra = hasEnabledLyricsLineExtra(line, settings)
+  const hasRichExtra = hasEnabledLyricsLineExtra(line, settings) ||
+    (settings.furiganaEnabled && (hasRubyFurigana(line.text, line.furigana) || words.some(w => hasRubyFurigana(w.text, w.furigana))))
   const contentClassName = [
     'lyrics-line-content',
     hasRichExtra ? 'has-rich-lyrics' : ''

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences } from 'electron'
 import { join, basename, extname } from 'path'
 import { readFile, writeFile, mkdtemp, rm, access, mkdir, stat } from 'fs/promises'
 import { existsSync, readFileSync } from 'fs'
@@ -16,6 +16,8 @@ import type {
 } from '../types/listeningStats'
 import { collectIamfStreamStats } from '../shared/iamf/obuWalker'
 import { mp4HasIamfTrack, readMp4DurationSeconds } from '../shared/iamf/mp4'
+import { romanizeLyrics, translateLyrics } from '../shared/ai/aiRomanizer'
+import { generateEqFromPrompt } from '../shared/ai/aiEqAssistant'
 import {
   deepScanFlacIntegrityTrack,
   isFlacTarget,
@@ -28,6 +30,7 @@ import {
   type IntegrityFindingInput,
   type IntegrityScanTrackTarget
 } from './services/libraryIntegrity'
+import { parseLyricsText } from './services/lyricsParsing'
 import { LibraryLatestSyncCoordinator } from './services/libraryLatestSync'
 import {
   buildSubsonicStreamUrl,
@@ -65,9 +68,10 @@ import type {
 import {
   discordRpcService,
   type DiscordPresenceUpdate,
-  type DiscordRpcConfigureOptions
+  type DiscordRpcConfigureOptions,
+  setDiscordRpcAppVersion
 } from './services/discordRpc'
-import { resolveDiscordCoverArtUrl } from './services/discordCoverArtLookup'
+import { resolveDiscordCoverArtUrl, setDiscordCoverArtAppVersion } from './services/discordCoverArtLookup'
 import { checkForUpdates, RELEASES_PAGE_URL } from './services/updates'
 import { LocalApiService, generateLocalApiToken } from './services/localApi'
 import { CompanionApiLibrary } from './services/companionApiLibrary'
@@ -99,6 +103,11 @@ import { normalizeStatsShareFileName, validateStatsSharePng } from './services/s
 import { normalizeSignalShareFileName, validateSignalSharePng } from './services/signalShareImage'
 import { getMusicMetadataParseOptions } from './utils/musicMetadata'
 import { extractReplayGainDb } from './utils/replayGain'
+
+
+setDiscordCoverArtAppVersion(app.getVersion())
+setDiscordRpcAppVersion(app.getVersion())
+
 import {
   MINI_WINDOW_MAX_HEIGHT,
   MINI_WINDOW_MAX_WIDTH,
@@ -533,6 +542,8 @@ const LASTFM_SESSION_USERNAME_META_KEY = 'lastfm_session_username_v1'
 const LASTFM_PENDING_SCROBBLES_META_KEY = 'lastfm_pending_scrobbles_v1'
 const LASTFM_ACTIVE_PROFILE_ID_META_KEY = 'lastfm_active_profile_id_v1'
 const LASTFM_PROFILES_META_KEY = 'lastfm_profiles_v1'
+const LASTFM_CUSTOM_API_KEY_META_KEY = 'lastfm_custom_api_key_v1'
+const LASTFM_CUSTOM_SHARED_SECRET_META_KEY = 'lastfm_custom_shared_secret_v1'
 const LYRICS_ONLINE_ENABLED_META_KEY = 'lyrics_online_enabled_v1'
 const LYRICS_LRCLIB_BASE_URL_META_KEY = 'lyrics_lrclib_base_url_v1'
 const TRACKLIST_THUMB_MAX_EDGE_PX = 96
@@ -1232,6 +1243,7 @@ const lastFmService = new LastFmService({
   config: lastFmConfig,
   apiKey: LASTFM_API_KEY,
   sharedSecret: LASTFM_SHARED_SECRET,
+  appVersion: app.getVersion(),
   openExternal: async (url: string) => {
     await shell.openExternal(url)
   },
@@ -2589,6 +2601,8 @@ async function persistLastFmConfig(config: LastFmServiceConfig): Promise<void> {
   await library.setAppMeta(LASTFM_ENABLED_META_KEY, config.enabled ? '1' : '0')
   await library.setAppMeta(LASTFM_ACTIVE_PROFILE_ID_META_KEY, config.activeProfileId)
   await library.setAppMeta(LASTFM_PROFILES_META_KEY, JSON.stringify(config.profiles))
+  await library.setAppMeta(LASTFM_CUSTOM_API_KEY_META_KEY, config.customApiKey ?? '')
+  await library.setAppMeta(LASTFM_CUSTOM_SHARED_SECRET_META_KEY, config.customSharedSecret ?? '')
   await library.setAppMeta(
     LASTFM_API_BASE_URL_META_KEY,
     activeProfile.protocol === 'listenbrainz'
@@ -2669,8 +2683,12 @@ async function loadLastFmConfigFromMeta(): Promise<LastFmServiceConfig> {
     const connected = profile.protocol === 'listenbrainz'
       ? Boolean(profile.sessionKey)
       : Boolean(profile.sessionKey && profile.username)
+    const customApiKey = normalizeOptionalMetaText(library.getAppMeta(LASTFM_CUSTOM_API_KEY_META_KEY))
+    const customSharedSecret = normalizeOptionalMetaText(library.getAppMeta(LASTFM_CUSTOM_SHARED_SECRET_META_KEY))
+    const effectiveApiKey = customApiKey || LASTFM_API_KEY
+    const effectiveSharedSecret = customSharedSecret || LASTFM_SHARED_SECRET
     const hasRequiredApiCredentials = !lastFmProfileRequiresApiCredentials(profile) ||
-      (LASTFM_API_KEY.length > 0 && LASTFM_SHARED_SECRET.length > 0)
+      (effectiveApiKey.length > 0 && effectiveSharedSecret.length > 0)
 
     return {
       ...profile,
@@ -2678,16 +2696,22 @@ async function loadLastFmConfigFromMeta(): Promise<LastFmServiceConfig> {
     }
   })
   const enabledStored = parseMetaBoolean(library.getAppMeta(LASTFM_ENABLED_META_KEY), false)
+  const customApiKey = normalizeOptionalMetaText(library.getAppMeta(LASTFM_CUSTOM_API_KEY_META_KEY))
+  const customSharedSecret = normalizeOptionalMetaText(library.getAppMeta(LASTFM_CUSTOM_SHARED_SECRET_META_KEY))
   const normalized: LastFmServiceConfig = {
     enabled: enabledStored,
     activeProfileId,
-    profiles
+    profiles,
+    customApiKey,
+    customSharedSecret
   }
 
   const needsPersistence =
     library.getAppMeta(LASTFM_ENABLED_META_KEY) !== (normalized.enabled ? '1' : '0') ||
     library.getAppMeta(LASTFM_ACTIVE_PROFILE_ID_META_KEY) !== normalized.activeProfileId ||
-    library.getAppMeta(LASTFM_PROFILES_META_KEY) !== JSON.stringify(normalized.profiles)
+    library.getAppMeta(LASTFM_PROFILES_META_KEY) !== JSON.stringify(normalized.profiles) ||
+    library.getAppMeta(LASTFM_CUSTOM_API_KEY_META_KEY) !== (normalized.customApiKey ?? '') ||
+    library.getAppMeta(LASTFM_CUSTOM_SHARED_SECRET_META_KEY) !== (normalized.customSharedSecret ?? '')
 
   if (needsPersistence) {
     try {
@@ -5308,6 +5332,33 @@ ipcMain.handle('app:getBuildInfo', () => {
   return getAppBuildInfo()
 })
 
+ipcMain.handle('app:getSystemAccentColor', () => {
+  try {
+    if (process.platform === 'linux') {
+      try {
+        const { execSync } = require('child_process')
+        const output = execSync(
+          "dbus-send --print-reply --dest=org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.Settings.Read string:'org.freedesktop.appearance' string:'accent-color'",
+          { timeout: 1000 }
+        ).toString()
+        const matches = output.match(/double\s+([\d.]+)/g)
+        if (matches && matches.length >= 3) {
+          const r = Math.round(parseFloat(matches[0].split(' ')[1]) * 255)
+          const g = Math.round(parseFloat(matches[1].split(' ')[1]) * 255)
+          const b = Math.round(parseFloat(matches[2].split(' ')[1]) * 255)
+          return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+        }
+      } catch (e) {
+        // Fallback if dbus-send fails
+      }
+    }
+    return systemPreferences.getAccentColor() || ''
+  } catch (error) {
+    console.warn('Failed to get system accent color:', error)
+    return ''
+  }
+})
+
 ipcMain.handle('app:getPerformanceStats', async (event) => {
   const metrics = app.getAppMetrics()
   const totalCpuPercent = metrics.reduce((sum, metric) => sum + metric.cpu.percentCPUUsage, 0)
@@ -5425,6 +5476,22 @@ ipcMain.handle('diagnostics:revealCurrentLog', async () => {
   return memoryDiagnosticsService?.revealCurrentLog() ?? false
 })
 
+ipcMain.handle('ai:romanizeLyrics', async (_event, text: string, options: any) => {
+  const result = await romanizeLyrics(text, options)
+  const payload = parseLyricsText(result.text, 'ai-romanized')
+  return { ...result, payload }
+})
+
+ipcMain.handle('ai:translateLyrics', async (_event, text: string, options: any, targetLang?: string) => {
+  const result = await translateLyrics(text, options, targetLang)
+  const payload = parseLyricsText(result.text, 'ai-translated')
+  return { ...result, payload }
+})
+
+ipcMain.handle('ai:generateEqProfile', async (_event, prompt, _currentEq, customOptions) => {
+  return await generateEqFromPrompt(prompt, customOptions)
+})
+
 ipcMain.handle('diagnostics:revealPreviousLog', async () => {
   return memoryDiagnosticsService?.revealPreviousLog() ?? false
 })
@@ -5508,6 +5575,15 @@ ipcMain.handle('lastfm:setEnabled', async (_event, enabled: unknown) => {
   const nextConfig: LastFmServiceConfig = {
     ...lastFmConfig,
     enabled: Boolean(enabled)
+  }
+  return applyLastFmConfig(nextConfig)
+})
+
+ipcMain.handle('lastfm:setCustomCredentials', async (_event, apiKey: unknown, sharedSecret: unknown) => {
+  const nextConfig: LastFmServiceConfig = {
+    ...lastFmConfig,
+    customApiKey: typeof apiKey === 'string' ? apiKey.trim() || null : null,
+    customSharedSecret: typeof sharedSecret === 'string' ? sharedSecret.trim() || null : null
   }
   return applyLastFmConfig(nextConfig)
 })

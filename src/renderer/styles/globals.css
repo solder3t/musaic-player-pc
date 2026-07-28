@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ============================================
    MUSAIC - Glassmorphic Music Player Styles
    ============================================ */
@@ -4151,6 +4153,8 @@ body:has(.fullscreen-overlay) .controller-hints {
 .lyrics-line-text {
   min-width: 0;
   max-width: 100%;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .lyrics-line-content {

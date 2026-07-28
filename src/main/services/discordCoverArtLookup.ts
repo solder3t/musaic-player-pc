@@ -4,7 +4,11 @@ const ITUNES_SEARCH_URL = 'https://itunes.apple.com/search'
 const THE_AUDIO_DB_SEARCH_ALBUM_URL = 'https://www.theaudiodb.com/api/v1/json/2/searchalbum.php'
 const REQUEST_TIMEOUT_MS = 8000
 const MUSICBRAINZ_MIN_INTERVAL_MS = 1000
-const MUSICBRAINZ_USER_AGENT = 'Musaic-Discord-CoverArt/0.2.0 (https://github.com/solder3t/musaic-player-linux)'
+let appVersion = '0.0.0'
+export function setDiscordCoverArtAppVersion(v: string) {
+  appVersion = v
+}
+const getMusicBrainzUserAgent = () => `Musaic-Discord-CoverArt/${appVersion} (https://github.com/solder3t/musaic-player-linux)`
 const RELEASE_SEARCH_LIMIT = 5
 const MAX_RELEASE_CANDIDATES_TO_PROBE = 5
 const MAX_ARTIST_CANDIDATES = 4
@@ -764,7 +768,7 @@ async function resolveReleaseCandidates(
     `${MUSICBRAINZ_RELEASE_SEARCH_URL}?${params.toString()}`,
     {
       Accept: 'application/json',
-      'User-Agent': MUSICBRAINZ_USER_AGENT
+      'User-Agent': getMusicBrainzUserAgent()
     }
   ))
 
@@ -870,7 +874,7 @@ async function resolveCoverArtForRelease(releaseId: string): Promise<DiscordCove
     `${COVER_ART_ARCHIVE_RELEASE_URL}/${encodeURIComponent(releaseId)}`,
     {
       Accept: 'application/json',
-      'User-Agent': MUSICBRAINZ_USER_AGENT
+      'User-Agent': getMusicBrainzUserAgent()
     }
   )
 
@@ -955,7 +959,7 @@ async function resolveCoverArtFromItunesSearch(
     `${ITUNES_SEARCH_URL}?${params.toString()}`,
     {
       Accept: 'application/json',
-      'User-Agent': MUSICBRAINZ_USER_AGENT
+      'User-Agent': getMusicBrainzUserAgent()
     }
   )
 
@@ -1025,7 +1029,7 @@ async function resolveCoverArtFromItunesTrackSearch(
     `${ITUNES_SEARCH_URL}?${params.toString()}`,
     {
       Accept: 'application/json',
-      'User-Agent': MUSICBRAINZ_USER_AGENT
+      'User-Agent': getMusicBrainzUserAgent()
     }
   )
 
@@ -1115,7 +1119,7 @@ async function resolveCoverArtFromTheAudioDbSearch(
     `${THE_AUDIO_DB_SEARCH_ALBUM_URL}?${params.toString()}`,
     {
       Accept: 'application/json',
-      'User-Agent': MUSICBRAINZ_USER_AGENT
+      'User-Agent': getMusicBrainzUserAgent()
     }
   )
 

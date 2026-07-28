@@ -1,6 +1,6 @@
 # Maintainer: solder3t <sold3vs@gmail.com>
 pkgname=musaic-player-bin
-pkgver=0.5.1
+pkgver=0.5.2
 pkgrel=1
 pkgdesc="Audiophile music player with advanced visualization"
 arch=('x86_64')

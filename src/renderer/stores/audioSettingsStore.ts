@@ -2029,11 +2029,15 @@ export const useAudioSettingsStore = create<AudioSettingsStore>((set, get) => {
           set({ selectedDeviceId: '' })
         }
       } else {
-        const initialSelection = resolveInitialNativeOutputSelection(nativeAudioCapabilities, get().availableDevices)
-        if (initialSelection.statusMessage) {
-          set({ playbackModeStatusMessage: initialSelection.statusMessage })
+        if (get().playbackOutputMode === 'standard') {
+          await get().selectDevice('default')
+        } else {
+          const initialSelection = resolveInitialNativeOutputSelection(nativeAudioCapabilities, get().availableDevices)
+          if (initialSelection.statusMessage) {
+            set({ playbackModeStatusMessage: initialSelection.statusMessage })
+          }
+          await get().selectDevice(initialSelection.deviceId)
         }
-        await get().selectDevice(initialSelection.deviceId)
       }
 
       const savedCalibrationInputDeviceId = localStorage.getItem(CALIBRATION_INPUT_STORAGE_KEY)

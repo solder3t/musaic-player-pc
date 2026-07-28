@@ -6,10 +6,12 @@ import HomeView from '../views/HomeView'
 import SettingsView from '../views/SettingsView'
 import PlaylistView from '../views/PlaylistView'
 import StatsView from '../views/StatsView'
+import MoodView from '../views/MoodView'
+import AiInsightsView from '../views/AiInsightsView'
 
 export default function ViewRouter() {
   const activeView = useUIStore((s) => s.activeView)
-  const controllerEnabledView = activeView === 'home' || activeView === 'library' || activeView === 'stats' || activeView === 'playlist'
+  const controllerEnabledView = activeView === 'home' || activeView === 'library' || activeView === 'stats' || activeView === 'playlist' || activeView === 'mood' || activeView === 'ai-insights'
 
   let content
   switch (activeView) {
@@ -24,6 +26,12 @@ export default function ViewRouter() {
       break
     case 'graph':
       content = <GraphView />
+      break
+    case 'mood':
+      content = <MoodView />
+      break
+    case 'ai-insights':
+      content = <AiInsightsView />
       break
     case 'eq':
       content = <EQView />

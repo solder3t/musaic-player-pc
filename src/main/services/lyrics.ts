@@ -434,13 +434,9 @@ export class LyricsService {
 
     if (!options.forceRefresh) {
       const cached = this.libraryApi.getLyricsCache(path, metadataSignature)
-      if (cached) {
-        if (cached.source === 'lrclib' && this.enabled) {
-          lrclibCached = cached
-        } else {
-          const cachedResult = this.createLookupResultFromCache(cached, trackOffsetMs)
-          if (cachedResult) return cachedResult
-        }
+      if (cached && cached.source === 'embedded') {
+        const cachedResult = this.createLookupResultFromCache(cached, trackOffsetMs)
+        if (cachedResult) return cachedResult
       }
     }
 
@@ -461,6 +457,18 @@ export class LyricsService {
         status: 'hit',
         lyrics: applyTrackOffsetToPayload(embedded, trackOffsetMs),
         cached: false
+      }
+    }
+
+    if (!options.forceRefresh) {
+      const cached = this.libraryApi.getLyricsCache(path, metadataSignature)
+      if (cached) {
+        if (cached.source === 'lrclib' && this.enabled) {
+          lrclibCached = cached
+        } else if (cached.source !== 'embedded') {
+          const cachedResult = this.createLookupResultFromCache(cached, trackOffsetMs)
+          if (cachedResult) return cachedResult
+        }
       }
     }
 

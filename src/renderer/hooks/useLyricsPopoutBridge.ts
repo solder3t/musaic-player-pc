@@ -34,6 +34,9 @@ interface LyricsPopoutBridgeState {
   currentTrack: LyricsPopoutSnapshot['currentTrack']
   lyricsQuery: LyricsPopoutSnapshot['lyricsQuery']
   lyricsResult: LyricsPopoutSnapshot['lyricsResult']
+  isRomanized: boolean
+  isTranslated: boolean
+  aiProcessing: boolean
   isLoading: boolean
   errorMessage: string
 }
@@ -52,6 +55,9 @@ function buildLyricsPopoutSnapshot(
     currentTrack: state.currentTrack,
     lyricsQuery: state.lyricsQuery,
     lyricsResult: state.lyricsResult,
+    isRomanized: state.isRomanized,
+    isTranslated: state.isTranslated,
+    aiProcessing: state.aiProcessing,
     isLoading: state.isLoading,
     errorMessage: state.errorMessage
   }
@@ -68,8 +74,13 @@ export function useLyricsPopoutBridge(): void {
   const lyricsTrackPath = useLyricsStore((s) => s.currentTrackPath)
   const lyricsResult = useLyricsStore((s) => s.currentResult)
   const lyricsIsLoading = useLyricsStore((s) => s.isLoading)
+  const isRomanized = useLyricsStore((s) => s.isRomanized)
+  const isTranslated = useLyricsStore((s) => s.isTranslated)
+  const aiProcessing = useLyricsStore((s) => s.aiProcessing)
   const lyricsStoreError = useLyricsStore((s) => s.errorMessage)
   const refreshLyricsForTrack = useLyricsStore((s) => s.refreshForTrack)
+  const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
+  const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const lyricsShelfExpanded = useUIStore((s) => s.lyricsShelfExpanded)
 
   const latestStateRef = useRef<LyricsPopoutBridgeState | null>(null)
@@ -106,6 +117,9 @@ export function useLyricsPopoutBridge(): void {
     lyricsQuery,
     lyricsResult: activeLyricsResult,
     isLoading: lyricsIsLoading,
+    isRomanized,
+    isTranslated,
+    aiProcessing,
     errorMessage: lyricsStoreError
   } satisfies LyricsPopoutBridgeState), [
     activeLyricsResult,
@@ -114,6 +128,9 @@ export function useLyricsPopoutBridge(): void {
     duration,
     effectiveDelayMs,
     lyricsIsLoading,
+    isRomanized,
+    isTranslated,
+    aiProcessing,
     lyricsQuery,
     lyricsShelfExpanded,
     lyricsStoreError,
@@ -154,6 +171,14 @@ export function useLyricsPopoutBridge(): void {
           const seekTimeSeconds = clampSeekTime(command.time, player.duration)
           if (seekTimeSeconds === null) return
           void player.seek(seekTimeSeconds)
+          break
+        }
+        case 'toggleRomanized': {
+          void toggleRomanized()
+          break
+        }
+        case 'toggleTranslated': {
+          void toggleTranslated()
           break
         }
       }

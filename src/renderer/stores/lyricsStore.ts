@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { LyricsLookupResult, LyricsStatus, LyricsTrackQuery } from '../../types/lyrics'
+import { useAiSettingsStore } from './aiSettingsStore'
 
 interface LyricsStore {
   status: LyricsStatus | null
@@ -16,6 +17,11 @@ interface LyricsStore {
   loadForTrack: (query: LyricsTrackQuery | null) => Promise<LyricsLookupResult | null>
   refreshForTrack: (query: LyricsTrackQuery | null) => Promise<LyricsLookupResult | null>
   resetToDefaults: () => Promise<LyricsStatus | null>
+  isRomanized: boolean
+  isTranslated: boolean
+  aiProcessing: boolean
+  toggleRomanized: () => Promise<void>
+  toggleTranslated: () => Promise<void>
 }
 
 let statusUnsubscribe: (() => void) | null = null
@@ -119,6 +125,9 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         ? state.resultByTrackPath[trackPath]
         : result,
       isLoading: false,
+      isRomanized: false,
+      isTranslated: false,
+      aiProcessing: false,
       errorMessage: result.status === 'transient_error' ? result.message : ''
     }))
     return result
@@ -131,6 +140,9 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
     currentResult: null,
     isLoading: false,
     isInitialized: false,
+    isRomanized: false,
+    isTranslated: false,
+    aiProcessing: false,
     errorMessage: '',
 
     init: async () => {
@@ -249,12 +261,89 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           currentTrackPath: null,
           currentResult: null,
           isLoading: false,
+          isRomanized: false,
+          isTranslated: false,
+          aiProcessing: false,
           errorMessage: ''
         })
         return status
       } catch (error) {
         set({ errorMessage: toErrorMessage(error) })
         return null
+      }
+    },
+
+    toggleRomanized: async () => {
+      const state = get()
+      if (state.aiProcessing || !state.currentTrackPath) return
+      if (state.isRomanized) {
+        set({
+          isRomanized: false,
+          currentResult: state.resultByTrackPath[state.currentTrackPath] ?? null
+        })
+        return
+      }
+
+      const originalResult = state.resultByTrackPath[state.currentTrackPath]
+      if (!originalResult || originalResult.status !== 'hit' || !originalResult.lyrics) return
+
+      const textToConvert = originalResult.lyrics.syncedLyrics ?? originalResult.lyrics.plainLyrics
+      if (!textToConvert) return
+
+      set({ aiProcessing: true })
+      try {
+        const { settings } = useAiSettingsStore.getState()
+        const aiResult = await window.electronAPI.ai.romanizeLyrics(textToConvert, settings)
+        
+        set(() => ({
+          isRomanized: true,
+          isTranslated: false,
+          aiProcessing: false,
+          currentResult: {
+            ...originalResult,
+            lyrics: aiResult.payload
+          }
+        }))
+      } catch (err) {
+        console.error('Romanization failed', err)
+        set({ aiProcessing: false, errorMessage: 'Romanization failed' })
+      }
+    },
+
+    toggleTranslated: async () => {
+      const state = get()
+      if (state.aiProcessing || !state.currentTrackPath) return
+      if (state.isTranslated) {
+        set({
+          isTranslated: false,
+          currentResult: state.resultByTrackPath[state.currentTrackPath] ?? null
+        })
+        return
+      }
+
+      const originalResult = state.resultByTrackPath[state.currentTrackPath]
+      if (!originalResult || originalResult.status !== 'hit' || !originalResult.lyrics) return
+
+      const textToConvert = originalResult.lyrics.syncedLyrics ?? originalResult.lyrics.plainLyrics
+      if (!textToConvert) return
+
+      set({ aiProcessing: true })
+      try {
+        const { settings } = useAiSettingsStore.getState()
+        const aiResult = await window.electronAPI.ai.translateLyrics(textToConvert, settings, 'English')
+        
+        set(() => ({
+          isTranslated: true,
+          isRomanized: false,
+          aiProcessing: false,
+          currentResult: {
+            ...originalResult,
+            lyrics: aiResult.payload
+          }
+        }))
+      } catch (err) {
+        console.error('Translation failed', err)
+        set({ aiProcessing: false, errorMessage: 'Translation failed' })
       }
     }
   }

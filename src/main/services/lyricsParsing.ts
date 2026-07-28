@@ -259,12 +259,21 @@ function parseXlrcSyncedLines(lyricsText: string): LyricsLine[] {
   return parsePackageSyncedLines(lyricsText, XLRC_PARSE_OPTIONS)
 }
 
+export function cleanPlainLyricsText(text: string | null | undefined): string | null {
+  if (!text) return null
+  // Strip out enhanced LRC word tags like <00:00.00> and voice prefixes like v1:
+  let cleaned = text.replace(/v\d+:/g, '')
+  cleaned = cleaned.replace(/<\d{2}:\d{2}\.\d{2,3}>/g, '')
+  cleaned = cleaned.replace(/ +/g, ' ').trim()
+  return cleaned.length > 0 ? cleaned : null
+}
+
 export function toPlainLyricsFromLines(lines: LyricsLine[]): string | null {
   const textLines = lines
     .filter((line) => line.kind !== 'silence' && line.text.trim().length > 0)
     .map((line) => line.text)
   if (textLines.length === 0) return null
-  return textLines.join('\n')
+  return cleanPlainLyricsText(textLines.join('\n'))
 }
 
 export function createLyricsPayload(
@@ -294,7 +303,7 @@ export function createLyricsPayload(
     source,
     provider,
     format,
-    plainLyrics: normalizedPlain ?? toPlainLyricsFromLines(normalizedLines),
+    plainLyrics: cleanPlainLyricsText(normalizedPlain ?? toPlainLyricsFromLines(normalizedLines)) ?? (normalizedPlain ?? toPlainLyricsFromLines(normalizedLines)),
     syncedLyrics: normalizedSynced ?? toPlainLyricsFromLines(normalizedLines),
     syncedLines: normalizedLines
   }
