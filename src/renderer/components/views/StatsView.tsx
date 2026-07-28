@@ -13,7 +13,7 @@ import { useUIStore } from '../../stores/uiStore'
 import { formatExactDuration } from '../../utils/collectionDuration'
 import AlbumArtwork from '../library/AlbumArtwork'
 import StatsShareModal from '../stats/StatsShareModal'
-import AiStatisticsScreen from '../stats/AiStatisticsScreen'
+
 
 const RANGE_OPTIONS: Array<{ value: ListeningStatsRange; label: string }> = [
   { value: '7d', label: '7D' },
@@ -165,7 +165,6 @@ export default function StatsView() {
   const selectAlbum = useLibraryStore((state) => state.selectAlbum)
   const startPlaybackContextByPaths = usePlayerStore((state) => state.startPlaybackContextByPaths)
   const [shareSnapshot, setShareSnapshot] = useState<typeof dashboard>(null)
-  const [activeTab, setActiveTab] = useState<'ai' | 'standard'>('ai')
 
   useEffect(() => {
     void loadDashboard()
@@ -255,49 +254,7 @@ export default function StatsView() {
         </div>
       </header>
 
-      <div style={{ display: 'flex', gap: '12px', padding: '16px 32px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <button
-          type="button"
-          onClick={() => setActiveTab('ai')}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '14px',
-            fontWeight: 800,
-            fontSize: '14px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            background: activeTab === 'ai' ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'rgba(255,255,255,0.06)',
-            color: activeTab === 'ai' ? '#fff' : '#9ca3af',
-            boxShadow: activeTab === 'ai' ? '0 4px 15px rgba(168, 85, 247, 0.35)' : 'none'
-          }}
-        >
-          🤖 AI Sonic Intelligence
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('standard')}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '14px',
-            fontWeight: 800,
-            fontSize: '14px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            background: activeTab === 'standard' ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'rgba(255,255,255,0.06)',
-            color: activeTab === 'standard' ? '#fff' : '#9ca3af',
-            boxShadow: activeTab === 'standard' ? '0 4px 15px rgba(168, 85, 247, 0.35)' : 'none'
-          }}
-        >
-          📊 Standard Statistics
-        </button>
-      </div>
 
-      {activeTab === 'ai' ? (
-        <AiStatisticsScreen />
-      ) : (
-        <>
           {error && (
             <div className="listening-stats-state listening-stats-state-error" role="alert">
               <strong>Listening Stats could not be loaded.</strong>
@@ -431,8 +388,7 @@ export default function StatsView() {
               )}
             </>
           )}
-        </>
-      )}
+
 
       <StatsShareModal
         isOpen={shareSnapshot !== null}

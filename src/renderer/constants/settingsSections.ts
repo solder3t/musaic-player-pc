@@ -120,13 +120,11 @@ export const NON_HIDDEN_SETTINGS_SECTIONS = SETTINGS_SECTIONS.filter(
 export interface NavEntry {
   id: string
   label: string
-  view: 'home' | 'library' | 'stats' | 'graph' | 'mood' | 'ai-insights' | 'eq' | 'settings' | 'playlist'
+  view: 'home' | 'library' | 'stats' | 'graph' | 'eq' | 'settings' | 'playlist'
   keywords: string[]
 }
 
 export const NAV_ENTRIES: NavEntry[] = [
-  { id: 'nav:mood', label: 'Music Mood Nebula', view: 'mood', keywords: ['mood', 'nebula', 'emotion', 'valence', 'excitement', 'playlist', 'ai'] },
-  { id: 'nav:ai-insights', label: 'AI Insights', view: 'ai-insights', keywords: ['ai', 'insights', 'stats', 'analytics', 'moods', 'distribution'] },
   { id: 'nav:eq', label: 'Equalizer', view: 'eq', keywords: ['eq', 'equalizer', 'bands', 'frequency', 'bass', 'treble'] },
   { id: 'nav:graph', label: 'Library Graph', view: 'graph', keywords: ['graph', 'network', 'artists', 'relationships', 'collab', 'collaboration', 'map'] },
   { id: 'nav:stats', label: 'Listening Stats', view: 'stats', keywords: ['stats', 'listening', 'history', 'plays', 'play count', 'time'] },
