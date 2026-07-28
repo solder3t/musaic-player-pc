@@ -127,7 +127,7 @@ interface ThemePresetDefinition {
   description: string
   // Light presets derive accent text by darkening (not lightening) the accent.
   isLight?: boolean
-  tokens: PresetBaseTokens
+  tokens: PresetBaseTokens & Partial<SurfaceTokens>
   accent: string
   accentHover: string
   accentGlow: string
