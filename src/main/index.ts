@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences, Menu, MenuItem } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences } from 'electron'
 import { join, basename, extname } from 'path'
 const icon = require('../../resources/icon.png?asset')
 import { readFile, writeFile, mkdtemp, rm, access, mkdir, stat } from 'fs/promises'
