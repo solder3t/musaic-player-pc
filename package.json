@@ -208,6 +208,9 @@
       "entitlementsInherit": "resources/entitlements.mac.inherit.plist"
     },
     "linux": {
+      "executableArgs": [
+        "--no-sandbox"
+      ],
       "fileAssociations": [
         {
           "name": "Musaic Audio File",
