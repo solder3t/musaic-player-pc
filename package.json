@@ -278,7 +278,7 @@
       ],
       "artifactName": "Musaic-${version}-Linux-${arch}.${ext}",
       "category": "Audio",
-      "icon": "build/icon.png"
+      "icon": "build/icons/"
     },
     "appImage": {
       "artifactName": "Musaic-${version}-Linux.${ext}"
