@@ -6,6 +6,8 @@ import { useMetadataEditorStore, type MetadataEditChanges } from '../../stores/m
 import { usePlayerStore } from '../../stores/playerStore'
 import { usePlaylistStore } from '../../stores/playlistStore'
 import { usePresence } from '../../hooks/usePresence'
+import { useAiSettingsStore } from '../../stores/aiSettingsStore'
+import { completeMetadata } from '../../../shared/ai/aiMetadataCompleter'
 
 interface DraftField {
   value: string
@@ -238,6 +240,7 @@ export default function MetadataEditorPanel() {
   const [saveProgress, setSaveProgress] = useState<{ current: number; total: number } | null>(null)
   const [fieldOverrides, setFieldOverrides] = useState<Record<string, string[]>>({})
   const [showDiffModal, setShowDiffModal] = useState(false)
+  const [isAiLoading, setIsAiLoading] = useState(false)
 
   const selectedTrackPaths = useMemo(() => tracks.map((track) => track.path), [tracks])
   const selectedCount = selectedTrackPaths.length
@@ -558,6 +561,47 @@ export default function MetadataEditorPanel() {
     }
   }, [redo, refreshAfterMutation])
 
+  const aiSettings = useAiSettingsStore((state) => state.settings)
+
+  const handleAiAutoComplete = useCallback(async () => {
+    if (selectedCount !== 1) {
+      setValidationError('AI auto-complete is only available for single tracks.')
+      return
+    }
+    const track = tracks[0]
+    if (!track) return
+
+    setValidationError(null)
+    setStatusMessage(null)
+    setIsAiLoading(true)
+
+    try {
+      const response = await completeMetadata(
+        draft.title.value || track.title || 'Unknown Title',
+        draft.artist.value || track.artist || 'Unknown Artist',
+        aiSettings
+      )
+
+      if (!response.result) {
+        setValidationError('AI failed to find or parse metadata.')
+      } else {
+        const { result } = response
+        if (result.title) updateDraftField('title', result.title)
+        if (result.artist) updateDraftField('artist', result.artist)
+        if (result.album) updateDraftField('album', result.album)
+        if (result.genre) updateDraftField('genre', result.genre)
+        if (result.year != null) updateDraftField('year', String(result.year))
+        if (result.trackNumber != null) updateDraftField('trackNumber', String(result.trackNumber))
+        if (result.discNumber != null) updateDraftField('discNumber', String(result.discNumber))
+        setStatusMessage('AI metadata applied. Please review and save.')
+      }
+    } catch (err: unknown) {
+      setValidationError(toErrorMessage(err, 'AI auto-complete failed.'))
+    } finally {
+      setIsAiLoading(false)
+    }
+  }, [aiSettings, draft.artist.value, draft.title.value, selectedCount, tracks, updateDraftField])
+
   if (!presence.shouldRender || !displayedPanelRequest) return null
 
   return (
@@ -609,6 +653,22 @@ export default function MetadataEditorPanel() {
 
       <div className="metadata-panel-actions">
         <div className="metadata-panel-secondary-actions">
+          <button
+            className="settings-btn metadata-panel-icon-btn"
+            onClick={() => void handleAiAutoComplete()}
+            disabled={selectedCount !== 1 || isSaving || isAiLoading}
+            title="AI Auto-Complete"
+            aria-label="AI Auto-Complete"
+          >
+            {isAiLoading ? (
+              <span className="spinner" style={{ width: 15, height: 15, display: 'inline-block', border: '2px solid transparent', borderTopColor: 'currentColor', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                <path d="M5 3v4M3 5h4"/>
+              </svg>
+            )}
+          </button>
           <button
             className="settings-btn metadata-panel-icon-btn"
             onClick={() => void handleUndo()}

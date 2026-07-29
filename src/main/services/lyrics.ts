@@ -10,6 +10,13 @@ import {
   toPlainLyricsFromLines
 } from './lyricsParsing'
 import {
+  BetterLyricsProvider,
+  GeniusProvider,
+  KuGouProvider,
+  NetEaseProvider
+} from './lyricsProviders'
+import { validateResult } from './lyricsValidation'
+import {
   LrclibLookupCoordinator,
   createLrclibClientConfig,
   normalizeLrclibMetadataText
@@ -552,6 +559,46 @@ export class LyricsService {
     }
 
     this.setLastError(null)
+    
+    // --- NEW FALLBACK PROVIDERS ---
+    const providers = [
+      new BetterLyricsProvider(),
+      new KuGouProvider(),
+      new NetEaseProvider(),
+      new GeniusProvider()
+    ]
+    
+    for (const provider of providers) {
+      try {
+        const results = await provider.searchAll(normalizedQuery)
+        for (const res of results) {
+          if (validateResult(res, title, artist, durationSeconds ?? -1, true)) {
+            const payload = parseLyricsText(res.lyrics, 'online', 'lrc')
+            if (payload) {
+              await this.libraryApi.upsertLyricsCache({
+                trackPath: path,
+                metadataSignature,
+                status: 'hit',
+                source: 'online',
+                provider: provider.name.toLowerCase() as any,
+                plainLyrics: payload.plainLyrics,
+                syncedLyrics: payload.syncedLyrics,
+                syncedLines: payload.syncedLines
+              })
+              return {
+                status: 'hit',
+                lyrics: applyTrackOffsetToPayload(payload, trackOffsetMs),
+                cached: false
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Ignore provider errors and continue to the next one
+      }
+    }
+    // --- END NEW FALLBACK PROVIDERS ---
+
     if (xlrcdbLookup.status === 'not_found') {
       await this.cacheOnlineNotFound(path, metadataSignature)
     }

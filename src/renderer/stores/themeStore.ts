@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { themeFromSourceColor, argbFromHex, hexFromArgb } from '@material/material-color-utilities'
 import { useVisualizerSettingsStore } from './visualizerSettingsStore'
 
-export type ThemePresetId = 'default' | 'graphite' | 'midnight' | 'studio' | 'crimson' | 'light' | 'amoled' | 'glassmorphism' | 'neonnebula' | 'materialyou'
+export type ThemePresetId = 'default' | 'light' | 'dark' | 'amoled' | 'midnight' | 'neonnebula' | 'materialyou'
 export type AccentSource = 'theme' | 'cover-art'
 export type CoverArtAccentMethod = 'dominant' | 'average' | 'vibrant'
 
@@ -169,7 +169,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   default: {
     id: 'default',
     label: 'Default',
-    description: 'Current Musaic look',
+    description: 'Adapts between Light and Dark themes depending on system',
     tokens: {
       bgPrimary: '#000000',
       bgSecondary: '#050505',
@@ -184,82 +184,6 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
     accent: '#38bdf8',
     accentHover: '#7dd3fc',
     accentGlow: 'rgba(56, 189, 248, 0.3)',
-  },
-  graphite: {
-    id: 'graphite',
-    label: 'Graphite',
-    description: 'Neutral slate surfaces',
-    tokens: {
-      bgPrimary: '#07080b',
-      bgSecondary: '#0d1016',
-      bgTertiary: '#141923',
-      glassBg: 'rgba(255, 255, 255, 0.04)',
-      glassBorder: 'rgba(255, 255, 255, 0.11)',
-      glassHighlight: 'rgba(255, 255, 255, 0.06)',
-      textPrimary: 'rgba(255, 255, 255, 0.95)',
-      textSecondary: 'rgba(219, 226, 239, 0.72)',
-      textTertiary: 'rgba(190, 202, 223, 0.46)',
-    },
-    accent: '#4fc3f7',
-    accentHover: '#8bdaf9',
-    accentGlow: 'rgba(79, 195, 247, 0.34)',
-  },
-  midnight: {
-    id: 'midnight',
-    label: 'Midnight',
-    description: 'Deep blue-black contrast',
-    tokens: {
-      bgPrimary: '#03050b',
-      bgSecondary: '#060b14',
-      bgTertiary: '#0b1220',
-      glassBg: 'rgba(177, 209, 255, 0.05)',
-      glassBorder: 'rgba(169, 203, 255, 0.16)',
-      glassHighlight: 'rgba(255, 255, 255, 0.07)',
-      textPrimary: 'rgba(236, 244, 255, 0.96)',
-      textSecondary: 'rgba(194, 213, 242, 0.72)',
-      textTertiary: 'rgba(165, 187, 222, 0.48)',
-    },
-    accent: '#4f9bff',
-    accentHover: '#89b8ff',
-    accentGlow: 'rgba(79, 155, 255, 0.34)',
-  },
-  studio: {
-    id: 'studio',
-    label: 'Studio',
-    description: 'Low-glare warm dark',
-    tokens: {
-      bgPrimary: '#0a0908',
-      bgSecondary: '#12100e',
-      bgTertiary: '#1b1714',
-      glassBg: 'rgba(255, 255, 255, 0.03)',
-      glassBorder: 'rgba(255, 232, 214, 0.12)',
-      glassHighlight: 'rgba(255, 255, 255, 0.045)',
-      textPrimary: 'rgba(255, 247, 240, 0.95)',
-      textSecondary: 'rgba(242, 214, 188, 0.67)',
-      textTertiary: 'rgba(222, 182, 150, 0.44)',
-    },
-    accent: '#ff9f5b',
-    accentHover: '#ffbf8f',
-    accentGlow: 'rgba(255, 159, 91, 0.34)',
-  },
-  crimson: {
-    id: 'crimson',
-    label: 'Crimson',
-    description: 'Default theme with red accent',
-    tokens: {
-      bgPrimary: '#000000',
-      bgSecondary: '#050505',
-      bgTertiary: '#0a0a0a',
-      glassBg: 'rgba(255, 255, 255, 0.03)',
-      glassBorder: 'rgba(255, 255, 255, 0.08)',
-      glassHighlight: 'rgba(255, 255, 255, 0.05)',
-      textPrimary: 'rgba(255, 255, 255, 0.95)',
-      textSecondary: 'rgba(255, 255, 255, 0.6)',
-      textTertiary: 'rgba(255, 255, 255, 0.4)',
-    },
-    accent: '#ef4444',
-    accentHover: '#f87171',
-    accentGlow: 'rgba(239, 68, 68, 0.32)',
   },
   light: {
     id: 'light',
@@ -281,6 +205,25 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
     accentHover: '#075985',
     accentGlow: 'rgba(3, 105, 161, 0.24)',
   },
+  dark: {
+    id: 'dark',
+    label: 'Dark',
+    description: 'Default theme with red accent',
+    tokens: {
+      bgPrimary: '#000000',
+      bgSecondary: '#050505',
+      bgTertiary: '#0a0a0a',
+      glassBg: 'rgba(255, 255, 255, 0.03)',
+      glassBorder: 'rgba(255, 255, 255, 0.08)',
+      glassHighlight: 'rgba(255, 255, 255, 0.05)',
+      textPrimary: 'rgba(255, 255, 255, 0.95)',
+      textSecondary: 'rgba(255, 255, 255, 0.6)',
+      textTertiary: 'rgba(255, 255, 255, 0.4)',
+    },
+    accent: '#ef4444',
+    accentHover: '#f87171',
+    accentGlow: 'rgba(239, 68, 68, 0.32)',
+  },
   amoled: {
     id: 'amoled',
     label: 'AMOLED Black',
@@ -300,24 +243,24 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
     accentHover: '#d8b4fe',
     accentGlow: 'rgba(192, 132, 252, 0.38)',
   },
-  glassmorphism: {
-    id: 'glassmorphism',
-    label: 'Glassmorphism Blur',
-    description: 'Deep frosted cyan glass with luminous reflections',
+  midnight: {
+    id: 'midnight',
+    label: 'Midnight',
+    description: 'Deep blue-black contrast',
     tokens: {
-      bgPrimary: '#06111e',
-      bgSecondary: '#0a192f',
-      bgTertiary: '#0f2342',
-      glassBg: 'rgba(255, 255, 255, 0.07)',
-      glassBorder: 'rgba(0, 240, 255, 0.22)',
-      glassHighlight: 'rgba(255, 255, 255, 0.12)',
-      textPrimary: 'rgba(240, 250, 255, 0.96)',
-      textSecondary: 'rgba(180, 220, 245, 0.72)',
-      textTertiary: 'rgba(130, 180, 215, 0.48)',
+      bgPrimary: '#03050b',
+      bgSecondary: '#060b14',
+      bgTertiary: '#0b1220',
+      glassBg: 'rgba(177, 209, 255, 0.05)',
+      glassBorder: 'rgba(169, 203, 255, 0.16)',
+      glassHighlight: 'rgba(255, 255, 255, 0.07)',
+      textPrimary: 'rgba(236, 244, 255, 0.96)',
+      textSecondary: 'rgba(194, 213, 242, 0.72)',
+      textTertiary: 'rgba(165, 187, 222, 0.48)',
     },
-    accent: '#00f0ff',
-    accentHover: '#66f5ff',
-    accentGlow: 'rgba(0, 240, 255, 0.40)',
+    accent: '#4f9bff',
+    accentHover: '#89b8ff',
+    accentGlow: 'rgba(79, 155, 255, 0.34)',
   },
   neonnebula: {
     id: 'neonnebula',
@@ -474,7 +417,17 @@ function resolveThemeTokens(
   accentSource: AccentSource,
   coverArtAccent: string | null
 ): ResolvedThemeTokens {
-  const preset = THEME_PRESETS[presetId] ?? THEME_PRESETS.default
+  let activePresetId = presetId
+  if (presetId === 'default') {
+    try {
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      activePresetId = isSystemDark ? 'dark' : 'light'
+    } catch {
+      activePresetId = 'dark' // fallback if matchMedia is unavailable
+    }
+  }
+
+  const preset = THEME_PRESETS[activePresetId] ?? THEME_PRESETS.default
   const themeAccent = customAccent ?? preset.accent
   const effectiveAccent = accentSource === 'cover-art' && coverArtAccent
     ? coverArtAccent
@@ -585,13 +538,10 @@ function readSavedThemeSettings(): SavedThemeSettings | null {
     const presetCandidate = parsed.presetId
     const presetId = (
       presetCandidate === 'default'
-      || presetCandidate === 'graphite'
-      || presetCandidate === 'midnight'
-      || presetCandidate === 'studio'
-      || presetCandidate === 'crimson'
       || presetCandidate === 'light'
+      || presetCandidate === 'dark'
       || presetCandidate === 'amoled'
-      || presetCandidate === 'glassmorphism'
+      || presetCandidate === 'midnight'
       || presetCandidate === 'neonnebula'
       || presetCandidate === 'materialyou'
     )
@@ -954,6 +904,17 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
       }).catch((e: any) => {
         console.warn('Failed to fetch system accent color for Material You theme:', e)
       })
+
+      try {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        mediaQuery.addEventListener('change', () => {
+          if (get().presetId === 'default') {
+            get().setPreset('default')
+          }
+        })
+      } catch (e) {
+        console.warn('Failed to attach prefers-color-scheme listener:', e)
+      }
     },
   }
 })

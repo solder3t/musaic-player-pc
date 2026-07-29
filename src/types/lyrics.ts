@@ -1,5 +1,5 @@
-export type LyricsProvider = 'lrclib' | 'xlrcdb'
-export type LyricsSource = 'embedded' | 'lrclib' | 'manual' | 'lrc' | 'xlrc' | 'xlrcdb' | 'ai-romanized' | 'ai-translated'
+export type LyricsProvider = 'lrclib' | 'xlrcdb' | 'netease' | 'kugou' | 'betterlyrics' | 'genius' | 'online'
+export type LyricsSource = 'embedded' | 'lrclib' | 'manual' | 'lrc' | 'xlrc' | 'xlrcdb' | 'ai-romanized' | 'ai-translated' | 'online'
 export type LyricsFormat = 'plain' | 'lrc' | 'xlrc'
 export type LyricsLookupStatus = 'hit' | 'not_found' | 'transient_error'
 

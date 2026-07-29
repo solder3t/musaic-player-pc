@@ -407,7 +407,7 @@ export interface FolderSubdirectoryEntry {
 }
 
 export type LyricsCacheStatus = 'hit' | 'not_found'
-export type LyricsCacheSource = 'embedded' | 'lrclib' | 'xlrcdb'
+export type LyricsCacheSource = 'embedded' | 'lrclib' | 'xlrcdb' | 'online'
 
 export interface LyricsCacheEntry {
   trackPath: string
