@@ -277,7 +277,8 @@
         "tar.gz"
       ],
       "artifactName": "Musaic-${version}-Linux-${arch}.${ext}",
-      "category": "Audio"
+      "category": "Audio",
+      "icon": "build/icon.png"
     },
     "appImage": {
       "artifactName": "Musaic-${version}-Linux.${ext}"

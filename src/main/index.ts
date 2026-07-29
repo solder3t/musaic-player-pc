@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences } from 'electron'
 import { join, basename, extname } from 'path'
+import icon from '../../resources/icon.png?asset'
 import { readFile, writeFile, mkdtemp, rm, access, mkdir, stat } from 'fs/promises'
 import { existsSync, readFileSync } from 'fs'
 import { tmpdir, hostname, networkInterfaces } from 'os'
@@ -2836,6 +2837,7 @@ async function createScopePopoutWindow(scope: ScopeKind): Promise<void> {
   const position = resolveScopePopoutPosition(scope)
 
   const scopeWindow = new BrowserWindow({
+    icon: icon,
     width: defaults.width,
     height: defaults.height,
     minWidth: defaults.minWidth,
@@ -4130,6 +4132,7 @@ async function createMiniPlayerWindow(): Promise<void> {
   miniWindowPrefs = prefs
 
   miniWindow = new BrowserWindow({
+    icon: icon,
     width: prefs.width,
     height: prefs.height,
     x: prefs.x,
@@ -4225,6 +4228,7 @@ async function createLyricsPopoutWindow(): Promise<void> {
   lyricsPopoutWindowPrefs = prefs
 
   lyricsPopoutWindow = new BrowserWindow({
+    icon: icon,
     width: prefs.width,
     height: prefs.height,
     x: prefs.x,
@@ -4301,6 +4305,7 @@ function createWindow(): void {
   mainWindowPrefs = prefs
 
   mainWindow = new BrowserWindow({
+    icon: icon,
     width: prefs.width,
     height: prefs.height,
     x: prefs.x,
@@ -4911,6 +4916,11 @@ queueAssociatedOpenFiles(parseAssociatedOpenPathsFromArgv(process.argv))
 // PARALLAX_LAUNCH_ZONE=1 set externally works too — same code path on the preload side.
 if (process.argv.includes('--zone')) {
   process.env.PARALLAX_LAUNCH_ZONE = '1'
+}
+
+if (process.platform === 'linux') {
+  app.setAppUserModelId('com.musaic.mp')
+  app.setDesktopName('musaic-player.desktop')
 }
 
 app.whenReady().then(async () => {
