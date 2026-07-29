@@ -197,8 +197,8 @@ function getDefaultScrobbleProfileName(protocol: LastFmScrobbleProtocol): string
 }
 
 function getScrobbleUrlPlaceholder(protocol: LastFmScrobbleProtocol): string {
-  if (protocol === 'audioscrobbler') return 'http://localhost:42010/apis/audioscrobbler_legacy'
-  if (protocol === 'listenbrainz') return 'http://localhost:42010/apis/listenbrainz'
+  if (protocol === 'audioscrobbler') return 'http://post.audioscrobbler.com/'
+  if (protocol === 'listenbrainz') return 'https://api.listenbrainz.org'
   return 'http://localhost:9078/2.0/'
 }
 
@@ -2222,7 +2222,7 @@ export default function SettingsView() {
                             setLastFmEditingProfileId(null)
                             setLastFmProfileProtocolInput('lastfm2')
                             setLastFmProfileNameInput(getDefaultScrobbleProfileName('lastfm2'))
-                            setLastFmProfileUrlInput('')
+                            setLastFmProfileUrlInput('http://localhost:9078/2.0/')
                             setLastFmProfileUsernameInput('')
                             setLastFmProfileSessionKeyInput('')
                           }}
@@ -2237,7 +2237,7 @@ export default function SettingsView() {
                             setLastFmEditingProfileId(null)
                             setLastFmProfileProtocolInput('listenbrainz')
                             setLastFmProfileNameInput(getDefaultScrobbleProfileName('listenbrainz'))
-                            setLastFmProfileUrlInput('')
+                            setLastFmProfileUrlInput('https://api.listenbrainz.org')
                             setLastFmProfileUsernameInput('')
                             setLastFmProfileSessionKeyInput('')
                           }}

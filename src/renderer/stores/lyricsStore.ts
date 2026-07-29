@@ -323,7 +323,7 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         }))
       } catch (err) {
         console.error('Romanization failed', err)
-        set({ aiProcessing: false, errorMessage: 'Romanization failed' })
+        set({ aiProcessing: false, errorMessage: 'Romanization failed: ' + (err instanceof Error ? err.message : String(err)) })
       }
     },
 
