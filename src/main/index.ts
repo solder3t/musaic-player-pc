@@ -272,6 +272,7 @@ import { parseListeningImportFile } from '../shared/stats/listeningImportFile'
 const isDev = process.env.NODE_ENV === 'development'
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('enable-features', 'GlobalShortcutsPortal')
+  app.commandLine.appendSwitch('no-sandbox')
 }
 
 const globalInputShortcutService = new GlobalInputShortcutService(globalShortcut)
