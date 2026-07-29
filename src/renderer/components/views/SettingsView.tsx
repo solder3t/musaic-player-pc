@@ -2213,13 +2213,45 @@ export default function SettingsView() {
                   <div className="settings-field settings-lastfm-profiles-field">
                     <div className="settings-lastfm-profiles-head">
                       <span className="settings-field-label">Destinations</span>
-                      <button
-                        type="button"
-                        className="settings-btn settings-btn-primary"
-                        onClick={openLastFmCreateProfileModal}
-                      >
-                        Add Destination
-                      </button>
+                      <div className="settings-inline-row">
+                        <button
+                          type="button"
+                          className="settings-btn"
+                          onClick={() => {
+                            setLastFmProfileModalMode('create')
+                            setLastFmEditingProfileId(null)
+                            setLastFmProfileProtocolInput('lastfm2')
+                            setLastFmProfileNameInput(getDefaultScrobbleProfileName('lastfm2'))
+                            setLastFmProfileUrlInput('')
+                            setLastFmProfileUsernameInput('')
+                            setLastFmProfileSessionKeyInput('')
+                          }}
+                        >
+                          Add Last.fm
+                        </button>
+                        <button
+                          type="button"
+                          className="settings-btn"
+                          onClick={() => {
+                            setLastFmProfileModalMode('create')
+                            setLastFmEditingProfileId(null)
+                            setLastFmProfileProtocolInput('listenbrainz')
+                            setLastFmProfileNameInput(getDefaultScrobbleProfileName('listenbrainz'))
+                            setLastFmProfileUrlInput('')
+                            setLastFmProfileUsernameInput('')
+                            setLastFmProfileSessionKeyInput('')
+                          }}
+                        >
+                          Add ListenBrainz
+                        </button>
+                        <button
+                          type="button"
+                          className="settings-btn settings-btn-primary"
+                          onClick={openLastFmCreateProfileModal}
+                        >
+                          Add Custom
+                        </button>
+                      </div>
                     </div>
                     <div className="settings-lastfm-profile-list">
                       {lastFmProfiles.map((profile) => {
@@ -3418,6 +3450,17 @@ export default function SettingsView() {
                   onChange={(event) => setLastFmProfileSessionKeyInput(event.target.value)}
                 />
               </label>
+              {lastFmProfileProtocolInput === 'listenbrainz' && (
+                <div style={{ marginTop: '-8px', marginBottom: '12px', textAlign: 'right' }}>
+                  <button
+                    type="button"
+                    className="settings-btn settings-link-btn"
+                    onClick={() => openExternalLink('https://listenbrainz.org/profile/')}
+                  >
+                    Get ListenBrainz Token
+                  </button>
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <button className="settings-btn" onClick={closeLastFmProfileModal}>
