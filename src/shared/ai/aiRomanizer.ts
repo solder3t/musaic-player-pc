@@ -92,12 +92,18 @@ export async function romanizeLyrics(
       romanizeCache.set(cacheKey, cleaned);
       return { text: cleaned, tokens: res.tokens || 0, fromCache: false };
     } else {
+      if (res.error) throw new Error(res.error);
       const fallback = offlineFallbackRomanize(text);
-      return { text: fallback, tokens: 0, fromCache: false };
+      if (fallback === text) throw new Error("AI Romanization returned identical text and offline fallback cannot transliterate this script.");
+      return { text: fallback, tokens: res.tokens || 0, fromCache: false };
     }
   } catch (err) {
     console.warn('[AiRomanizer] AI romanization failed, using fallback:', err);
-    return { text: offlineFallbackRomanize(text), tokens: 0, fromCache: false };
+    const fallback = offlineFallbackRomanize(text);
+    if (fallback === text) {
+      throw err; // throw error back to renderer so it doesn't silently fail
+    }
+    return { text: fallback, tokens: 0, fromCache: false };
   }
 }
 

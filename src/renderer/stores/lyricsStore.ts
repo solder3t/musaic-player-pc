@@ -130,6 +130,18 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
       aiProcessing: false,
       errorMessage: result.status === 'transient_error' ? result.message : ''
     }))
+
+    // Automatically trigger romanization if enabled
+    const { settings } = useAiSettingsStore.getState()
+    if (settings.autoRomanize && result.status === 'hit') {
+      setTimeout(() => {
+        const state = get()
+        if (state.currentTrackPath === trackPath && !state.isRomanized) {
+          void state.toggleRomanized()
+        }
+      }, 50)
+    }
+
     return result
   }
 
@@ -295,6 +307,11 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         const { settings } = useAiSettingsStore.getState()
         const aiResult = await window.electronAPI.ai.romanizeLyrics(textToConvert, settings)
         
+        if (!aiResult.text || aiResult.text.trim() === textToConvert.trim()) {
+          set({ aiProcessing: false })
+          return
+        }
+
         set(() => ({
           isRomanized: true,
           isTranslated: false,

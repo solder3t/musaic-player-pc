@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences, Menu, MenuItem } from 'electron'
 import { join, basename, extname } from 'path'
-import icon from '../../resources/icon.png?asset'
+const icon = require('../../resources/icon.png?asset')
 import { readFile, writeFile, mkdtemp, rm, access, mkdir, stat } from 'fs/promises'
 import { existsSync, readFileSync } from 'fs'
 import { tmpdir, hostname, networkInterfaces } from 'os'
@@ -4920,7 +4920,7 @@ if (process.argv.includes('--zone')) {
 
 if (process.platform === 'linux') {
   app.setAppUserModelId('com.musaic.mp')
-  app.setDesktopName('musaic-player.desktop')
+  ;(app as any).setDesktopName('musaic-player.desktop')
 }
 
 app.whenReady().then(async () => {
