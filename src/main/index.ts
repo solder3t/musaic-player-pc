@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, clipboard, screen, safeStorage, powerMonitor, protocol, session, globalShortcut, systemPreferences } from 'electron'
 import { join, basename, extname } from 'path'
+const icon = require('../../resources/icon.png?asset')
 import { readFile, writeFile, mkdtemp, rm, access, mkdir, stat } from 'fs/promises'
 import { existsSync, readFileSync } from 'fs'
 import { tmpdir, hostname, networkInterfaces } from 'os'
@@ -2836,6 +2837,7 @@ async function createScopePopoutWindow(scope: ScopeKind): Promise<void> {
   const position = resolveScopePopoutPosition(scope)
 
   const scopeWindow = new BrowserWindow({
+    icon: icon,
     width: defaults.width,
     height: defaults.height,
     minWidth: defaults.minWidth,
@@ -4130,6 +4132,7 @@ async function createMiniPlayerWindow(): Promise<void> {
   miniWindowPrefs = prefs
 
   miniWindow = new BrowserWindow({
+    icon: icon,
     width: prefs.width,
     height: prefs.height,
     x: prefs.x,
@@ -4225,6 +4228,7 @@ async function createLyricsPopoutWindow(): Promise<void> {
   lyricsPopoutWindowPrefs = prefs
 
   lyricsPopoutWindow = new BrowserWindow({
+    icon: icon,
     width: prefs.width,
     height: prefs.height,
     x: prefs.x,
@@ -4301,6 +4305,7 @@ function createWindow(): void {
   mainWindowPrefs = prefs
 
   mainWindow = new BrowserWindow({
+    icon: icon,
     width: prefs.width,
     height: prefs.height,
     x: prefs.x,
@@ -4913,6 +4918,11 @@ if (process.argv.includes('--zone')) {
   process.env.PARALLAX_LAUNCH_ZONE = '1'
 }
 
+if (process.platform === 'linux') {
+  app.setAppUserModelId('com.musaic.mp')
+  ;(app as any).setDesktopName('musaic-player.desktop')
+}
+
 app.whenReady().then(async () => {
   // Grant audio-capture permission up front so Web Audio's AudioContext.outputLatency reports at
   // 1ms precision instead of 8ms — Blink quantizes it coarsely until the document holds microphone
@@ -5335,8 +5345,10 @@ ipcMain.handle('app:getBuildInfo', () => {
 ipcMain.handle('app:getSystemAccentColor', () => {
   try {
     if (process.platform === 'linux') {
+      const { execSync } = require('child_process')
+      
+      // 1. Try xdg-desktop-portal
       try {
-        const { execSync } = require('child_process')
         const output = execSync(
           "dbus-send --print-reply --dest=org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.Settings.Read string:'org.freedesktop.appearance' string:'accent-color'",
           { timeout: 1000 }
@@ -5349,7 +5361,28 @@ ipcMain.handle('app:getSystemAccentColor', () => {
           return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
         }
       } catch (e) {
-        // Fallback if dbus-send fails
+        // Fallback to next method
+      }
+
+      // 2. Try GNOME gsettings
+      try {
+        const gnomeAccent = execSync('gsettings get org.gnome.desktop.interface accent-color', { timeout: 1000 }).toString().trim().replace(/'/g, '')
+        const gnomeMap: Record<string, string> = {
+          blue: '#3584e4',
+          teal: '#2190a4',
+          green: '#2ec27e',
+          yellow: '#f6d32d',
+          orange: '#ff7800',
+          red: '#e01b24',
+          pink: '#d56199',
+          purple: '#9141ac',
+          slate: '#6c7a89'
+        }
+        if (gnomeMap[gnomeAccent]) {
+          return gnomeMap[gnomeAccent]
+        }
+      } catch (e) {
+        // Fallback to next method
       }
     }
     return systemPreferences.getAccentColor() || ''

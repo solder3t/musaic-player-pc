@@ -863,37 +863,39 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
             THEME_PRESETS.materialyou.accentGlow = deriveAccentGlow(normalized)
 
             if (isLight) {
-              THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.neutral.tone(98))
-              THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.neutral.tone(95))
-              THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.neutral.tone(90))
-              THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.neutral.tone(100))
-              THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.neutralVariant.tone(90))
-              THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.neutralVariant.tone(95))
-              THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.neutral.tone(10))
-              THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.neutralVariant.tone(30))
-              THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.neutralVariant.tone(50))
-              THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.neutral.tone(98))
-              THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.neutral.tone(100))
-              THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.neutralVariant.tone(90))
-              THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(0, 0, 0, 0.05)'
-              THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(0, 0, 0, 0.15)'
-              THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.neutral.tone(95)) + 'e6' // 90% opacity
+              // Tint the light backgrounds heavily with the primary/secondary palettes
+              THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(98))
+              THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(95))
+              THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(90))
+              THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(85))
+              THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(80))
+              THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(85))
+              THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(10))
+              THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(30))
+              THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(50))
+              THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(98))
+              THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(92))
+              THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(80))
+              THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(255, 255, 255, 0.2)'
+              THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(255, 255, 255, 0.5)'
+              THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(95)) + 'e6' // 90% opacity
             } else {
-              THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.neutral.tone(6))
-              THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.neutral.tone(10))
-              THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.neutral.tone(17))
-              THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.neutral.tone(20))
-              THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.neutralVariant.tone(20))
-              THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.neutralVariant.tone(15))
-              THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.neutral.tone(95))
-              THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.neutralVariant.tone(80))
-              THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.neutralVariant.tone(60))
-              THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.neutral.tone(6))
-              THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.neutral.tone(12))
-              THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.neutralVariant.tone(20))
+              // Tint the dark backgrounds heavily with the primary/secondary palettes for a true "Material You" feel
+              THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(10))
+              THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(15))
+              THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(22))
+              THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(25))
+              THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(30))
+              THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(25))
+              THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(95))
+              THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(80))
+              THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(60))
+              THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(10))
+              THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(16))
+              THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(25))
               THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(0, 0, 0, 0.2)'
               THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(0, 0, 0, 0.5)'
-              THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.neutral.tone(10)) + 'e6' // 90% opacity
+              THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(15)) + 'e6' // 90% opacity
             }
             
             if (get().presetId === 'materialyou') {

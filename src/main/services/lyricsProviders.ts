@@ -1,5 +1,6 @@
 import { ttmlToLrc } from './ttmlParser'
 import type { LyricsTrackQuery } from '../../types/lyrics'
+import * as https from 'https'
 
 export interface LyricsSearchResult {
   provider: string
@@ -19,18 +20,81 @@ export interface MusaicLyricsProvider {
 // Utilities
 // ----------------------------------------------------------------------------
 
+async function dohFetchBody(urlString: string): Promise<string | null> {
+  try {
+    const urlObj = new URL(urlString)
+    const hostname = urlObj.hostname
+
+    const dohUrl = `https://1.1.1.1/dns-query?name=${encodeURIComponent(hostname)}&type=A`
+    
+    const ip = await new Promise<string>((resolve, reject) => {
+      const req = https.get(dohUrl, {
+        headers: {
+          'Accept': 'application/dns-json',
+          'Host': 'cloudflare-dns.com'
+        },
+        servername: 'cloudflare-dns.com',
+        timeout: 5000
+      }, (res) => {
+        let data = ''
+        res.on('data', chunk => data += chunk)
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data)
+            const answer = json.Answer?.find((a: any) => a.type === 1)
+            if (answer && answer.data) resolve(answer.data)
+            else reject(new Error('No A record'))
+          } catch (e) {
+            reject(e)
+          }
+        })
+      })
+      req.on('error', reject)
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    })
+
+    return await new Promise<string>((resolve, reject) => {
+      const req = https.get({
+        hostname: ip,
+        port: urlObj.port ? parseInt(urlObj.port) : 443,
+        path: urlObj.pathname + urlObj.search,
+        headers: {
+          'Host': hostname,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        servername: hostname,
+        timeout: 5000
+      }, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`Status ${res.statusCode}`))
+          return
+        }
+        let data = ''
+        res.on('data', chunk => data += chunk)
+        res.on('end', () => resolve(data))
+      })
+      req.on('error', reject)
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    })
+  } catch (err) {
+    console.warn(`[DoH] Failed to fetch ${urlString} via DoH:`, err)
+    return null
+  }
+}
+
 async function fetchBody(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(5000)
     })
     if (!res.ok) return null
     return await res.text()
-  } catch {
-    return null
+  } catch (err) {
+    console.warn(`[fetchBody] Standard fetch failed for ${url}, falling back to DoH:`, err)
+    return await dohFetchBody(url)
   }
 }
 

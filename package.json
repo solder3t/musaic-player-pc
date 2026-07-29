@@ -1,6 +1,6 @@
 {
   "name": "musaic-player",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Beautiful offline music player for Linux with lyrics, Listen Together, AI romanization & Last.fm",
   "main": "./out/main/index.js",
   "scripts": {
@@ -277,7 +277,8 @@
         "tar.gz"
       ],
       "artifactName": "Musaic-${version}-Linux-${arch}.${ext}",
-      "category": "Audio"
+      "category": "Audio",
+      "icon": "build/icon.png"
     },
     "appImage": {
       "artifactName": "Musaic-${version}-Linux.${ext}"
