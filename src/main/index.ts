@@ -5345,8 +5345,10 @@ ipcMain.handle('app:getBuildInfo', () => {
 ipcMain.handle('app:getSystemAccentColor', () => {
   try {
     if (process.platform === 'linux') {
+      const { execSync } = require('child_process')
+      
+      // 1. Try xdg-desktop-portal
       try {
-        const { execSync } = require('child_process')
         const output = execSync(
           "dbus-send --print-reply --dest=org.freedesktop.portal.Desktop /org/freedesktop/portal/desktop org.freedesktop.portal.Settings.Read string:'org.freedesktop.appearance' string:'accent-color'",
           { timeout: 1000 }
@@ -5359,7 +5361,28 @@ ipcMain.handle('app:getSystemAccentColor', () => {
           return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
         }
       } catch (e) {
-        // Fallback if dbus-send fails
+        // Fallback to next method
+      }
+
+      // 2. Try GNOME gsettings
+      try {
+        const gnomeAccent = execSync('gsettings get org.gnome.desktop.interface accent-color', { timeout: 1000 }).toString().trim().replace(/'/g, '')
+        const gnomeMap: Record<string, string> = {
+          blue: '#3584e4',
+          teal: '#2190a4',
+          green: '#2ec27e',
+          yellow: '#f6d32d',
+          orange: '#ff7800',
+          red: '#e01b24',
+          pink: '#d56199',
+          purple: '#9141ac',
+          slate: '#6c7a89'
+        }
+        if (gnomeMap[gnomeAccent]) {
+          return gnomeMap[gnomeAccent]
+        }
+      } catch (e) {
+        // Fallback to next method
       }
     }
     return systemPreferences.getAccentColor() || ''
