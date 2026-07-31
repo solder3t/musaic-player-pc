@@ -96,12 +96,15 @@ export default function EQView() {
     setIsDropdownVisible(false)
     setAutoEqQuery(item.name)
     try {
-      const decodedPath = decodeURIComponent(item.path);
-      const urlPath = decodedPath.split('/').map(encodeURIComponent).join('/');
-      const eqUrl = `https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/results/${urlPath}/${encodeURIComponent(item.name)}%20ParametricEQ.txt`;
+      // item.path is already URL-encoded from INDEX.md (e.g. "crinacle/711%20in-ear/Sony%20WH-1000XM5")
+      // The ParametricEQ.txt lives inside that folder, named "<model_name> ParametricEQ.txt"
+      // The path's last segment IS the URL-encoded model name, so we can use it directly:
+      const lastSegment = item.path.split('/').pop() || '';
+      const eqUrl = `https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/results/${item.path}/${lastSegment}%20ParametricEQ.txt`;
       
+      console.log('[AutoEQ] Fetching:', eqUrl);
       const res = await fetch(eqUrl);
-      if (!res.ok) throw new Error("Failed to fetch EQ data");
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${eqUrl}`);
       const content = await res.text();
       const preset = parseAutoEQ(content, item.name);
       
@@ -111,10 +114,12 @@ export default function EQView() {
         isCustom: true
       });
     } catch (err) {
-      console.error(err);
+      console.error('[AutoEQ] Error:', err);
       alert("Failed to load AutoEQ profile.");
     }
   }
+
+
 
   return (
     <div className="eq-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1rem', padding: '1rem' }}>

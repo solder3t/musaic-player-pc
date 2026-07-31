@@ -5,6 +5,10 @@ const TYPE_MAP: Record<string, EQBand['type']> = {
   PK: 'peaking',
   LS: 'lowshelf',
   HS: 'highshelf',
+  LSC: 'lowshelf',
+  HSC: 'highshelf',
+  LP: 'lowpass',
+  HP: 'highpass',
 }
 
 /**
@@ -29,7 +33,7 @@ export function parseAutoEQ(content: string, filename?: string): EQPreset {
     }
 
     const filterMatch = line.match(
-      /^Filter\s+\d+:\s*(ON|OFF)\s+(PK|LS|HS)\s+Fc\s+([\d.]+)\s*Hz\s+Gain\s+([-\d.]+)\s*dB\s+Q\s+([\d.]+)/i
+      /^Filter\s+\d+:\s*(ON|OFF)\s+(PK|LS|HS|LSC|HSC|LP|HP)\s+Fc\s+([\d.]+)\s*Hz\s+Gain\s+([-\d.]+)\s*dB(?:\s+Q\s+([\d.]+))?/i
     )
     if (filterMatch) {
       const [, onOff, typeCode, fc, gain, q] = filterMatch
@@ -40,7 +44,7 @@ export function parseAutoEQ(content: string, filename?: string): EQPreset {
         type: TYPE_MAP[typeCode.toUpperCase()] || 'peaking',
         frequency: Math.max(20, Math.min(20000, parseFloat(fc))),
         gain: Math.max(-12, Math.min(12, parseFloat(gain))),
-        Q: Math.max(0.1, Math.min(18, parseFloat(q))),
+        Q: q ? Math.max(0.1, Math.min(18, parseFloat(q))) : 0.707,
       })
     }
   }
