@@ -108,7 +108,10 @@ export async function generateEqFromPrompt(
 
     // Parse JSON
     let jsonStr = res.text.trim();
-    if (jsonStr.startsWith('```')) {
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    } else if (jsonStr.startsWith('```')) {
       jsonStr = jsonStr.replace(/^```[a-z]*\n?/mi, '').replace(/\n?```$/m, '').trim();
     }
 
