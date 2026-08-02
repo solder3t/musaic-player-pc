@@ -45,9 +45,11 @@ export default function EQView() {
         Q: 1.41
       }))
       
+      const rawName = result.name || 'Generated EQ'
+      const presetName = rawName.startsWith('AI ') ? rawName : `AI ${rawName}`
       importPreset({
         id: `ai-preset-${Date.now()}`,
-        name: result.name || 'AI Assistant',
+        name: presetName,
         preamp: result.preamp || 0,
         bands,
         isCustom: true

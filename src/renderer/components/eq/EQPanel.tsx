@@ -75,8 +75,11 @@ export default function EQPanel() {
   )
 
   const activePreset = activePresetId ? presets.find((p) => p.id === activePresetId) : null
-  const builtInPresets = presets.filter((p) => !p.isCustom)
+  const builtInPresets = presets.filter((p) => !p.isCustom && !p.id.startsWith('ai-'))
+  const musaicAiPresets = presets.filter((p) => !p.isCustom && p.id.startsWith('ai-'))
   const customPresets = presets.filter((p) => p.isCustom)
+  const customAiPresets = customPresets.filter((p) => p.id.startsWith('ai-preset-') || p.name.startsWith('AI '))
+  const userPresets = customPresets.filter((p) => !p.id.startsWith('ai-preset-') && !p.name.startsWith('AI '))
 
   const handleSave = () => {
     if (saveName.trim()) {
@@ -118,9 +121,25 @@ export default function EQPanel() {
                 </option>
               ))}
             </optgroup>
-            {customPresets.length > 0 && (
+            <optgroup label="✨ Musaic AI">
+              {musaicAiPresets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name.replace('🤖 ', '')}
+                </option>
+              ))}
+            </optgroup>
+            {userPresets.length > 0 && (
               <optgroup label="My Presets">
-                {customPresets.map((p) => (
+                {userPresets.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {customAiPresets.length > 0 && (
+              <optgroup label="✨ AI Generated">
+                {customAiPresets.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
