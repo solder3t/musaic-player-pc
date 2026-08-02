@@ -169,7 +169,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   default: {
     id: 'default',
     label: 'Default',
-    description: 'Adapts between Light and Dark themes depending on system',
+    description: 'Pure black background with a sky-blue accent',
     tokens: {
       bgPrimary: '#000000',
       bgSecondary: '#050505',
@@ -208,7 +208,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   dark: {
     id: 'dark',
     label: 'Dark',
-    description: 'Default theme with red accent',
+    description: 'Pure black background with a bold red accent',
     tokens: {
       bgPrimary: '#000000',
       bgSecondary: '#050505',
@@ -284,7 +284,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   materialyou: {
     id: 'materialyou',
     label: 'Material You',
-    description: 'Dynamic Android Musaic sage and forest mint aesthetics',
+    description: 'Dark forest-green surfaces with emerald-mint accents',
     tokens: {
       bgPrimary: '#111613',
       bgSecondary: '#19221d',

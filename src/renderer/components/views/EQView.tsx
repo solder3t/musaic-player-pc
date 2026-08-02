@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import EQPanel from '../eq/EQPanel'
 import { useEQStore } from '../../stores/eqStore'
 import { EQBand } from '../../types/audio'
@@ -22,6 +22,13 @@ export default function EQView() {
   // Debounce search
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [])
+
   const handleAiSubmit = () => {
     if (!aiPrompt.trim()) return
 
@@ -42,6 +49,9 @@ export default function EQView() {
         bands,
         isCustom: true
       })
+    }).catch((err: unknown) => {
+      console.error('[AI EQ] Failed to generate profile:', err)
+      alert('AI EQ generation failed. Check your API key in Settings.')
     })
   }
 
