@@ -60,6 +60,7 @@ export function useCoverArtAccent(): void {
   const currentTrack = usePlayerStore((state) => state.currentTrack)
   const getArtwork = useLibraryStore((state) => state.getArtwork)
 
+  const presetId = useThemeStore((state) => state.presetId)
   const accentSource = useThemeStore((state) => state.accentSource)
   const coverArtAccentMethod = useThemeStore((state) => state.coverArtAccentMethod)
   const setCoverArtAccent = useThemeStore((state) => state.setCoverArtAccent)
@@ -70,7 +71,7 @@ export function useCoverArtAccent(): void {
     requestTokenRef.current += 1
     const requestToken = requestTokenRef.current
 
-    if (accentSource !== 'cover-art') {
+    if (accentSource !== 'cover-art' && presetId !== 'coverart') {
       setCoverArtAccent(null)
       return () => {
         requestTokenRef.current += 1
@@ -118,5 +119,5 @@ export function useCoverArtAccent(): void {
     return () => {
       requestTokenRef.current += 1
     }
-  }, [accentSource, coverArtAccentMethod, currentTrack, getArtwork, setCoverArtAccent])
+  }, [accentSource, coverArtAccentMethod, currentTrack, getArtwork, presetId, setCoverArtAccent])
 }

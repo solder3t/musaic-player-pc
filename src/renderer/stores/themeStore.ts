@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { themeFromSourceColor, argbFromHex, hexFromArgb } from '@material/material-color-utilities'
 import { useVisualizerSettingsStore } from './visualizerSettingsStore'
 
-export type ThemePresetId = 'default' | 'light' | 'dark' | 'amoled' | 'midnight' | 'neonnebula' | 'materialyou'
+export type ThemePresetId = 'default' | 'light' | 'dark' | 'amoled' | 'midnight' | 'neonnebula' | 'materialyou' | 'coverart'
 export type AccentSource = 'theme' | 'cover-art'
 export type CoverArtAccentMethod = 'dominant' | 'average' | 'vibrant'
 
@@ -300,6 +300,25 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
     accentHover: '#a7f3d0',
     accentGlow: 'rgba(110, 231, 183, 0.36)',
   },
+  coverart: {
+    id: 'coverart',
+    label: 'Cover Art Dynamic',
+    description: 'Dynamically adapts full app theme, surfaces & accent to currently playing album artwork',
+    tokens: {
+      bgPrimary: '#0f0e13',
+      bgSecondary: '#16141c',
+      bgTertiary: '#1f1b27',
+      glassBg: 'rgba(255, 255, 255, 0.04)',
+      glassBorder: 'rgba(255, 255, 255, 0.1)',
+      glassHighlight: 'rgba(255, 255, 255, 0.06)',
+      textPrimary: 'rgba(255, 255, 255, 0.95)',
+      textSecondary: 'rgba(255, 255, 255, 0.65)',
+      textTertiary: 'rgba(255, 255, 255, 0.45)',
+    },
+    accent: '#38bdf8',
+    accentHover: '#7dd3fc',
+    accentGlow: 'rgba(56, 189, 248, 0.3)',
+  },
 }
 
 export const THEME_PRESET_LIST: ThemePresetDefinition[] = Object.values(THEME_PRESETS)
@@ -436,8 +455,8 @@ function resolveThemeTokens(
   const usesPresetAccent = customAccent === null && !(accentSource === 'cover-art' && coverArtAccent)
 
   return {
-    ...preset.tokens,
     ...(isLight ? LIGHT_SURFACE_DEFAULTS : DARK_SURFACE_DEFAULTS),
+    ...preset.tokens,
     isLight,
     accent: effectiveAccent,
     accentHover: isLight && usesPresetAccent
@@ -544,6 +563,7 @@ function readSavedThemeSettings(): SavedThemeSettings | null {
       || presetCandidate === 'midnight'
       || presetCandidate === 'neonnebula'
       || presetCandidate === 'materialyou'
+      || presetCandidate === 'coverart'
     )
       ? presetCandidate
       : DEFAULT_PRESET_ID
@@ -645,6 +665,59 @@ function applyMaterialYouAccent(rawColorHex: string): boolean {
     THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(0, 0, 0, 0.2)'
     THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(0, 0, 0, 0.5)'
     THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(15)) + 'e6'
+  }
+  return true
+}
+
+/**
+ * Applies an extracted cover art accent color to build a dynamic full-app theme palette.
+ * Mutates THEME_PRESETS.coverart in place so setPreset('coverart') applies the updated colors.
+ */
+function applyCoverArtThemePalette(rawColorHex: string | null): boolean {
+  const fallbackHex = DEFAULT_ACCENT
+  const hex = rawColorHex ? (rawColorHex.startsWith('#') ? rawColorHex : `#${rawColorHex}`) : fallbackHex
+  const normalized = normalizeHexColor(hex) ?? fallbackHex
+
+  const mTheme = themeFromSourceColor(argbFromHex(normalized))
+  const isLight = Boolean(THEME_PRESETS.coverart.isLight)
+  const palettes = mTheme.palettes
+
+  THEME_PRESETS.coverart.accent = normalized
+  THEME_PRESETS.coverart.accentHover = deriveAccentHover(normalized, isLight)
+  THEME_PRESETS.coverart.accentGlow = deriveAccentGlow(normalized)
+
+  if (isLight) {
+    THEME_PRESETS.coverart.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(98))
+    THEME_PRESETS.coverart.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(95))
+    THEME_PRESETS.coverart.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(90))
+    THEME_PRESETS.coverart.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(85))
+    THEME_PRESETS.coverart.tokens.controlBg = hexFromArgb(palettes.primary.tone(80))
+    THEME_PRESETS.coverart.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(85))
+    THEME_PRESETS.coverart.tokens.textPrimary = hexFromArgb(palettes.primary.tone(10))
+    THEME_PRESETS.coverart.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(30))
+    THEME_PRESETS.coverart.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(50))
+    THEME_PRESETS.coverart.tokens.stageBg = hexFromArgb(palettes.primary.tone(98))
+    THEME_PRESETS.coverart.tokens.stageSurface = hexFromArgb(palettes.primary.tone(92))
+    THEME_PRESETS.coverart.tokens.stageBorder = hexFromArgb(palettes.primary.tone(80))
+    THEME_PRESETS.coverart.tokens.scrimSoft = 'rgba(255, 255, 255, 0.2)'
+    THEME_PRESETS.coverart.tokens.scrimStrong = 'rgba(255, 255, 255, 0.5)'
+    THEME_PRESETS.coverart.tokens.glassBg = hexFromArgb(palettes.primary.tone(95)) + 'e6'
+  } else {
+    THEME_PRESETS.coverart.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(8))
+    THEME_PRESETS.coverart.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(13))
+    THEME_PRESETS.coverart.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(18))
+    THEME_PRESETS.coverart.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(20))
+    THEME_PRESETS.coverart.tokens.controlBg = hexFromArgb(palettes.primary.tone(25))
+    THEME_PRESETS.coverart.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(20))
+    THEME_PRESETS.coverart.tokens.textPrimary = hexFromArgb(palettes.primary.tone(96))
+    THEME_PRESETS.coverart.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(82))
+    THEME_PRESETS.coverart.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(65))
+    THEME_PRESETS.coverart.tokens.stageBg = hexFromArgb(palettes.primary.tone(8))
+    THEME_PRESETS.coverart.tokens.stageSurface = hexFromArgb(palettes.primary.tone(14))
+    THEME_PRESETS.coverart.tokens.stageBorder = hexFromArgb(palettes.primary.tone(22))
+    THEME_PRESETS.coverart.tokens.scrimSoft = 'rgba(0, 0, 0, 0.25)'
+    THEME_PRESETS.coverart.tokens.scrimStrong = 'rgba(0, 0, 0, 0.55)'
+    THEME_PRESETS.coverart.tokens.glassBg = hexFromArgb(palettes.primary.tone(13)) + 'e6'
   }
   return true
 }
@@ -811,6 +884,9 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
     resolvedTokens: defaultTokens,
     setPreset: (presetId) => {
       const state = get()
+      if (presetId === 'coverart') {
+        applyCoverArtThemePalette(state.coverArtAccent)
+      }
       applyAndSet({
         presetId,
         customAccent: state.customAccent,
@@ -877,7 +953,11 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
     setCoverArtAccent: (accentHexOrNull) => {
       const normalized = accentHexOrNull ? normalizeHexColor(accentHexOrNull) : null
       const state = get()
-      if (state.coverArtAccent === normalized) return
+      if (state.coverArtAccent === normalized && state.presetId !== 'coverart') return
+
+      if (state.presetId === 'coverart') {
+        applyCoverArtThemePalette(normalized)
+      }
 
       applyAndSet({
         presetId: state.presetId,
