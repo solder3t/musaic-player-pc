@@ -298,7 +298,7 @@ const BUILT_IN_PRESETS: EQPreset[] = [
     ],
   },
   {
-    id: 'ai-acoustic-immersion', name: '🤖 AI Acoustic Immersion (Musaic)', preamp: -2,
+    id: 'musaic-acoustic-immersion', name: 'Acoustic Immersion (Musaic)', preamp: -2,
     bands: [
       { id: genId(), type: 'lowshelf', frequency: 50, gain: 4, Q: 0.8 },
       { id: genId(), type: 'peaking', frequency: 300, gain: 1, Q: 1.2 },
@@ -308,7 +308,7 @@ const BUILT_IN_PRESETS: EQPreset[] = [
     ],
   },
   {
-    id: 'ai-vocal-presence', name: '🤖 AI Vocal Presence (Musaic)', preamp: -1,
+    id: 'musaic-vocal-presence', name: 'Vocal Presence (Musaic)', preamp: -1,
     bands: [
       { id: genId(), type: 'lowshelf', frequency: 70, gain: -1, Q: 0.707 },
       { id: genId(), type: 'peaking', frequency: 400, gain: 2, Q: 1.0 },
@@ -318,7 +318,7 @@ const BUILT_IN_PRESETS: EQPreset[] = [
     ],
   },
   {
-    id: 'ai-spatial-soundstage', name: '🤖 AI Spatial 3D Soundstage (Musaic)', preamp: -2,
+    id: 'musaic-spatial-soundstage', name: 'Spatial 3D Soundstage (Musaic)', preamp: -2,
     bands: [
       { id: genId(), type: 'lowshelf', frequency: 45, gain: 5, Q: 0.707 },
       { id: genId(), type: 'peaking', frequency: 200, gain: -1, Q: 1.5 },
@@ -328,7 +328,7 @@ const BUILT_IN_PRESETS: EQPreset[] = [
     ],
   },
   {
-    id: 'ai-electronic-punch', name: '🤖 AI Electronic Punch (Musaic)', preamp: -3,
+    id: 'musaic-electronic-punch', name: 'Electronic Punch (Musaic)', preamp: -3,
     bands: [
       { id: genId(), type: 'lowshelf', frequency: 55, gain: 6, Q: 0.9 },
       { id: genId(), type: 'peaking', frequency: 180, gain: 3, Q: 1.2 },

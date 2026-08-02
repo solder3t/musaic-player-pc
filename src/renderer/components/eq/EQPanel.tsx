@@ -75,11 +75,6 @@ export default function EQPanel() {
   )
 
   const activePreset = activePresetId ? presets.find((p) => p.id === activePresetId) : null
-  const builtInPresets = presets.filter((p) => !p.isCustom && !p.id.startsWith('ai-'))
-  const musaicAiPresets = presets.filter((p) => !p.isCustom && p.id.startsWith('ai-'))
-  const customPresets = presets.filter((p) => p.isCustom)
-  const customAiPresets = customPresets.filter((p) => p.id.startsWith('ai-preset-') || p.name.startsWith('AI '))
-  const userPresets = customPresets.filter((p) => !p.id.startsWith('ai-preset-') && !p.name.startsWith('AI '))
 
   const handleSave = () => {
     if (saveName.trim()) {
@@ -114,38 +109,11 @@ export default function EQPanel() {
             }}
           >
             <option value="">Custom</option>
-            <optgroup label="Built-in">
-              {builtInPresets.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="✨ Musaic AI">
-              {musaicAiPresets.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name.replace('🤖 ', '')}
-                </option>
-              ))}
-            </optgroup>
-            {userPresets.length > 0 && (
-              <optgroup label="My Presets">
-                {userPresets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            {customAiPresets.length > 0 && (
-              <optgroup label="✨ AI Generated">
-                {customAiPresets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
+            {presets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
           </select>
 
           {/* Save preset */}
@@ -248,7 +216,7 @@ export default function EQPanel() {
         </div>
       </div>
 
-      {/* AI EQ Assistant Box */}
+      {/* Musaic Audio Profiles Box */}
       <div className="eq-ai-assistant" style={{
         display: 'flex',
         alignItems: 'center',
@@ -263,14 +231,14 @@ export default function EQPanel() {
         flexWrap: 'wrap'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '18px' }}>✨</span>
+          <span style={{ fontSize: '18px' }}>🎵</span>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Musaic AI EQ Assistant</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Neural psychoacoustic profile matching for Linux ALSA & PulseAudio</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Musaic Audio Profiles</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Curated acoustic profiles tuned for Musaic Player</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {presets.filter(p => p.id.startsWith('ai-')).map(p => (
+          {presets.filter(p => p.id.startsWith('musaic-')).map(p => (
             <button
               key={p.id}
               type="button"
@@ -287,7 +255,7 @@ export default function EQPanel() {
                 transition: 'all 0.2s ease'
               }}
             >
-              {p.name.replace('🤖 ', '')}
+              {p.name}
             </button>
           ))}
         </div>
