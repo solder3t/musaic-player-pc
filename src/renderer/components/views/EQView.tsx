@@ -5,7 +5,10 @@ import { EQBand } from '../../types/audio'
 import { useAiSettingsStore } from '../../stores/aiSettingsStore'
 import { parseAutoEQ } from '../../utils/autoEQParser'
 
+// Cache version — bump this when the parsing logic changes to force a refresh.
+const AUTOEQ_CACHE_VERSION = 2
 let autoEqIndexCache: { name: string, path: string }[] | null = null;
+let autoEqIndexCacheVersion = 0;
 
 export default function EQView() {
   const [aiPrompt, setAiPrompt] = useState('')
@@ -65,16 +68,37 @@ export default function EQView() {
     
     setIsSearchingAutoEq(true)
     try {
-      if (!autoEqIndexCache) {
+      if (!autoEqIndexCache || autoEqIndexCacheVersion !== AUTOEQ_CACHE_VERSION) {
         const res = await fetch('https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/results/INDEX.md');
         const text = await res.text();
-        const regex = /-\s+\[(.*?)\]\(\.\/(.*?)\)/g;
+        // Parse line by line. Each line looks like:
+        //   - [Model Name](./path/to/Model%20Name) by source on rig
+        // Paths can contain literal ( and ) so we split each line on ') by ' to isolate
+        // the markdown link before parsing, avoiding regex stopping at inner parens.
         const results: { name: string, path: string }[] = [];
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-          results.push({ name: match[1], path: match[2] });
+        for (const line of text.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('- [')) continue;
+          // Find the name: between '- [' and ']('
+          const nameEnd = trimmed.indexOf('](');
+          if (nameEnd === -1) continue;
+          const name = trimmed.slice(3, nameEnd);
+          // Find the path: between './'' and the next ')' that closes the markdown link.
+          // The markdown link ends at the last ')' before ' by ' (or end of line).
+          const linkStart = trimmed.indexOf('(./', nameEnd);
+          if (linkStart === -1) continue;
+          // Take everything after '(./' — then find the last ')' which closes the link
+          const afterLinkOpen = trimmed.slice(linkStart + 3); // skip '(./'  
+          // The link closes at a ')' followed by ' by ' or end of string
+          // Use lastIndexOf of ') by ' first, fall back to lastIndexOf(')')
+          const byMarker = afterLinkOpen.lastIndexOf(') by ');
+          const path = byMarker !== -1
+            ? afterLinkOpen.slice(0, byMarker)
+            : afterLinkOpen.slice(0, afterLinkOpen.lastIndexOf(')'));
+          if (path) results.push({ name, path });
         }
         autoEqIndexCache = results;
+        autoEqIndexCacheVersion = AUTOEQ_CACHE_VERSION;
       }
 
       const matches = autoEqIndexCache.filter(item => item.name.toLowerCase().includes(q)).slice(0, 50)
@@ -107,10 +131,13 @@ export default function EQView() {
     setAutoEqQuery(item.name)
     try {
       // item.path is already URL-encoded from INDEX.md (e.g. "crinacle/711%20in-ear/Sony%20WH-1000XM5")
-      // The ParametricEQ.txt lives inside that folder, named "<model_name> ParametricEQ.txt"
-      // The path's last segment IS the URL-encoded model name, so we can use it directly:
-      const lastSegment = item.path.split('/').pop() || '';
-      const eqUrl = `https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/results/${item.path}/${lastSegment}%20ParametricEQ.txt`;
+      // Use item.name to build the filename - encode spaces as %20 but preserve other special chars
+      // that GitHub Raw accepts unencoded (like parentheses).
+      const encodedName = item.name
+        .split('')
+        .map(c => c === ' ' ? '%20' : c)
+        .join('');
+      const eqUrl = `https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/results/${item.path}/${encodedName}%20ParametricEQ.txt`;
       
       console.log('[AutoEQ] Fetching:', eqUrl);
       const res = await fetch(eqUrl);
