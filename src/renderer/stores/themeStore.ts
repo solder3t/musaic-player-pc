@@ -284,7 +284,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   materialyou: {
     id: 'materialyou',
     label: 'Material You',
-    description: 'Dark forest-green surfaces with emerald-mint accents',
+    description: 'Dynamically themed using your system accent color (GNOME/KDE)',
     tokens: {
       bgPrimary: '#111613',
       bgSecondary: '#19221d',
@@ -594,6 +594,61 @@ interface ThemeMutation {
   coverArtAccent: string | null
 }
 
+/**
+ * Applies a system/user accent color to the Material You preset definition.
+ * Mutates THEME_PRESETS.materialyou in place so any subsequent setPreset('materialyou')
+ * call picks up the new palette. Returns true if the color was applied.
+ */
+function applyMaterialYouAccent(rawColorHex: string): boolean {
+  if (!rawColorHex) return false
+  const hex = rawColorHex.startsWith('#') ? rawColorHex : `#${rawColorHex}`
+  const normalized = normalizeHexColor(hex)
+  if (!normalized) return false
+
+  const mTheme = themeFromSourceColor(argbFromHex(normalized))
+  const isLight = Boolean(THEME_PRESETS.materialyou.isLight)
+  const palettes = mTheme.palettes
+
+  THEME_PRESETS.materialyou.accent = normalized
+  THEME_PRESETS.materialyou.accentHover = deriveAccentHover(normalized, isLight)
+  THEME_PRESETS.materialyou.accentGlow = deriveAccentGlow(normalized)
+
+  if (isLight) {
+    THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(98))
+    THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(95))
+    THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(90))
+    THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(85))
+    THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(80))
+    THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(85))
+    THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(10))
+    THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(30))
+    THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(50))
+    THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(98))
+    THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(92))
+    THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(80))
+    THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(255, 255, 255, 0.2)'
+    THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(255, 255, 255, 0.5)'
+    THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(95)) + 'e6'
+  } else {
+    THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(10))
+    THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(15))
+    THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(22))
+    THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(25))
+    THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(30))
+    THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(25))
+    THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(95))
+    THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(80))
+    THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(60))
+    THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(10))
+    THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(16))
+    THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(25))
+    THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(0, 0, 0, 0.2)'
+    THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(0, 0, 0, 0.5)'
+    THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(15)) + 'e6'
+  }
+  return true
+}
+
 export const useThemeStore = create<ThemeSettingsState>((set, get) => {
   let accentAnimationFrame: number | null = null
   let accentAnimationToken = 0
@@ -763,6 +818,18 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
         coverArtAccentMethod: state.coverArtAccentMethod,
         coverArtAccent: state.coverArtAccent,
       }, true)
+      // Re-fetch system accent each time Material You is activated so the
+      // theme immediately reflects the current system color.
+      if (presetId === 'materialyou') {
+        void window.electronAPI.app.getSystemAccentColor().then((colorHex: string) => {
+          if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
+            // Re-apply to push the updated palette tokens to the document
+            get().setPreset('materialyou')
+          }
+        }).catch((e: unknown) => {
+          console.warn('Material You: failed to read system accent color:', e)
+        })
+      }
     },
     setCustomAccent: (accentHex) => {
       const normalized = normalizeHexColor(accentHex)
@@ -850,61 +917,11 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
       }
 
       void window.electronAPI.app.getSystemAccentColor().then((colorHex: string) => {
-        if (colorHex) {
-          const hex = colorHex.startsWith('#') ? colorHex : `#${colorHex}`
-          const normalized = normalizeHexColor(hex)
-          if (normalized) {
-            const mTheme = themeFromSourceColor(argbFromHex(normalized))
-            const isLight = Boolean(THEME_PRESETS.materialyou.isLight)
-            const palettes = mTheme.palettes
-            
-            THEME_PRESETS.materialyou.accent = normalized
-            THEME_PRESETS.materialyou.accentHover = deriveAccentHover(normalized, isLight)
-            THEME_PRESETS.materialyou.accentGlow = deriveAccentGlow(normalized)
-
-            if (isLight) {
-              // Tint the light backgrounds heavily with the primary/secondary palettes
-              THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(98))
-              THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(95))
-              THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(90))
-              THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(85))
-              THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(80))
-              THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(85))
-              THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(10))
-              THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(30))
-              THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(50))
-              THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(98))
-              THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(92))
-              THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(80))
-              THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(255, 255, 255, 0.2)'
-              THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(255, 255, 255, 0.5)'
-              THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(95)) + 'e6' // 90% opacity
-            } else {
-              // Tint the dark backgrounds heavily with the primary/secondary palettes for a true "Material You" feel
-              THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(10))
-              THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(15))
-              THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(22))
-              THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(25))
-              THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(30))
-              THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(25))
-              THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(95))
-              THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(80))
-              THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(60))
-              THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(10))
-              THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(16))
-              THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(25))
-              THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(0, 0, 0, 0.2)'
-              THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(0, 0, 0, 0.5)'
-              THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(15)) + 'e6' // 90% opacity
-            }
-            
-            if (get().presetId === 'materialyou') {
-              get().setPreset('materialyou')
-            }
-          }
+        if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
+          get().setPreset('materialyou')
         }
-      }).catch((e: any) => {
-        console.warn('Failed to fetch system accent color for Material You theme:', e)
+      }).catch((e: unknown) => {
+        console.warn('Material You: failed to fetch system accent color at startup:', e)
       })
 
       try {
