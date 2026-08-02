@@ -175,7 +175,7 @@ export function useMediaSession(): void {
 
       if (trackId !== prevTrackId) {
         prevTrackId = trackId
-        updateMetadata()
+        void updateMetadata()
         syncPlaybackState()
       } else if (playbackState !== prevPlaybackState) {
         prevPlaybackState = playbackState
