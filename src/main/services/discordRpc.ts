@@ -16,7 +16,7 @@ const MAX_RPC_PACKET_SIZE = 1024 * 1024
 const DISCORD_RPC_CLIENT_ID = '1471059486100815915'
 const DISCORD_SMALL_IMAGE_KEY = 'musaic-logo'
 const DISCORD_SMALL_IMAGE_TEXT = 'Musaic'
-const DISCORD_SMALL_IMAGE_LINK_URL = 'https://github.com/solder3t/musaic-player-linux'
+const DISCORD_SMALL_IMAGE_LINK_URL = 'https://github.com/solder3t/musaic-player-pc'
 const DEFAULT_PAUSE_CLEAR_MINUTES = 5
 const MAX_PAUSE_CLEAR_MINUTES = 1440
 const DISCORD_APP_INFO_LOOKUP_URL = `https://discord.com/api/v10/oauth2/applications/${DISCORD_RPC_CLIENT_ID}/rpc`
@@ -26,7 +26,7 @@ let appVersion = '0.0.0'
 export function setDiscordRpcAppVersion(v: string) {
   appVersion = v
 }
-const getDiscordRpcUserAgent = () => `Musaic-Discord-RPC/${appVersion} (https://github.com/solder3t/musaic-player-linux)`
+const getDiscordRpcUserAgent = () => `Musaic-Discord-RPC/${appVersion} (https://github.com/solder3t/musaic-player-pc)`
 const DISCORD_SET_ACTIVITY_COALESCE_MS = 150
 const DISCORD_SET_ACTIVITY_ACK_TIMEOUT_MS = 1500
 

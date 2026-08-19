@@ -22,7 +22,7 @@ set -euo pipefail
 # Repo name appears exactly once; a rename only needs MUSAIC_RECEIVER_REPO (GitHub 301-redirects
 # renamed repos, and curl -L follows, so even that is not urgent — deployed devices with the old
 # default keep updating through the redirect until a release ships them this new default).
-REPO="${MUSAIC_RECEIVER_REPO:-solder3t/musaic-player-linux}"
+REPO="${MUSAIC_RECEIVER_REPO:-solder3t/musaic-player-pc}"
 INSTALL_DIR="${MUSAIC_RECEIVER_INSTALL_DIR:-/opt/musaic-receiver}"
 SERVICE_NAME="musaic-receiver"
 TARBALL_NAME="musaic-receiver-linux-arm64.tar.gz"

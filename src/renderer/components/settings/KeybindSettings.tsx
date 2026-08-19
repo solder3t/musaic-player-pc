@@ -13,7 +13,7 @@ import {
   isGlobalInputBindingEnabled,
   useInputBindingStore
 } from '../../stores/inputBindingStore'
-import { formatInputBinding, normalizeRawKeyboardBinding } from '../../utils/inputBindings'
+import { formatInputBinding, getRuntimePlatform, normalizeRawKeyboardBinding } from '../../utils/inputBindings'
 import ConfirmActionModal from './ConfirmActionModal'
 
 interface CaptureTarget {
@@ -41,7 +41,7 @@ export default function KeybindSettings() {
   const resetAll = useInputBindingStore((state) => state.resetAll)
   const setGlobalRegistrationSuspended = useInputBindingStore((state) => state.setGlobalRegistrationSuspended)
   const setGlobalEnabled = useInputBindingStore((state) => state.setGlobalEnabled)
-  const platform = window.electronAPI?.platform ?? 'linux'
+  const platform = getRuntimePlatform()
   const [captureTarget, setCaptureTarget] = useState<CaptureTarget | null>(null)
   const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(null)
   const [feedback, setFeedback] = useState('')

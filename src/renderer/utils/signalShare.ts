@@ -5,7 +5,7 @@ import {
   type SignalLayout
 } from '@boof2015/astra-signal'
 
-export const SIGNAL_WEB_URL = 'https://github.com/solder3t/musaic-player-linux/'
+export const SIGNAL_WEB_URL = 'https://github.com/solder3t/musaic-player-pc/'
 
 export interface SignalShareTarget {
   artist: string

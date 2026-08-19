@@ -49,7 +49,7 @@ join/SSE/audio/clock/telemetry all flow; only the DAC is fake.
 One line, on any 64-bit Pi OS (or other arm64 Linux):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/solder3t/musaic-player-linux/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh
+curl -fsSL https://raw.githubusercontent.com/solder3t/musaic-player-pc/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh
 ```
 
 (Download-then-run, not `| sudo bash` — modern sudo puts commands on a private pty, and a
