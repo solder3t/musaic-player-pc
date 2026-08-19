@@ -90,7 +90,12 @@ import {
   PHONE_REMOTE_MAX_PORT,
   PHONE_REMOTE_MIN_PORT
 } from '../../../types/phoneRemote'
-import type { LastFmProfileStatus, LastFmScrobbleProtocol } from '../../../types/lastFm'
+import {
+  LASTFM_OFFICIAL_PROFILE_ID,
+  LISTENBRAINZ_OFFICIAL_PROFILE_ID,
+  type LastFmProfileStatus,
+  type LastFmScrobbleProtocol
+} from '../../../types/lastFm'
 import { LRCLIB_OFFICIAL_BASE_URL } from '../../../types/lyrics'
 import type { AppBuildInfo } from '../../../types/appBuildInfo'
 import type { CompanionApiScope } from '../../../types/companionApi'
@@ -249,10 +254,8 @@ const RESET_ACTION_IDS: ResetActionId[] = [
   'factory-reset',
 ]
 
-const MUSAIC_REPOSITORY_URL = 'https://github.com/solder3t/musaic-player-linux'
-const MUSAIC_DISCORD_URL = 'https://discord.gg/hsKK8Kr9Nj'
-const MUSAIC_SUPPORT_URL = 'https://github.com/solder3t/musaic-player-linux'
-const MUSAIC_LICENSE_URL = 'https://github.com/solder3t/musaic-player-linux/blob/main/LICENSE'
+const MUSAIC_REPOSITORY_URL = 'https://github.com/solder3t/musaic-player-pc'
+const MUSAIC_LICENSE_URL = 'https://github.com/solder3t/musaic-player-pc/blob/main/LICENSE'
 const GPL_V3_URL = 'https://www.gnu.org/licenses/gpl-3.0.html'
 const BIT_PERFECT_WARNING_DISMISSED_STORAGE_KEY = 'musaic-bitperfect-warning-dismissed-v1'
 const DEVELOPER_SETTINGS_VISIBILITY_STORAGE_KEY = 'musaic-settings-developer-section-visible-v1'
@@ -465,6 +468,8 @@ export default function SettingsView() {
     updateCustomProfile: updateLastFmCustomProfile,
     deleteCustomProfile: deleteLastFmCustomProfile,
     setProfileEnabled: setLastFmProfileEnabled,
+    setProfileNowPlaying: setLastFmProfileNowPlaying,
+    setListenBrainzToken,
     beginAuth: beginLastFmAuth,
     disconnectProfile: disconnectLastFmProfile,
     setCustomCredentials: setLastFmCustomCredentials,
@@ -509,6 +514,10 @@ export default function SettingsView() {
   const [miniPlayerVisualizerMode, setMiniPlayerVisualizerMode] = useState<MiniPlayerVisualizerMode>('off')
   const [localApiPortInput, setLocalApiPortInput] = useState(String(LOCAL_API_DEFAULT_PORT))
   const [phoneRemotePortInput, setPhoneRemotePortInput] = useState(String(PHONE_REMOTE_DEFAULT_PORT))
+  const [lastFmDialogOpen, setLastFmDialogOpen] = useState(false)
+  const [listenBrainzDialogOpen, setListenBrainzDialogOpen] = useState(false)
+  const [listenBrainzTokenInput, setListenBrainzTokenInput] = useState('')
+  const [customEndpointsExpanded, setCustomEndpointsExpanded] = useState(false)
   const [lastFmProfileModalMode, setLastFmProfileModalMode] = useState<'create' | 'edit' | null>(null)
   const [lastFmEditingProfileId, setLastFmEditingProfileId] = useState<string | null>(null)
   const [lastFmProfileProtocolInput, setLastFmProfileProtocolInput] = useState<LastFmScrobbleProtocol>('lastfm2')
@@ -1016,13 +1025,17 @@ export default function SettingsView() {
   // sink-types-PIN flow which is gone. Removed.
   const lastFmEnabled = lastFmStatus?.enabled ?? false
   const lastFmAuthPending = lastFmStatus?.authPending ?? false
-  const lastFmAuthPendingProfileId = lastFmStatus?.authPendingProfileId ?? null
   const lastFmHasApiCredentials = lastFmStatus?.hasApiCredentials ?? true
   const lastFmProfiles = lastFmStatus?.profiles ?? []
+  const officialLastFmProfile = lastFmStatus?.lastFmProfile ?? lastFmProfiles.find((p) => p.id === LASTFM_OFFICIAL_PROFILE_ID)
+  const officialListenBrainzProfile = lastFmStatus?.listenBrainzProfile ?? lastFmProfiles.find((p) => p.id === LISTENBRAINZ_OFFICIAL_PROFILE_ID)
+  const customScrobbleProfiles = lastFmProfiles.filter((p) => p.kind === 'custom')
   const lastFmPendingScrobbles = lastFmStatus?.pendingScrobbles ?? 0
   const lastFmStatusLabel = lastFmStatus?.statusMessage ?? 'Loading scrobbling status...'
   const lastFmQueueLabel = `Pending scrobbles: ${lastFmPendingScrobbles}.`
   const lastFmResolvedError = lastFmErrorMessage || (lastFmStatus?.lastError ?? '')
+  const lastFmDialogPresence = usePresence(lastFmDialogOpen ? 'Last.fm' : null)
+  const listenBrainzDialogPresence = usePresence(listenBrainzDialogOpen ? 'ListenBrainz' : null)
   const lastFmProfileModalOpen = lastFmProfileModalMode != null
   const lastFmProfileModalTitle = lastFmProfileModalMode === 'edit' ? 'Edit Destination' : 'Add Destination'
   const lastFmProfilePresence = usePresence(lastFmProfileModalOpen ? lastFmProfileModalTitle : null)
@@ -2196,8 +2209,8 @@ export default function SettingsView() {
 
               <div className="settings-integration-card">
                 <div className="settings-integration-card-head">
-                  <h4>Scrobbling</h4>
-                  <p>Now Playing updates and scrobbles for your connected destinations.</p>
+                  <h4>Scrobblers</h4>
+                  <p>Track your listening history and send Now Playing updates across services.</p>
                 </div>
                 <div className="settings-grid">
                   <div className="settings-field settings-field-inline">
@@ -2210,216 +2223,273 @@ export default function SettingsView() {
                     </button>
                   </div>
 
-                  <div className="settings-field settings-lastfm-profiles-field">
-                    <div className="settings-lastfm-profiles-head">
-                      <span className="settings-field-label">Destinations</span>
+                  {/* Last.fm Card */}
+                  <div className="settings-scrobbler-card">
+                    <div className="settings-scrobbler-header">
+                      <div className="settings-scrobbler-info">
+                        <div className="settings-scrobbler-icon-row">
+                          <span className="settings-scrobbler-title">Last.fm</span>
+                          {officialLastFmProfile?.connected && (
+                            <span className="settings-chip settings-chip-mono">Connected</span>
+                          )}
+                        </div>
+                        <span className="settings-scrobbler-subtitle">
+                          {officialLastFmProfile?.connected
+                            ? `Signed in as ${officialLastFmProfile.username}`
+                            : 'Track listening history on Last.fm'}
+                        </span>
+                      </div>
+                      <div className="settings-inline-row">
+                        <button
+                          type="button"
+                          className="settings-btn"
+                          onClick={() => setLastFmDialogOpen(true)}
+                        >
+                          {officialLastFmProfile?.connected ? 'Manage' : 'Sign In'}
+                        </button>
+                        {officialLastFmProfile?.connected && (
+                          <button
+                            className={`settings-toggle ${officialLastFmProfile.enabled ? 'active' : ''}`}
+                            onClick={() => void setLastFmProfileEnabled(LASTFM_OFFICIAL_PROFILE_ID, !officialLastFmProfile.enabled)}
+                            aria-label="Toggle Last.fm Scrobbling"
+                          >
+                            {officialLastFmProfile.enabled ? 'On' : 'Off'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {officialLastFmProfile?.connected && (
+                      <div className="settings-scrobbler-subfield">
+                        <div className="settings-scrobbler-subfield-text">
+                          <span className="settings-scrobbler-subfield-label">Send Now Playing</span>
+                          <span className="settings-scrobbler-subfield-desc">Notify Last.fm of the track currently playing</span>
+                        </div>
+                        <button
+                          className={`settings-toggle ${officialLastFmProfile.nowPlayingEnabled !== false ? 'active' : ''}`}
+                          onClick={() => void setLastFmProfileNowPlaying(LASTFM_OFFICIAL_PROFILE_ID, !(officialLastFmProfile.nowPlayingEnabled !== false))}
+                          aria-label="Toggle Last.fm Now Playing"
+                        >
+                          {officialLastFmProfile.nowPlayingEnabled !== false ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ListenBrainz Card */}
+                  <div className="settings-scrobbler-card">
+                    <div className="settings-scrobbler-header">
+                      <div className="settings-scrobbler-info">
+                        <div className="settings-scrobbler-icon-row">
+                          <span className="settings-scrobbler-title">ListenBrainz</span>
+                          {officialListenBrainzProfile?.connected && (
+                            <span className="settings-chip settings-chip-mono">Connected</span>
+                          )}
+                        </div>
+                        <span className="settings-scrobbler-subtitle">
+                          {officialListenBrainzProfile?.connected
+                            ? 'Connected to ListenBrainz'
+                            : 'Track listening history on ListenBrainz'}
+                        </span>
+                      </div>
                       <div className="settings-inline-row">
                         <button
                           type="button"
                           className="settings-btn"
                           onClick={() => {
-                            setLastFmProfileModalMode('create')
-                            setLastFmEditingProfileId(null)
-                            setLastFmProfileProtocolInput('lastfm2')
-                            setLastFmProfileNameInput(getDefaultScrobbleProfileName('lastfm2'))
-                            setLastFmProfileUrlInput('http://localhost:9078/2.0/')
-                            setLastFmProfileUsernameInput('')
-                            setLastFmProfileSessionKeyInput('')
+                            setListenBrainzTokenInput('')
+                            setListenBrainzDialogOpen(true)
                           }}
                         >
-                          Add Last.fm
+                          {officialListenBrainzProfile?.connected ? 'Configure' : 'Connect'}
                         </button>
+                        {officialListenBrainzProfile?.connected && (
+                          <button
+                            className={`settings-toggle ${officialListenBrainzProfile.enabled ? 'active' : ''}`}
+                            onClick={() => void setLastFmProfileEnabled(LISTENBRAINZ_OFFICIAL_PROFILE_ID, !officialListenBrainzProfile.enabled)}
+                            aria-label="Toggle ListenBrainz Scrobbling"
+                          >
+                            {officialListenBrainzProfile.enabled ? 'On' : 'Off'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {officialListenBrainzProfile?.connected && (
+                      <div className="settings-scrobbler-subfield">
+                        <div className="settings-scrobbler-subfield-text">
+                          <span className="settings-scrobbler-subfield-label">Send Now Playing</span>
+                          <span className="settings-scrobbler-subfield-desc">Notify ListenBrainz of the track currently playing</span>
+                        </div>
+                        <button
+                          className={`settings-toggle ${officialListenBrainzProfile.nowPlayingEnabled !== false ? 'active' : ''}`}
+                          onClick={() => void setLastFmProfileNowPlaying(LISTENBRAINZ_OFFICIAL_PROFILE_ID, !(officialListenBrainzProfile.nowPlayingEnabled !== false))}
+                          aria-label="Toggle ListenBrainz Now Playing"
+                        >
+                          {officialListenBrainzProfile.nowPlayingEnabled !== false ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Queue & Status Info */}
+                  <p className="settings-note">{lastFmStatusLabel}</p>
+                  {lastFmPendingScrobbles > 0 && (
+                    <p className="settings-note">{lastFmQueueLabel}</p>
+                  )}
+                  {lastFmProfileFeedback && <p className="settings-note settings-note-success">{lastFmProfileFeedback}</p>}
+                  {lastFmAuthHint && <p className="settings-note settings-note-success">{lastFmAuthHint}</p>}
+                  {lastFmResolvedError && <p className="settings-note settings-note-error">{lastFmResolvedError}</p>}
+                  {!lastFmHasApiCredentials && (
+                    <p className="settings-note settings-note-error">
+                      Last.fm API credentials are missing in this build. Please provide custom credentials below.
+                    </p>
+                  )}
+
+                  {/* Advanced / Custom Endpoints */}
+                  <div style={{ marginTop: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <button
+                        type="button"
+                        className="settings-btn settings-link-btn"
+                        style={{ padding: 0, fontSize: '0.85rem' }}
+                        onClick={() => setCustomEndpointsExpanded(!customEndpointsExpanded)}
+                      >
+                        {customEndpointsExpanded ? '▼ Hide Custom Scrobble Endpoints' : '► Custom Scrobble Endpoints & Overrides'}
+                      </button>
+                      {customEndpointsExpanded && (
                         <button
                           type="button"
                           className="settings-btn"
-                          onClick={() => {
-                            setLastFmProfileModalMode('create')
-                            setLastFmEditingProfileId(null)
-                            setLastFmProfileProtocolInput('listenbrainz')
-                            setLastFmProfileNameInput(getDefaultScrobbleProfileName('listenbrainz'))
-                            setLastFmProfileUrlInput('https://api.listenbrainz.org')
-                            setLastFmProfileUsernameInput('')
-                            setLastFmProfileSessionKeyInput('')
-                          }}
-                        >
-                          Add ListenBrainz
-                        </button>
-                        <button
-                          type="button"
-                          className="settings-btn settings-btn-primary"
                           onClick={openLastFmCreateProfileModal}
                         >
-                          Add Custom
+                          Add Custom Endpoint
                         </button>
-                      </div>
+                      )}
                     </div>
-                    <div className="settings-lastfm-profile-list">
-                      {lastFmProfiles.map((profile) => {
-                        const canToggleProfile = canToggleLastFmProfile(profile)
-                        const profileAuthPending = lastFmAuthPending && lastFmAuthPendingProfileId === profile.id
-                        const canConnectProfile = lastFmHasApiCredentials &&
-                          profile.kind === 'official' &&
-                          profile.protocol === 'lastfm2' &&
-                          !profile.connected &&
-                          !lastFmIsAuthorizing
-                        const rowClassName = [
-                          'settings-lastfm-profile-row',
-                          profile.enabled ? 'active' : 'inactive',
-                          !canToggleProfile ? 'blocked' : ''
-                        ].filter(Boolean).join(' ')
+                    {customEndpointsExpanded && (
+                      <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {customScrobbleProfiles.length > 0 ? (
+                          <div className="settings-lastfm-profile-list">
+                            {customScrobbleProfiles.map((profile) => {
+                              const canToggleProfile = canToggleLastFmProfile(profile)
+                              const rowClassName = [
+                                'settings-lastfm-profile-row',
+                                profile.enabled ? 'active' : 'inactive',
+                                !canToggleProfile ? 'blocked' : ''
+                              ].filter(Boolean).join(' ')
 
-                        return (
-                          <div key={profile.id} className={rowClassName}>
-                            <label className="settings-lastfm-profile-check">
-                              <input
-                                type="checkbox"
-                                checked={profile.enabled}
-                                disabled={!canToggleProfile}
-                                onChange={() => handleToggleLastFmProfile(profile)}
-                                aria-label={`${profile.enabled ? 'Disable' : 'Enable'} ${profile.name}`}
-                              />
-                              <span aria-hidden="true" />
-                            </label>
-                            <div className="settings-lastfm-profile-main">
-                              <div className="settings-lastfm-profile-title-row">
-                                <span className="settings-lastfm-profile-name">{profile.name}</span>
-                                <span className="settings-chip settings-chip-mono">
-                                  {profile.protocolLabel}
-                                </span>
-                              </div>
-                              <div className="settings-lastfm-profile-meta">
-                                <span>{profile.apiBaseUrl}</span>
-                                <span>
-                                  {profile.connected
-                                    ? profile.username
-                                      ? `Connected as ${profile.username}`
-                                      : 'Token configured'
-                                    : 'Not connected'}
-                                </span>
-                                <span>{profile.pendingScrobbles} pending</span>
-                                {profile.lastError && (
-                                  <span className="settings-lastfm-profile-error">{profile.lastError}</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="settings-lastfm-profile-actions">
-                              {profile.kind === 'official' && profile.protocol === 'lastfm2' && (!profile.connected || profileAuthPending) && (
-                                <button
-                                  type="button"
-                                  className="settings-lastfm-icon-btn"
-                                  onClick={() => void beginLastFmAuth(profile.id)}
-                                  disabled={!canConnectProfile && !profileAuthPending}
-                                  title={profileAuthPending ? 'Authorization pending' : 'Connect'}
-                                  aria-label={profileAuthPending ? 'Authorization pending' : `Connect ${profile.name}`}
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M10.5 13.5L13.5 10.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                    <path d="M8.2 15.8L6.8 17.2C5.6 18.4 3.8 18.4 2.6 17.2C1.5 16 1.5 14.2 2.6 13L6.1 9.5C7.3 8.3 9.1 8.3 10.3 9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                    <path d="M15.8 8.2L17.2 6.8C18.4 5.6 20.2 5.6 21.4 6.8C22.5 8 22.5 9.8 21.4 11L17.9 14.5C16.7 15.7 14.9 15.7 13.7 14.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                  </svg>
-                                </button>
-                              )}
-                              {profile.connected && (
-                                <button
-                                  type="button"
-                                  className="settings-lastfm-icon-btn"
-                                  onClick={() => void disconnectLastFmProfile(profile.id)}
-                                  title="Disconnect"
-                                  aria-label={`Disconnect ${profile.name}`}
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M7 7L17 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                    <path d="M17 7L7 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                  </svg>
-                                </button>
-                              )}
-                              {profile.kind === 'custom' && (
-                                <button
-                                  type="button"
-                                  className="settings-lastfm-icon-btn"
-                                  onClick={() => openLastFmEditProfileModal(profile)}
-                                  title="Edit"
-                                  aria-label={`Edit ${profile.name}`}
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M4 20H8.4L19.2 9.2C20.1 8.3 20.1 6.9 19.2 6L18 4.8C17.1 3.9 15.7 3.9 14.8 4.8L4 15.6V20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                                    <path d="M13.8 5.8L18.2 10.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                  </svg>
-                                </button>
-                              )}
-                              {profile.canDelete && (
-                                <button
-                                  type="button"
-                                  className="settings-lastfm-icon-btn danger"
-                                  onClick={() => handleDeleteLastFmProfile(profile)}
-                                  title="Delete"
-                                  aria-label={`Delete ${profile.name}`}
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M5 7H19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                                    <path d="M9 7V5H15V7" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                                    <path d="M8 10V19H16V10" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
+                              return (
+                                <div key={profile.id} className={rowClassName}>
+                                  <label className="settings-lastfm-profile-check">
+                                    <input
+                                      type="checkbox"
+                                      checked={profile.enabled}
+                                      disabled={!canToggleProfile}
+                                      onChange={() => handleToggleLastFmProfile(profile)}
+                                      aria-label={`${profile.enabled ? 'Disable' : 'Enable'} ${profile.name}`}
+                                    />
+                                    <span aria-hidden="true" />
+                                  </label>
+                                  <div className="settings-lastfm-profile-main">
+                                    <div className="settings-lastfm-profile-title-row">
+                                      <span className="settings-lastfm-profile-name">{profile.name}</span>
+                                      <span className="settings-chip settings-chip-mono">
+                                        {profile.protocolLabel}
+                                      </span>
+                                    </div>
+                                    <div className="settings-lastfm-profile-meta">
+                                      <span>{profile.apiBaseUrl}</span>
+                                      <span>
+                                        {profile.connected
+                                          ? profile.username
+                                            ? `Connected as ${profile.username}`
+                                            : 'Token configured'
+                                          : 'Not connected'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="settings-lastfm-profile-actions">
+                                    <button
+                                      type="button"
+                                      className="settings-lastfm-icon-btn"
+                                      onClick={() => openLastFmEditProfileModal(profile)}
+                                      title="Edit"
+                                      aria-label={`Edit ${profile.name}`}
+                                    >
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M4 20H8.4L19.2 9.2C20.1 8.3 20.1 6.9 19.2 6L18 4.8C17.1 3.9 15.7 3.9 14.8 4.8L4 15.6V20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                                        <path d="M13.8 5.8L18.2 10.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                      </svg>
+                                    </button>
+                                    {profile.canDelete && (
+                                      <button
+                                        type="button"
+                                        className="settings-lastfm-icon-btn danger"
+                                        onClick={() => handleDeleteLastFmProfile(profile)}
+                                        title="Delete"
+                                        aria-label={`Delete ${profile.name}`}
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                          <path d="M6 7V19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                          <path d="M4 7H20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                          <path d="M9 7V4C9 3.4 9.4 3 10 3H14C14.6 3 15 3.4 15 4V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
                           </div>
-                        )
-                      })}
-                    </div>
+                        ) : (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94a3b8)' }}>
+                            No custom endpoints configured. You can add Libre.fm, GNU FM, or custom servers.
+                          </div>
+                        )}
+                        <div className="settings-grid" style={{ marginTop: '8px' }}>
+                          <label className="settings-field">
+                            <span className="settings-field-label">Custom Last.fm API Key</span>
+                            <input
+                              className="settings-select"
+                              type="text"
+                              placeholder="Optional overrides"
+                              value={lastFmCustomApiKeyInput}
+                              onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
+                              onBlur={() => {
+                                const nextKey = lastFmCustomApiKeyInput.trim() || null
+                                const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                                if (
+                                  nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                                  nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                                ) {
+                                  void setLastFmCustomCredentials(nextKey, nextSecret)
+                                }
+                              }}
+                            />
+                          </label>
+                          <label className="settings-field">
+                            <span className="settings-field-label">Custom Last.fm Shared Secret</span>
+                            <input
+                              className="settings-select"
+                              type="password"
+                              placeholder="Optional overrides"
+                              value={lastFmCustomSharedSecretInput}
+                              onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
+                              onBlur={() => {
+                                const nextKey = lastFmCustomApiKeyInput.trim() || null
+                                const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                                if (
+                                  nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                                  nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                                ) {
+                                  void setLastFmCustomCredentials(nextKey, nextSecret)
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <p className="settings-note">{lastFmStatusLabel}</p>
-                <p className="settings-note">{lastFmQueueLabel}</p>
-                {lastFmProfileFeedback && <p className="settings-note settings-note-success">{lastFmProfileFeedback}</p>}
-                {lastFmAuthHint && <p className="settings-note settings-note-success">{lastFmAuthHint}</p>}
-                {lastFmResolvedError && <p className="settings-note settings-note-error">{lastFmResolvedError}</p>}
-                {!lastFmHasApiCredentials && (
-                  <p className="settings-note settings-note-error">
-                    Last.fm API credentials are missing in this build. Please provide custom credentials.
-                  </p>
-                )}
-                <div className="settings-grid">
-                  <label className="settings-field">
-                    <span className="settings-field-label">Custom API Key</span>
-                    <input
-                      className="settings-select"
-                      type="text"
-                      placeholder="Optional overrides"
-                      value={lastFmCustomApiKeyInput}
-                      onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
-                      onBlur={() => {
-                        const nextKey = lastFmCustomApiKeyInput.trim() || null
-                        const nextSecret = lastFmCustomSharedSecretInput.trim() || null
-                        if (
-                          nextKey !== (lastFmStatus?.customApiKey ?? null) ||
-                          nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
-                        ) {
-                          void setLastFmCustomCredentials(nextKey, nextSecret)
-                        }
-                      }}
-                    />
-                  </label>
-                  <label className="settings-field">
-                    <span className="settings-field-label">Custom Shared Secret</span>
-                    <input
-                      className="settings-select"
-                      type="password"
-                      placeholder="Optional overrides"
-                      value={lastFmCustomSharedSecretInput}
-                      onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
-                      onBlur={() => {
-                        const nextKey = lastFmCustomApiKeyInput.trim() || null
-                        const nextSecret = lastFmCustomSharedSecretInput.trim() || null
-                        if (
-                          nextKey !== (lastFmStatus?.customApiKey ?? null) ||
-                          nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
-                        ) {
-                          void setLastFmCustomCredentials(nextKey, nextSecret)
-                        }
-                      }}
-                    />
-                  </label>
                 </div>
               </div>
 
@@ -3125,21 +3195,6 @@ export default function SettingsView() {
                   >
                     GitHub Repository
                   </button>
-                  <button
-                    type="button"
-                    className="settings-btn settings-link-btn"
-                    onClick={() => openExternalLink(MUSAIC_DISCORD_URL)}
-                  >
-                    Discord
-                  </button>
-                  <button
-                    type="button"
-                    className="settings-btn settings-link-btn settings-link-btn-kofi"
-                    onClick={() => openExternalLink(MUSAIC_SUPPORT_URL)}
-                  >
-                    Ko-fi
-                    <span className="settings-link-btn-heart" aria-hidden="true" />
-                  </button>
                 </div>
               </div>
               <div className="settings-info-panel">
@@ -3379,6 +3434,232 @@ export default function SettingsView() {
         onCancel={() => setShowBitPerfectWarning(false)}
         onConfirm={handleConfirmBitPerfectWarning}
       />
+      {lastFmDialogPresence.shouldRender && (
+        <div
+          className="modal-overlay"
+          data-presence={lastFmDialogPresence.phase}
+          aria-hidden={lastFmDialogPresence.phase === 'exiting'}
+          onClick={() => setLastFmDialogOpen(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxWidth: '440px' }}
+          >
+            <div className="modal-header" style={{ justifyContent: 'center', position: 'relative' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+                <div style={{ color: 'var(--accent, #6366f1)' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+                  </svg>
+                </div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Last.fm</h2>
+              </div>
+              <button
+                className="modal-close"
+                style={{ position: 'absolute', right: '16px', top: '16px' }}
+                onClick={() => setLastFmDialogOpen(false)}
+                aria-label="Close"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center', padding: '16px 24px' }}>
+              <p style={{ color: 'var(--color-text-secondary, #94a3b8)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                Connect your Last.fm account to automatically scrobble the tracks you listen to.
+              </p>
+
+              {officialLastFmProfile?.connected ? (
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '20px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '8px'
+                  }}
+                >
+                  <div style={{ color: 'var(--accent, #6366f1)' }}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+                    </svg>
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>
+                    Signed in as {officialLastFmProfile.username}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary, #94a3b8)' }}>
+                    Scrobbles after 50% or 4 minutes (whichever comes first)
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '8px 0', fontSize: '0.85rem', color: 'var(--color-text-secondary, #94a3b8)' }}>
+                  {lastFmAuthPending || lastFmIsAuthorizing
+                    ? (lastFmAuthHint || 'Waiting for authorization in your browser...')
+                    : 'Signing in connects your Last.fm account to automatically scrobble tracks and update Now Playing.'}
+                </div>
+              )}
+              {lastFmResolvedError && (
+                <div style={{ color: 'var(--color-danger, #ef4444)', fontSize: '0.85rem', marginTop: '8px' }}>
+                  {lastFmResolvedError}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer" style={{ justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="settings-btn" onClick={() => setLastFmDialogOpen(false)}>
+                Cancel
+              </button>
+              {officialLastFmProfile?.connected ? (
+                <button
+                  className="settings-btn"
+                  style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                  onClick={() => {
+                    void disconnectLastFmProfile(LASTFM_OFFICIAL_PROFILE_ID)
+                    setLastFmDialogOpen(false)
+                  }}
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  className="settings-btn settings-btn-primary"
+                  onClick={() => {
+                    void beginLastFmAuth(LASTFM_OFFICIAL_PROFILE_ID)
+                  }}
+                  disabled={lastFmIsAuthorizing}
+                >
+                  {lastFmIsAuthorizing || lastFmAuthPending ? 'Authorizing...' : 'Sign In'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {listenBrainzDialogPresence.shouldRender && (
+        <div
+          className="modal-overlay"
+          data-presence={listenBrainzDialogPresence.phase}
+          aria-hidden={listenBrainzDialogPresence.phase === 'exiting'}
+          onClick={() => setListenBrainzDialogOpen(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxWidth: '440px' }}
+          >
+            <div className="modal-header" style={{ justifyContent: 'center', position: 'relative' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+                <div style={{ color: 'var(--accent, #6366f1)' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z" />
+                  </svg>
+                </div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>ListenBrainz</h2>
+              </div>
+              <button
+                className="modal-close"
+                style={{ position: 'absolute', right: '16px', top: '16px' }}
+                onClick={() => setListenBrainzDialogOpen(false)}
+                aria-label="Close"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center', padding: '16px 24px' }}>
+              <p style={{ color: 'var(--color-text-secondary, #94a3b8)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                Connect your ListenBrainz account to track your listening history.
+              </p>
+
+              {officialListenBrainzProfile?.connected ? (
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '20px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '8px'
+                  }}
+                >
+                  <div style={{ color: '#22c55e' }}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>
+                    Connected to ListenBrainz
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary, #94a3b8)' }}>
+                    Scrobbles after 50% or 4 minutes (whichever comes first)
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
+                  <label className="settings-field">
+                    <span className="settings-field-label">User Token</span>
+                    <input
+                      className="settings-input"
+                      type="password"
+                      placeholder="e.g. 12345678-1234-1234-1234-123456789abc"
+                      value={listenBrainzTokenInput}
+                      onChange={(e) => setListenBrainzTokenInput(e.target.value)}
+                      autoFocus
+                    />
+                  </label>
+                  <div style={{ textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      className="settings-btn settings-link-btn"
+                      style={{ fontSize: '0.85rem', padding: 0 }}
+                      onClick={() => openExternalLink('https://listenbrainz.org/profile/')}
+                    >
+                      Get Token
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer" style={{ justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="settings-btn" onClick={() => setListenBrainzDialogOpen(false)}>
+                Cancel
+              </button>
+              {officialListenBrainzProfile?.connected ? (
+                <button
+                  className="settings-btn"
+                  style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                  onClick={() => {
+                    void setListenBrainzToken('')
+                    setListenBrainzDialogOpen(false)
+                  }}
+                >
+                  Log Out
+                </button>
+              ) : (
+                <button
+                  className="settings-btn settings-btn-primary"
+                  onClick={() => {
+                    if (listenBrainzTokenInput.trim()) {
+                      void setListenBrainzToken(listenBrainzTokenInput.trim())
+                      setListenBrainzDialogOpen(false)
+                    }
+                  }}
+                  disabled={!listenBrainzTokenInput.trim()}
+                >
+                  Save
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {lastFmProfilePresence.shouldRender && (
         <div
           className="modal-overlay"

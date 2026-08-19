@@ -3,6 +3,8 @@ import type { MiniPlayerSnapshot } from '../../types/miniPlayer'
 import {
   LASTFM_OFFICIAL_API_BASE_URL,
   LASTFM_OFFICIAL_PROFILE_ID,
+  LISTENBRAINZ_OFFICIAL_API_BASE_URL,
+  LISTENBRAINZ_OFFICIAL_PROFILE_ID,
   getLastFmProtocolLabel,
   isLastFmCustomEndpoint,
   lastFmProfileRequiresApiCredentials,
@@ -245,7 +247,31 @@ function buildCustomProfileId(name: string, existingIds: Set<string>): string {
   return candidate
 }
 
-function createOfficialProfile(raw?: unknown, defaultEnabled = false): LastFmProfileConfig {
+async function executeNetworkFetch(
+  url: string | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const urlString = url.toString()
+
+  if (typeof process !== 'undefined' && process.versions?.electron) {
+    try {
+      const electron = await import('electron')
+      if (electron.net && typeof electron.net.fetch === 'function') {
+        return await electron.net.fetch(urlString, init as any)
+      }
+    } catch {
+      // Fall back to global fetch
+    }
+  }
+
+  return await fetch(urlString, init)
+}
+
+export function createOfficialProfile(raw?: unknown, defaultEnabled = false): LastFmProfileConfig {
+  return createOfficialLastFmProfile(raw, defaultEnabled)
+}
+
+export function createOfficialLastFmProfile(raw?: unknown, defaultEnabled = false): LastFmProfileConfig {
   const record = raw && typeof raw === 'object' && !Array.isArray(raw)
     ? raw as Record<string, unknown>
     : {}
@@ -257,6 +283,26 @@ function createOfficialProfile(raw?: unknown, defaultEnabled = false): LastFmPro
     name: 'Official Last.fm',
     apiBaseUrl: LASTFM_OFFICIAL_API_BASE_URL,
     enabled: normalizeProfileEnabled(record.enabled, defaultEnabled),
+    nowPlayingEnabled: typeof record.nowPlayingEnabled === 'boolean' ? record.nowPlayingEnabled : true,
+    sessionKey: normalizeText(record.sessionKey),
+    username: normalizeText(record.username),
+    pendingScrobbles: sanitizePendingScrobbles(record.pendingScrobbles)
+  }
+}
+
+export function createOfficialListenBrainzProfile(raw?: unknown, defaultEnabled = false): LastFmProfileConfig {
+  const record = raw && typeof raw === 'object' && !Array.isArray(raw)
+    ? raw as Record<string, unknown>
+    : {}
+
+  return {
+    id: LISTENBRAINZ_OFFICIAL_PROFILE_ID,
+    kind: 'official',
+    protocol: 'listenbrainz',
+    name: 'Official ListenBrainz',
+    apiBaseUrl: LISTENBRAINZ_OFFICIAL_API_BASE_URL,
+    enabled: normalizeProfileEnabled(record.enabled, defaultEnabled),
+    nowPlayingEnabled: typeof record.nowPlayingEnabled === 'boolean' ? record.nowPlayingEnabled : true,
     sessionKey: normalizeText(record.sessionKey),
     username: normalizeText(record.username),
     pendingScrobbles: sanitizePendingScrobbles(record.pendingScrobbles)
@@ -270,10 +316,14 @@ function normalizeCustomProfile(raw: unknown, existingIds: Set<string>, defaultE
   const apiBaseUrl = parseProfileApiBaseUrl(protocol, record.apiBaseUrl)
   if (!apiBaseUrl) return null
   if (protocol === 'lastfm2' && apiBaseUrl === LASTFM_OFFICIAL_API_BASE_URL) return null
+  if (protocol === 'listenbrainz' && apiBaseUrl === LISTENBRAINZ_OFFICIAL_API_BASE_URL) return null
 
   const name = normalizeProfileName(record.name, 'Custom endpoint')
   const rawId = normalizeText(record.id)
-  const id = rawId && rawId !== LASTFM_OFFICIAL_PROFILE_ID && !existingIds.has(rawId)
+  const id = rawId &&
+    rawId !== LASTFM_OFFICIAL_PROFILE_ID &&
+    rawId !== LISTENBRAINZ_OFFICIAL_PROFILE_ID &&
+    !existingIds.has(rawId)
     ? rawId
     : buildCustomProfileId(name, existingIds)
   existingIds.add(id)
@@ -285,6 +335,7 @@ function normalizeCustomProfile(raw: unknown, existingIds: Set<string>, defaultE
     name,
     apiBaseUrl,
     enabled: normalizeProfileEnabled(record.enabled, defaultEnabled),
+    nowPlayingEnabled: typeof record.nowPlayingEnabled === 'boolean' ? record.nowPlayingEnabled : true,
     sessionKey: normalizeText(record.sessionKey),
     username: normalizeText(record.username),
     pendingScrobbles: sanitizePendingScrobbles(record.pendingScrobbles)
@@ -308,6 +359,7 @@ function createLegacyConfig(record: Record<string, unknown>, hasApiCredentials: 
       name: 'Custom Last.fm endpoint',
       apiBaseUrl,
       enabled: profileEnabled,
+      nowPlayingEnabled: true,
       sessionKey,
       username,
       pendingScrobbles
@@ -316,7 +368,7 @@ function createLegacyConfig(record: Record<string, unknown>, hasApiCredentials: 
     return {
       enabled,
       activeProfileId: customProfile.id,
-      profiles: [createOfficialProfile(), customProfile]
+      profiles: [createOfficialLastFmProfile(), createOfficialListenBrainzProfile(), customProfile]
     }
   }
 
@@ -325,12 +377,13 @@ function createLegacyConfig(record: Record<string, unknown>, hasApiCredentials: 
     activeProfileId: LASTFM_OFFICIAL_PROFILE_ID,
     profiles: [
       {
-        ...createOfficialProfile(),
+        ...createOfficialLastFmProfile(),
         enabled: profileEnabled,
         sessionKey,
         username,
         pendingScrobbles
-      }
+      },
+      createOfficialListenBrainzProfile()
     ]
   }
 }
@@ -343,19 +396,37 @@ function normalizeConfig(config: LastFmServiceConfig, hasApiCredentials: boolean
 
   const rawProfiles = record.profiles
   const requestedActiveProfileId = normalizeText(record.activeProfileId)
-  const existingIds = new Set<string>([LASTFM_OFFICIAL_PROFILE_ID])
-  const officialRaw = rawProfiles.find((item) => {
+  const existingIds = new Set<string>([LASTFM_OFFICIAL_PROFILE_ID, LISTENBRAINZ_OFFICIAL_PROFILE_ID])
+
+  const officialLastFmRaw = rawProfiles.find((item) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return false
     const profile = item as Record<string, unknown>
-    return profile.id === LASTFM_OFFICIAL_PROFILE_ID || profile.kind === 'official'
+    return profile.id === LASTFM_OFFICIAL_PROFILE_ID || (profile.kind === 'official' && profile.protocol === 'lastfm2')
   })
-  const officialDefaultEnabled = requestedActiveProfileId === LASTFM_OFFICIAL_PROFILE_ID
+  const officialLastFmDefaultEnabled = requestedActiveProfileId === LASTFM_OFFICIAL_PROFILE_ID
 
-  const profiles: LastFmProfileConfig[] = [createOfficialProfile(officialRaw, officialDefaultEnabled)]
+  const officialListenBrainzRaw = rawProfiles.find((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+    const profile = item as Record<string, unknown>
+    return profile.id === LISTENBRAINZ_OFFICIAL_PROFILE_ID || (profile.kind === 'official' && profile.protocol === 'listenbrainz')
+  })
+  const officialListenBrainzDefaultEnabled = requestedActiveProfileId === LISTENBRAINZ_OFFICIAL_PROFILE_ID
+
+  const profiles: LastFmProfileConfig[] = [
+    createOfficialLastFmProfile(officialLastFmRaw, officialLastFmDefaultEnabled),
+    createOfficialListenBrainzProfile(officialListenBrainzRaw, officialListenBrainzDefaultEnabled)
+  ]
+
   for (const rawProfile of rawProfiles) {
     if (!rawProfile || typeof rawProfile !== 'object' || Array.isArray(rawProfile)) continue
     const recordProfile = rawProfile as Record<string, unknown>
-    if (recordProfile.id === LASTFM_OFFICIAL_PROFILE_ID || recordProfile.kind === 'official') continue
+    if (
+      recordProfile.id === LASTFM_OFFICIAL_PROFILE_ID ||
+      recordProfile.id === LISTENBRAINZ_OFFICIAL_PROFILE_ID ||
+      recordProfile.kind === 'official'
+    ) {
+      continue
+    }
     const rawProfileId = normalizeText(recordProfile.id)
     const customProfile = normalizeCustomProfile(rawProfile, existingIds, rawProfileId === requestedActiveProfileId)
     if (customProfile) {
@@ -515,6 +586,9 @@ export class LastFmService {
       statusMessage = `${enabledProfiles.length} scrobble destinations active.`
     }
 
+    const lastFmProfile = profileStatuses.find((p) => p.id === LASTFM_OFFICIAL_PROFILE_ID)
+    const listenBrainzProfile = profileStatuses.find((p) => p.id === LISTENBRAINZ_OFFICIAL_PROFILE_ID)
+
     return {
       enabled: this.config.enabled,
       connected: connectedProfiles.length > 0,
@@ -528,6 +602,8 @@ export class LastFmService {
       activeProfileId: activeProfile.id,
       activeProfile: activeProfileStatus,
       profiles: profileStatuses,
+      lastFmProfile,
+      listenBrainzProfile,
       pendingScrobbles: pendingCount,
       hasApiCredentials: this.hasApiCredentials,
       activeProfileRequiresApiCredentials: activeRequiresApiCredentials,
@@ -669,6 +745,42 @@ export class LastFmService {
       this.currentPlayback = null
       this.clearFlushTimer()
     }
+    await this.persistAndEmitStatus()
+    this.scheduleFlush(0)
+    return this.getStatus()
+  }
+
+  async setProfileNowPlaying(profileId: string, enabled: boolean): Promise<LastFmStatus> {
+    const profile = this.findProfile(profileId)
+    if (!profile) {
+      return this.failWithStatus('Scrobble profile not found.')
+    }
+    profile.nowPlayingEnabled = Boolean(enabled)
+    this.lastError = null
+    await this.persistAndEmitStatus()
+    return this.getStatus()
+  }
+
+  async setListenBrainzToken(token: string): Promise<LastFmStatus> {
+    let profile = this.findProfile(LISTENBRAINZ_OFFICIAL_PROFILE_ID)
+    if (!profile) {
+      profile = createOfficialListenBrainzProfile(undefined, false)
+      this.config.profiles.push(profile)
+    }
+
+    const cleanToken = normalizeText(token)
+    if (cleanToken) {
+      profile.sessionKey = cleanToken
+      profile.username = 'ListenBrainz User'
+      profile.enabled = true
+      this.profileErrors.delete(profile.id)
+    } else {
+      profile.sessionKey = null
+      profile.username = null
+      profile.enabled = false
+    }
+
+    this.lastError = null
     await this.persistAndEmitStatus()
     this.scheduleFlush(0)
     return this.getStatus()
@@ -929,7 +1041,7 @@ export class LastFmService {
         artist: normalizedArtist || currentTrack.artist,
         artistNames: normalizedArtistNames.length > 0 ? normalizedArtistNames : undefined,
         album: normalizedAlbum,
-        albumArtist: null,
+        albumArtist: normalizeText(currentTrack.albumArtist),
         durationSeconds: normalizeNullablePositiveInteger(snapshot.duration),
         startedAtUnix: Math.max(
           0,
@@ -1001,6 +1113,7 @@ export class LastFmService {
       name: profile.name,
       apiBaseUrl: profile.apiBaseUrl,
       enabled,
+      nowPlayingEnabled: profile.nowPlayingEnabled !== false,
       username: profile.username,
       connected: isConnectedProfile(profile),
       active: enabled,
@@ -1166,6 +1279,7 @@ export class LastFmService {
     if (!playback) return
 
     for (const profile of this.getEnabledSubmittableProfiles()) {
+      if (profile.nowPlayingEnabled === false) continue
       let profileState = playback.nowPlayingByProfileId.get(profile.id)
       if (!profileState) {
         profileState = {
@@ -1419,7 +1533,12 @@ export class LastFmService {
   private async getAudioScrobblerSession(profile: LastFmProfileConfig): Promise<AudioScrobblerSessionResult> {
     const cached = this.audioScrobblerSessions.get(profile.id)
     if (cached) return { ok: true, session: cached }
+    return this.performAudioScrobblerHandshake(profile)
+  }
 
+  private async performAudioScrobblerHandshake(
+    profile: LastFmProfileConfig
+  ): Promise<AudioScrobblerSessionResult> {
     if (!profile.username || !profile.sessionKey) {
       return {
         ok: false,
@@ -1443,11 +1562,11 @@ export class LastFmService {
     const timeout = setTimeout(() => controller.abort(), LASTFM_REQUEST_TIMEOUT_MS)
 
     try {
-      const response = await fetch(handshakeUrl.toString(), {
+      const response = await executeNetworkFetch(handshakeUrl.toString(), {
         method: 'GET',
         headers: {
           Accept: 'text/plain',
-          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-pc)`
         },
         signal: controller.signal
       })
@@ -1506,12 +1625,16 @@ export class LastFmService {
       }
     } catch (error) {
       const isAbort = error instanceof Error && error.name === 'AbortError'
+      const detail = error instanceof Error
+        ? (error.cause ? `${error.message} (${(error.cause as any).code || (error.cause as any).message || error.cause})` : error.message)
+        : String(error)
+      console.warn('[LastFmService] AudioScrobbler handshake error:', detail)
       return {
         ok: false,
         kind: 'transient',
         message: isAbort
           ? 'AudioScrobbler handshake timed out.'
-          : 'AudioScrobbler handshake failed due to a network error.'
+          : `AudioScrobbler handshake failed: ${detail}`
       }
     } finally {
       clearTimeout(timeout)
@@ -1527,12 +1650,12 @@ export class LastFmService {
     const timeout = setTimeout(() => controller.abort(), LASTFM_REQUEST_TIMEOUT_MS)
 
     try {
-      const response = await fetch(endpointUrl, {
+      const response = await executeNetworkFetch(endpointUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           Accept: 'text/plain',
-          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-pc)`
         },
         body: body.toString(),
         signal: controller.signal
@@ -1592,12 +1715,16 @@ export class LastFmService {
       }
     } catch (error) {
       const isAbort = error instanceof Error && error.name === 'AbortError'
+      const detail = error instanceof Error
+        ? (error.cause ? `${error.message} (${(error.cause as any).code || (error.cause as any).message || error.cause})` : error.message)
+        : String(error)
+      console.warn('[LastFmService] AudioScrobbler endpoint error:', detail)
       return {
         ok: false,
         kind: 'transient',
         message: isAbort
           ? 'AudioScrobbler request timed out.'
-          : 'AudioScrobbler request failed due to a network error.'
+          : `AudioScrobbler request failed: ${detail}`
       }
     } finally {
       clearTimeout(timeout)
@@ -1658,13 +1785,13 @@ export class LastFmService {
     const timeout = setTimeout(() => controller.abort(), LASTFM_REQUEST_TIMEOUT_MS)
 
     try {
-      const response = await fetch(buildListenBrainzSubmitUrl(profile.apiBaseUrl), {
+      const response = await executeNetworkFetch(buildListenBrainzSubmitUrl(profile.apiBaseUrl), {
         method: 'POST',
         headers: {
           Authorization: `Token ${profile.sessionKey}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-pc)`
         },
         body: JSON.stringify({
           listen_type: listenType,
@@ -1699,12 +1826,16 @@ export class LastFmService {
       }
     } catch (error) {
       const isAbort = error instanceof Error && error.name === 'AbortError'
+      const detail = error instanceof Error
+        ? (error.cause ? `${error.message} (${(error.cause as any).code || (error.cause as any).message || error.cause})` : error.message)
+        : String(error)
+      console.warn('[LastFmService] ListenBrainz request error:', detail)
       return {
         ok: false,
         kind: 'transient',
         message: isAbort
           ? 'ListenBrainz request timed out.'
-          : 'ListenBrainz request failed due to a network error.'
+          : `ListenBrainz request failed: ${detail}`
       }
     } finally {
       clearTimeout(timeout)
@@ -1798,12 +1929,12 @@ export class LastFmService {
     const timeout = setTimeout(() => controller.abort(), LASTFM_REQUEST_TIMEOUT_MS)
 
     try {
-      const response = await fetch(profile.apiBaseUrl, {
+      const response = await executeNetworkFetch(profile.apiBaseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
           Accept: 'application/json',
-          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-linux)`
+          'User-Agent': `Musaic-LastFM/${this.appVersion} (https://github.com/solder3t/musaic-player-pc)`
         },
         body: body.toString(),
         signal: controller.signal
@@ -1882,12 +2013,16 @@ export class LastFmService {
       }
     } catch (error) {
       const isAbort = error instanceof Error && error.name === 'AbortError'
+      const detail = error instanceof Error
+        ? (error.cause ? `${error.message} (${(error.cause as any).code || (error.cause as any).message || error.cause})` : error.message)
+        : String(error)
+      console.warn('[LastFmService] Last.fm request error:', detail)
       return {
         ok: false,
         kind: 'transient',
         message: isAbort
           ? 'Last.fm request timed out.'
-          : 'Last.fm request failed due to a network error.'
+          : `Last.fm request failed: ${detail}`
       }
     } finally {
       clearTimeout(timeout)

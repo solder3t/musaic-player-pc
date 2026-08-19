@@ -206,6 +206,8 @@ import {
 import {
   LASTFM_OFFICIAL_API_BASE_URL,
   LASTFM_OFFICIAL_PROFILE_ID,
+  LISTENBRAINZ_OFFICIAL_API_BASE_URL,
+  LISTENBRAINZ_OFFICIAL_PROFILE_ID,
   isLastFmCustomEndpoint,
   normalizeLastFmApiBaseUrl,
   normalizeLastFmScrobbleProtocol,
@@ -556,7 +558,7 @@ const REMOTE_CONTROLLER_ARTWORK_MAX_EDGE_PX = 256
 const REMOTE_CONTROLLER_ARTWORK_JPEG_QUALITY = 80
 const ARTWORK_THUMB_CACHE_VERSION = 'v2'
 const RELEASES_URL_HOSTNAME = 'github.com'
-const RELEASES_URL_PATH_PREFIX = '/solder3t/musaic-player-linux/releases'
+const RELEASES_URL_PATH_PREFIX = '/solder3t/musaic-player-pc/releases'
 const MEMORY_DIAGNOSTICS_ENABLED_META_KEY = 'memory_diagnostics_enabled_v1'
 const MEMORY_DIAGNOSTICS_SAMPLE_INTERVAL_MS = 15_000
 const SUBSONIC_SYNC_INTERVAL_MS = 20 * 60 * 1000
@@ -738,17 +740,32 @@ parallaxSinkListener.on('error', (error) => {
 let lastFmConfig: LastFmServiceConfig = {
   enabled: false,
   activeProfileId: LASTFM_OFFICIAL_PROFILE_ID,
-  profiles: [{
-    id: LASTFM_OFFICIAL_PROFILE_ID,
-    kind: 'official',
-    protocol: 'lastfm2',
-    name: 'Official Last.fm',
-    apiBaseUrl: LASTFM_OFFICIAL_API_BASE_URL,
-    enabled: false,
-    sessionKey: null,
-    username: null,
-    pendingScrobbles: []
-  }]
+  profiles: [
+    {
+      id: LASTFM_OFFICIAL_PROFILE_ID,
+      kind: 'official',
+      protocol: 'lastfm2',
+      name: 'Official Last.fm',
+      apiBaseUrl: LASTFM_OFFICIAL_API_BASE_URL,
+      enabled: false,
+      nowPlayingEnabled: true,
+      sessionKey: null,
+      username: null,
+      pendingScrobbles: []
+    },
+    {
+      id: LISTENBRAINZ_OFFICIAL_PROFILE_ID,
+      kind: 'official',
+      protocol: 'listenbrainz',
+      name: 'Official ListenBrainz',
+      apiBaseUrl: LISTENBRAINZ_OFFICIAL_API_BASE_URL,
+      enabled: false,
+      nowPlayingEnabled: true,
+      sessionKey: null,
+      username: null,
+      pendingScrobbles: []
+    }
+  ]
 }
 let lyricsOnlineEnabled = false
 let lyricsLrclibBaseUrl = LRCLIB_OFFICIAL_BASE_URL
@@ -2512,7 +2529,8 @@ function createOfficialLastFmProfile(
   sessionKey: string | null = null,
   username: string | null = null,
   pendingScrobbles = sanitizePendingScrobbles([]),
-  enabled = false
+  enabled = false,
+  nowPlayingEnabled = true
 ): LastFmProfileConfig {
   return {
     id: LASTFM_OFFICIAL_PROFILE_ID,
@@ -2521,6 +2539,28 @@ function createOfficialLastFmProfile(
     name: 'Official Last.fm',
     apiBaseUrl: LASTFM_OFFICIAL_API_BASE_URL,
     enabled,
+    nowPlayingEnabled,
+    sessionKey,
+    username,
+    pendingScrobbles
+  }
+}
+
+function createOfficialListenBrainzProfile(
+  sessionKey: string | null = null,
+  username: string | null = null,
+  pendingScrobbles = sanitizePendingScrobbles([]),
+  enabled = false,
+  nowPlayingEnabled = true
+): LastFmProfileConfig {
+  return {
+    id: LISTENBRAINZ_OFFICIAL_PROFILE_ID,
+    kind: 'official',
+    protocol: 'listenbrainz',
+    name: 'Official ListenBrainz',
+    apiBaseUrl: LISTENBRAINZ_OFFICIAL_API_BASE_URL,
+    enabled,
+    nowPlayingEnabled,
     sessionKey,
     username,
     pendingScrobbles
@@ -2541,8 +2581,9 @@ function normalizeLastFmProfilesFromMeta(raw: unknown, legacyActiveProfileId: st
   if (!Array.isArray(raw)) return null
 
   const customProfiles: LastFmProfileConfig[] = []
-  let officialProfile = createOfficialLastFmProfile(null, null, sanitizePendingScrobbles([]), legacyActiveProfileId === LASTFM_OFFICIAL_PROFILE_ID)
-  const usedIds = new Set<string>([LASTFM_OFFICIAL_PROFILE_ID])
+  let officialLastFmProfile = createOfficialLastFmProfile(null, null, sanitizePendingScrobbles([]), legacyActiveProfileId === LASTFM_OFFICIAL_PROFILE_ID)
+  let officialListenBrainzProfile = createOfficialListenBrainzProfile(null, null, sanitizePendingScrobbles([]), legacyActiveProfileId === LISTENBRAINZ_OFFICIAL_PROFILE_ID)
+  const usedIds = new Set<string>([LASTFM_OFFICIAL_PROFILE_ID, LISTENBRAINZ_OFFICIAL_PROFILE_ID])
 
   for (const item of raw) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) continue
@@ -2550,13 +2591,26 @@ function normalizeLastFmProfilesFromMeta(raw: unknown, legacyActiveProfileId: st
     const sessionKey = normalizeOptionalMetaText(typeof record.sessionKey === 'string' ? record.sessionKey : null)
     const username = normalizeOptionalMetaText(typeof record.username === 'string' ? record.username : null)
     const pendingScrobbles = sanitizePendingScrobbles(record.pendingScrobbles)
+    const nowPlayingEnabled = typeof record.nowPlayingEnabled === 'boolean' ? record.nowPlayingEnabled : true
 
-    if (record.kind === 'official' || record.id === LASTFM_OFFICIAL_PROFILE_ID) {
-      officialProfile = createOfficialLastFmProfile(
+    if (record.id === LASTFM_OFFICIAL_PROFILE_ID || (record.kind === 'official' && record.protocol === 'lastfm2')) {
+      officialLastFmProfile = createOfficialLastFmProfile(
         sessionKey,
         username,
         pendingScrobbles,
-        normalizeLastFmProfileEnabled(record, legacyActiveProfileId === LASTFM_OFFICIAL_PROFILE_ID)
+        normalizeLastFmProfileEnabled(record, legacyActiveProfileId === LASTFM_OFFICIAL_PROFILE_ID),
+        nowPlayingEnabled
+      )
+      continue
+    }
+
+    if (record.id === LISTENBRAINZ_OFFICIAL_PROFILE_ID || (record.kind === 'official' && record.protocol === 'listenbrainz')) {
+      officialListenBrainzProfile = createOfficialListenBrainzProfile(
+        sessionKey,
+        username,
+        pendingScrobbles,
+        normalizeLastFmProfileEnabled(record, legacyActiveProfileId === LISTENBRAINZ_OFFICIAL_PROFILE_ID),
+        nowPlayingEnabled
       )
       continue
     }
@@ -2568,9 +2622,13 @@ function normalizeLastFmProfilesFromMeta(raw: unknown, legacyActiveProfileId: st
       : parseLastFmApiBaseUrl(record.apiBaseUrl)
     if (!apiBaseUrl) continue
     if (protocol === 'lastfm2' && apiBaseUrl === LASTFM_OFFICIAL_API_BASE_URL) continue
+    if (protocol === 'listenbrainz' && apiBaseUrl === LISTENBRAINZ_OFFICIAL_API_BASE_URL) continue
 
     const rawId = normalizeOptionalMetaText(typeof record.id === 'string' ? record.id : null)
-    const id = rawId && rawId !== LASTFM_OFFICIAL_PROFILE_ID && !usedIds.has(rawId)
+    const id = rawId &&
+      rawId !== LASTFM_OFFICIAL_PROFILE_ID &&
+      rawId !== LISTENBRAINZ_OFFICIAL_PROFILE_ID &&
+      !usedIds.has(rawId)
       ? rawId
       : `custom-profile-${customProfiles.length + 1}`
     usedIds.add(id)
@@ -2583,13 +2641,14 @@ function normalizeLastFmProfilesFromMeta(raw: unknown, legacyActiveProfileId: st
       name: normalizeLastFmProfileName(record.name, 'Custom endpoint'),
       apiBaseUrl,
       enabled: normalizeLastFmProfileEnabled(record, defaultEnabled),
+      nowPlayingEnabled,
       sessionKey,
       username,
       pendingScrobbles
     })
   }
 
-  return [officialProfile, ...customProfiles]
+  return [officialLastFmProfile, officialListenBrainzProfile, ...customProfiles]
 }
 
 function getLegacyLastFmProfile(config: LastFmServiceConfig): LastFmProfileConfig {
@@ -5656,6 +5715,14 @@ ipcMain.handle('lastfm:setActiveProfile', async (_event, profileId: unknown) => 
 
 ipcMain.handle('lastfm:setProfileEnabled', async (_event, profileId: unknown, enabled: unknown) => {
   return lastFmService.setProfileEnabled(typeof profileId === 'string' ? profileId : '', Boolean(enabled))
+})
+
+ipcMain.handle('lastfm:setProfileNowPlaying', async (_event, profileId: unknown, enabled: unknown) => {
+  return lastFmService.setProfileNowPlaying(typeof profileId === 'string' ? profileId : '', Boolean(enabled))
+})
+
+ipcMain.handle('lastfm:setListenBrainzToken', async (_event, token: unknown) => {
+  return lastFmService.setListenBrainzToken(typeof token === 'string' ? token : '')
 })
 
 ipcMain.handle('lastfm:beginAuth', async (_event, profileId: unknown) => {
