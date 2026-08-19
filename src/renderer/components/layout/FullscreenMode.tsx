@@ -544,13 +544,45 @@ export default function FullscreenMode() {
   const isMultichannel = (resolvedChannelCount ?? 0) > 2
   const currentCodecProfile = currentTrack?.codecProfile?.toLowerCase() ?? ''
   const currentCodec = currentTrack?.codec?.toLowerCase() ?? ''
+  const currentFormat = currentTrack?.format?.toLowerCase() ?? ''
+  const bitDepth = currentTrack?.bitDepth ?? null
+  const sampleRate = currentTrack?.sampleRate ?? null
+
+  const isDsd = Boolean(
+    currentCodec.includes('dsd') ||
+    currentFormat === 'dsf' ||
+    currentFormat === 'dff' ||
+    currentFormat === 'dsd'
+  )
+
+  const isHiRes = Boolean(
+    !isDsd &&
+    ((bitDepth !== null && bitDepth > 16) || (sampleRate !== null && sampleRate > 48000))
+  )
+
+  const isLossless = Boolean(
+    !isHiRes &&
+    !isDsd &&
+    ['flac', 'alac', 'wav', 'aiff', 'ape', 'wv'].includes(currentFormat)
+  )
+
   const showAtmosBadge = Boolean(
     currentTrack?.isAtmosJoc ||
     currentCodecProfile.includes('atmos') ||
     currentCodecProfile.includes('joc') ||
     currentCodec.includes('atmos') ||
-    currentCodec.includes('joc')
+    currentCodec.includes('joc') ||
+    currentCodec.includes('eac3-joc')
   )
+
+  const showDolbyAudioBadge = Boolean(
+    !showAtmosBadge &&
+    (currentCodec.includes('ac3') ||
+     currentCodec.includes('eac3') ||
+     currentCodec.includes('truehd') ||
+     currentCodec.includes('dolby'))
+  )
+
   const showEclipsaBadge = Boolean(currentTrack?.isIamf || currentCodec === 'iamf')
 
   const checkFullscreenTitleOverflow = useCallback(() => {
@@ -819,11 +851,31 @@ export default function FullscreenMode() {
                 </h1>
                 <p className="fullscreen-artist">{currentTrack?.artist ?? '\u2014'}</p>
                 <p className="fullscreen-album">{currentTrack?.album ?? '\u2014'}</p>
-                {(showAtmosBadge || showEclipsaBadge || isMultichannel) && (
+                {(showAtmosBadge || showDolbyAudioBadge || showEclipsaBadge || isDsd || isHiRes || isLossless || isMultichannel) && (
                   <div className="fullscreen-audio-badges">
+                    {isDsd && (
+                      <span className="fullscreen-audio-badge fullscreen-audio-badge-dsd">
+                        DSD
+                      </span>
+                    )}
+                    {isHiRes && (
+                      <span className="fullscreen-audio-badge fullscreen-audio-badge-hires">
+                        HI-RES
+                      </span>
+                    )}
+                    {isLossless && (
+                      <span className="fullscreen-audio-badge fullscreen-audio-badge-lossless">
+                        LOSSLESS
+                      </span>
+                    )}
                     {showAtmosBadge && (
                       <span className="fullscreen-audio-badge fullscreen-audio-badge-atmos">
                         ATMOS
+                      </span>
+                    )}
+                    {showDolbyAudioBadge && (
+                      <span className="fullscreen-audio-badge fullscreen-audio-badge-dolby">
+                        DOLBY
                       </span>
                     )}
                     {showEclipsaBadge && (

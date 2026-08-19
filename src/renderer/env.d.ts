@@ -464,6 +464,8 @@ declare global {
                 deleteCustomProfile: (profileId: string) => Promise<LastFmStatus>
                 setActiveProfile: (profileId: string) => Promise<LastFmStatus>
                 setProfileEnabled: (profileId: string, enabled: boolean) => Promise<LastFmStatus>
+                setProfileNowPlaying: (profileId: string, enabled: boolean) => Promise<LastFmStatus>
+                setListenBrainzToken: (token: string) => Promise<LastFmStatus>
                 beginAuth: (profileId?: string) => Promise<LastFmAuthStartResult>
                 finishAuth: () => Promise<LastFmAuthFinishResult>
                 disconnect: () => Promise<LastFmStatus>

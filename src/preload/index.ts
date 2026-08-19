@@ -1112,6 +1112,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('lastfm:setActiveProfile', profileId),
     setProfileEnabled: (profileId: string, enabled: boolean): Promise<LastFmStatus> =>
       ipcRenderer.invoke('lastfm:setProfileEnabled', profileId, enabled),
+    setProfileNowPlaying: (profileId: string, enabled: boolean): Promise<LastFmStatus> =>
+      ipcRenderer.invoke('lastfm:setProfileNowPlaying', profileId, enabled),
+    setListenBrainzToken: (token: string): Promise<LastFmStatus> =>
+      ipcRenderer.invoke('lastfm:setListenBrainzToken', token),
     beginAuth: (profileId?: string): Promise<LastFmAuthStartResult> => ipcRenderer.invoke('lastfm:beginAuth', profileId),
     finishAuth: (): Promise<LastFmAuthFinishResult> => ipcRenderer.invoke('lastfm:finishAuth'),
     disconnect: (): Promise<LastFmStatus> => ipcRenderer.invoke('lastfm:disconnect'),
@@ -1793,6 +1797,8 @@ declare global {
         deleteCustomProfile: (profileId: string) => Promise<LastFmStatus>
         setActiveProfile: (profileId: string) => Promise<LastFmStatus>
         setProfileEnabled: (profileId: string, enabled: boolean) => Promise<LastFmStatus>
+        setProfileNowPlaying: (profileId: string, enabled: boolean) => Promise<LastFmStatus>
+        setListenBrainzToken: (token: string) => Promise<LastFmStatus>
         beginAuth: (profileId?: string) => Promise<LastFmAuthStartResult>
         finishAuth: () => Promise<LastFmAuthFinishResult>
         disconnect: () => Promise<LastFmStatus>

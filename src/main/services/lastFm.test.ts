@@ -255,10 +255,13 @@ test('Last.fm service migrates legacy configs into the official profile', () => 
   assert.equal(status.usingCustomEndpoint, false)
   assert.equal(status.connected, true)
   assert.equal(status.enabled, true)
-  assert.equal(status.profiles.length, 1)
+  assert.equal(status.profiles.length, 2)
   assert.equal(status.profiles[0].protocol, 'lastfm2')
   assert.equal(status.profiles[0].connected, true)
   assert.equal(status.profiles[0].enabled, true)
+  assert.equal(status.profiles[1].protocol, 'listenbrainz')
+  assert.equal(status.profiles[1].connected, false)
+  assert.equal(status.profiles[1].enabled, false)
 })
 
 test('creating a custom profile enables it without leaking official pending scrobbles', async (t) => {
@@ -291,11 +294,13 @@ test('creating a custom profile enables it without leaking official pending scro
 
   const persistedConfig = persisted.at(-1)
   assert.ok(persistedConfig)
-  assert.equal(persistedConfig.profiles.length, 2)
+  assert.equal(persistedConfig.profiles.length, 3)
   assert.equal(persistedConfig.profiles[0].pendingScrobbles.length, 1)
-  assert.equal(persistedConfig.profiles[1].enabled, true)
-  assert.equal(persistedConfig.profiles[1].sessionKey, 'custom-session')
-  assert.deepEqual(persistedConfig.profiles[1].pendingScrobbles, [])
+  const custom = persistedConfig.profiles.find((p) => p.name === 'Multi-Scrobbler')
+  assert.ok(custom)
+  assert.equal(custom.enabled, true)
+  assert.equal(custom.sessionKey, 'custom-session')
+  assert.deepEqual(custom.pendingScrobbles, [])
 })
 
 test('enabling profiles preserves each profile queue', async (t) => {
@@ -861,7 +866,7 @@ test('ListenBrainz native submissions use token auth and omit timestamps for pla
     Authorization: 'Token listenbrainz-token',
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    'User-Agent': 'Musaic-LastFM/0.0.0-test (https://github.com/solder3t/musaic-player-linux)'
+    'User-Agent': 'Musaic-LastFM/0.0.0-test (https://github.com/solder3t/musaic-player-pc)'
   })
 
   const nowPlayingBody = JSON.parse(requests[0].body) as Record<string, unknown>
@@ -970,4 +975,68 @@ test('missing Last.fm app credentials only block the official Last.fm profile', 
     officialService.stop()
     customService.stop()
   }
+})
+
+test('setListenBrainzToken manages official ListenBrainz configuration and logout', async (t) => {
+  const { service } = createService({
+    enabled: true,
+    activeProfileId: LASTFM_OFFICIAL_PROFILE_ID,
+    profiles: [createOfficialProfile()]
+  })
+  t.after(() => service.stop())
+
+  const status = await service.setListenBrainzToken('test-token-12345')
+  assert.equal(status.listenBrainzProfile?.connected, true)
+  assert.equal(status.listenBrainzProfile?.enabled, true)
+
+  const loggedOutStatus = await service.setListenBrainzToken('')
+  assert.equal(loggedOutStatus.listenBrainzProfile?.connected, false)
+  assert.equal(loggedOutStatus.listenBrainzProfile?.enabled, false)
+})
+
+test('setProfileNowPlaying toggles Now Playing and respects disabled state', async (t) => {
+  const { service } = createService({
+    enabled: true,
+    activeProfileId: LASTFM_OFFICIAL_PROFILE_ID,
+    profiles: [
+      createOfficialProfile({
+        sessionKey: 'official-session',
+        username: 'official-user'
+      })
+    ]
+  })
+  t.after(() => service.stop())
+
+  let nowPlayingCalls = 0
+  const protocolHarness = service as unknown as ProtocolCaller
+  protocolHarness.submitNowPlaying = async () => {
+    nowPlayingCalls += 1
+    return { ok: true }
+  }
+
+  // With nowPlayingEnabled = true
+  service.publishSnapshot(createMiniPlayerSnapshot({ playbackState: 'playing' }))
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  assert.equal(nowPlayingCalls, 1)
+
+  // Disable now playing for official profile
+  await service.setProfileNowPlaying(LASTFM_OFFICIAL_PROFILE_ID, false)
+  const status = service.getStatus()
+  assert.equal(status.lastFmProfile?.nowPlayingEnabled, false)
+
+  // Publish next track
+  service.publishSnapshot(createMiniPlayerSnapshot({
+    playbackState: 'playing',
+    currentTrack: {
+      id: 'track-2',
+      path: '/music/track2.flac',
+      title: 'Second Track',
+      artist: 'Second Artist',
+      album: 'Second Album',
+      isFavorite: false
+    }
+  }))
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  // Should NOT have incremented nowPlayingCalls
+  assert.equal(nowPlayingCalls, 1)
 })

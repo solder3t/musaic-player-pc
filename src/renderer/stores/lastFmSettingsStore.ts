@@ -24,6 +24,8 @@ interface LastFmSettingsStore {
   updateCustomProfile: (profileId: string, input: LastFmCustomProfileInput) => Promise<LastFmStatus | null>
   deleteCustomProfile: (profileId: string) => Promise<LastFmStatus | null>
   setProfileEnabled: (profileId: string, enabled: boolean) => Promise<LastFmStatus | null>
+  setProfileNowPlaying: (profileId: string, enabled: boolean) => Promise<LastFmStatus | null>
+  setListenBrainzToken: (token: string) => Promise<LastFmStatus | null>
   beginAuth: (profileId: string) => Promise<LastFmAuthStartResult | null>
   finishAuth: () => Promise<LastFmAuthFinishResult | null>
   disconnectProfile: (profileId: string) => Promise<LastFmStatus | null>
@@ -255,6 +257,26 @@ export const useLastFmSettingsStore = create<LastFmSettingsStore>((set, get) => 
     setProfileEnabled: async (profileId: string, enabled: boolean) => {
       try {
         const status = await window.electronAPI.lastFm.setProfileEnabled(profileId, enabled)
+        return applyStatus(status)
+      } catch (error) {
+        set({ errorMessage: toErrorMessage(error) })
+        return null
+      }
+    },
+
+    setProfileNowPlaying: async (profileId: string, enabled: boolean) => {
+      try {
+        const status = await window.electronAPI.lastFm.setProfileNowPlaying(profileId, enabled)
+        return applyStatus(status)
+      } catch (error) {
+        set({ errorMessage: toErrorMessage(error) })
+        return null
+      }
+    },
+
+    setListenBrainzToken: async (token: string) => {
+      try {
+        const status = await window.electronAPI.lastFm.setListenBrainzToken(token)
         return applyStatus(status)
       } catch (error) {
         set({ errorMessage: toErrorMessage(error) })

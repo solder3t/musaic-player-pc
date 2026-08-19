@@ -257,14 +257,54 @@ export default function TransportBar() {
   const isMultichannel = (resolvedChannelCount ?? 0) > 2
   const currentCodecProfile = currentTrack?.codecProfile?.toLowerCase() ?? ''
   const currentCodec = currentTrack?.codec?.toLowerCase() ?? ''
+  const currentFormat = currentTrack?.format?.toLowerCase() ?? ''
+  const bitDepth = currentTrack?.bitDepth ?? null
+  const sampleRate = currentTrack?.sampleRate ?? null
+
+  const isDsd = Boolean(
+    currentCodec.includes('dsd') ||
+    currentFormat === 'dsf' ||
+    currentFormat === 'dff' ||
+    currentFormat === 'dsd'
+  )
+
+  const isHiRes = Boolean(
+    !isDsd &&
+    ((bitDepth !== null && bitDepth > 16) || (sampleRate !== null && sampleRate > 48000))
+  )
+
+  const isLossless = Boolean(
+    !isHiRes &&
+    !isDsd &&
+    ['flac', 'alac', 'wav', 'aiff', 'ape', 'wv'].includes(currentFormat)
+  )
+
   const showAtmosBadge = Boolean(
     currentTrack?.isAtmosJoc ||
     currentCodecProfile.includes('atmos') ||
     currentCodecProfile.includes('joc') ||
     currentCodec.includes('atmos') ||
-    currentCodec.includes('joc')
+    currentCodec.includes('joc') ||
+    currentCodec.includes('eac3-joc')
   )
+
+  const showDolbyAudioBadge = Boolean(
+    !showAtmosBadge &&
+    (currentCodec.includes('ac3') ||
+     currentCodec.includes('eac3') ||
+     currentCodec.includes('truehd') ||
+     currentCodec.includes('dolby'))
+  )
+
   const showEclipsaBadge = Boolean(currentTrack?.isIamf || currentCodec === 'iamf')
+
+  const hiresTooltip = (() => {
+    const parts: string[] = []
+    if (bitDepth) parts.push(`${bitDepth}-bit`)
+    if (sampleRate) parts.push(`${(sampleRate / 1000).toFixed(1)} kHz`)
+    if (currentFormat) parts.push(currentFormat.toUpperCase())
+    return `Hi-Res Audio${parts.length > 0 ? ` • ${parts.join(' / ')}` : ''}`
+  })()
   const outputDeviceLabel = (() => {
     return resolveOutputDeviceLabel(selectedOutputDeviceId, availableOutputDevices, {
       defaultRouteFallbackLabel: 'System Default Output',
@@ -421,23 +461,46 @@ export default function TransportBar() {
                 )
                 : '\u2014'}
             </div>
-            {(showAtmosBadge || showEclipsaBadge || isMultichannel || currentTrack) && (
+            {(showAtmosBadge || showDolbyAudioBadge || showEclipsaBadge || isDsd || isHiRes || isLossless || isMultichannel) && (
               <div className="transport-audio-badges">
-                {currentTrack && (
+                {isDsd && (
                   <span
-                    className="transport-audio-badge"
-                    style={{ background: 'linear-gradient(90deg, var(--accent), #ff007f)', color: '#fff', border: 'none', fontWeight: 700 }}
-                    title="Musaic AI Sound Engine Active"
+                    className="transport-audio-badge transport-audio-badge-dsd"
+                    title="Direct Stream Digital (DSD) Audio"
                   >
-                    ✨ AI HI-RES
+                    DSD
+                  </span>
+                )}
+                {isHiRes && (
+                  <span
+                    className="transport-audio-badge transport-audio-badge-hires"
+                    title={hiresTooltip}
+                  >
+                    HI-RES
+                  </span>
+                )}
+                {isLossless && (
+                  <span
+                    className="transport-audio-badge transport-audio-badge-lossless"
+                    title={`Lossless Audio • 16-bit / ${(sampleRate ? (sampleRate / 1000).toFixed(1) : '44.1')} kHz ${currentFormat.toUpperCase()}`}
+                  >
+                    LOSSLESS
                   </span>
                 )}
                 {showAtmosBadge && (
                   <span
                     className="transport-audio-badge transport-audio-badge-atmos"
-                    title="Atmos metadata detected"
+                    title="Dolby Atmos Spatial Audio"
                   >
-                    ATM
+                    ATMOS
+                  </span>
+                )}
+                {showDolbyAudioBadge && (
+                  <span
+                    className="transport-audio-badge transport-audio-badge-dolby"
+                    title="Dolby Audio Stream"
+                  >
+                    DOLBY
                   </span>
                 )}
                 {showEclipsaBadge && (

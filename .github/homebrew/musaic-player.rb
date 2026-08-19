@@ -1,12 +1,12 @@
 cask "musaic-player" do
-  version "0.5.5"
+  version "0.5.7"
   sha256 "53df4c78c0779c2edc7555cec83400bd61347a5ffd20399e09cb21bc2b4c5f11"
 
-  url "https://github.com/solder3t/musaic-player-linux/releases/download/v#{version}/Musaic-#{version}-Mac-arm64.dmg",
-      verified: "github.com/solder3t/musaic-player-linux/"
+  url "https://github.com/solder3t/musaic-player-pc/releases/download/v#{version}/Musaic-#{version}-Mac-arm64.dmg",
+      verified: "github.com/solder3t/musaic-player-pc/"
   name "Musaic"
   desc "Music player with gapless playback, parametric EQ, and real-time DSP visualizers"
-  homepage "https://github.com/solder3t/musaic-player-linux"
+  homepage "https://github.com/solder3t/musaic-player-pc"
 
   livecheck do
     url :url

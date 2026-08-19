@@ -2,7 +2,7 @@
 #
 # Listen Together receiver — one-line installer for Raspberry Pi (64-bit) and other arm64 Linux.
 #
-#   curl -fsSL https://raw.githubusercontent.com/solder3t/musaic-player-linux/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh
+#   curl -fsSL https://raw.githubusercontent.com/solder3t/musaic-player-pc/dev/receiver/deploy/install.sh -o /tmp/musaic-receiver-install.sh && sudo bash /tmp/musaic-receiver-install.sh
 #
 # (Download-then-run rather than `| sudo bash`: modern sudo runs commands on a private pty, and
 # with the script arriving on stdin there is no route for keyboard input — the audio-output
@@ -23,7 +23,7 @@ set -euo pipefail
 # Where this script itself lives (for self-referential instructions). The releases repo name
 # lives in update.sh (overridable via MUSAIC_RECEIVER_REPO) — releases stay in a dedicated repo
 # so they never mix with the Musaic app's own releases.
-REPO_SOURCE="solder3t/musaic-player-linux"
+REPO_SOURCE="solder3t/musaic-player-pc"
 INSTALL_DIR="/opt/musaic-receiver"
 SERVICE_NAME="musaic-receiver"
 SERVICE_USER="musaic-receiver"

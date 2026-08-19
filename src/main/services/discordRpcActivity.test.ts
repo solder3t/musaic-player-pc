@@ -117,7 +117,7 @@ test('links title, artist, album art, and badge for YouTube Music', () => {
     largeImageUrl: 'https://example.com/cover.jpg',
     smallImageKey: 'musaic-logo',
     smallImageText: 'Musaic',
-    smallImageLinkUrl: 'https://github.com/solder3t/musaic-player-linux',
+    smallImageLinkUrl: 'https://github.com/solder3t/musaic-player-pc',
     linkDestination: 'ytmusic',
     nowSeconds: 1000
   })
@@ -125,7 +125,7 @@ test('links title, artist, album art, and badge for YouTube Music', () => {
   assert.equal(activity?.details_url, 'https://music.youtube.com/search?q=Air%20Dzeko%20%26%20Torres')
   assert.equal(activity?.state_url, 'https://music.youtube.com/search?q=Dzeko%20%26%20Torres')
   assert.equal(activity?.assets?.large_url, 'https://music.youtube.com/search?q=Air%20EP%20Dzeko%20%26%20Torres')
-  assert.equal(activity?.assets?.small_url, 'https://github.com/solder3t/musaic-player-linux')
+  assert.equal(activity?.assets?.small_url, 'https://github.com/solder3t/musaic-player-pc')
 })
 
 test('links to Last.fm pages and prefers the album artist for album links', () => {

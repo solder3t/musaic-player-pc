@@ -9,6 +9,17 @@ const MODIFIER_ORDER: readonly InputModifier[] = ['primary', 'control', 'alt', '
 const MODIFIER_KEYS = new Set(['alt', 'altgraph', 'control', 'meta', 'shift'])
 const RESERVED_GLOBAL_KEYS = new Set(['escape', 'tab'])
 
+export function getRuntimePlatform(): NodeJS.Platform {
+  if (typeof window !== 'undefined' && window.electronAPI?.platform) {
+    return window.electronAPI.platform
+  }
+  if (typeof navigator !== 'undefined') {
+    if (/Mac|iPhone|iPad|iPod/i.test(navigator.userAgent)) return 'darwin'
+    if (/Win/i.test(navigator.userAgent)) return 'win32'
+  }
+  return 'linux'
+}
+
 function normalizeKey(rawKey: string, code = ''): string {
   const key = rawKey.trim().toLocaleLowerCase()
   if (code === 'NumpadAdd' || key === '=' || key === '+') return '+'

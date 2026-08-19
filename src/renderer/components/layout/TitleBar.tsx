@@ -17,8 +17,9 @@ import {
 import type { AppMemoryFootprintSource } from '../../../shared/processMemoryFootprint'
 import MusaicActivityIndicator from '../activity/MusaicActivityIndicator'
 import MusaicLogo from '../icons/MusaicLogo'
+import { getRuntimePlatform } from '../../utils/inputBindings'
 
-const MUSAIC_SUPPORT_URL = 'https://github.com/solder3t/musaic-player-linux'
+const MUSAIC_SUPPORT_URL = 'https://github.com/solder3t/musaic-player-pc'
 const FPS_SAMPLE_INTERVAL_MS = 1000
 const FPS_SAMPLE_WINDOW_MS = 200
 const ANALYZER_RAIL_COLLAPSE_QUERY = '(max-width: 1040px)'
@@ -94,7 +95,7 @@ export default function TitleBar() {
   const activityIndicatorExperimentEnabled = useUIStore((s) => s.activityIndicatorExperimentEnabled)
   const isAnalyzerRackVisible = useUIStore((s) => s.isAnalyzerRackVisible)
   const analyzerRailCollapsed = useMediaQuery(ANALYZER_RAIL_COLLAPSE_QUERY)
-  const platform = window.electronAPI?.platform ?? 'linux'
+  const platform = getRuntimePlatform()
   const isMac = platform === 'darwin'
   const showTitlebarActivityIndicator = activityIndicatorExperimentEnabled
     && (!isAnalyzerRackVisible || analyzerRailCollapsed)
@@ -337,8 +338,8 @@ export default function TitleBar() {
           type="button"
           className="titlebar-logo-link"
           onClick={handleOpenSupport}
-          aria-label="Support Musaic on Ko-fi"
-          title="Support Musaic on Ko-fi"
+          aria-label="Musaic on GitHub"
+          title="Musaic on GitHub"
         >
           <span className="titlebar-logo">
             <MusaicLogo includeBackground={false} />
@@ -346,17 +347,6 @@ export default function TitleBar() {
           <span className="titlebar-logo-heart" aria-hidden="true" />
         </button>
         <span>Musaic</span>
-        <span style={{
-          fontSize: '10px',
-          background: 'linear-gradient(135deg, var(--accent), #ff007f)',
-          color: '#fff',
-          padding: '2px 6px',
-          borderRadius: '10px',
-          fontWeight: 700,
-          marginLeft: '6px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>Linux Premium</span>
         {showTitlebarActivityIndicator && (
           <TitleBarActivityFallback rackVisible={isAnalyzerRackVisible} />
         )}

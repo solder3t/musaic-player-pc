@@ -8,7 +8,7 @@ let appVersion = '0.0.0'
 export function setDiscordCoverArtAppVersion(v: string) {
   appVersion = v
 }
-const getMusicBrainzUserAgent = () => `Musaic-Discord-CoverArt/${appVersion} (https://github.com/solder3t/musaic-player-linux)`
+const getMusicBrainzUserAgent = () => `Musaic-Discord-CoverArt/${appVersion} (https://github.com/solder3t/musaic-player-pc)`
 const RELEASE_SEARCH_LIMIT = 5
 const MAX_RELEASE_CANDIDATES_TO_PROBE = 5
 const MAX_ARTIST_CANDIDATES = 4

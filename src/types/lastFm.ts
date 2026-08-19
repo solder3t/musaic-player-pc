@@ -1,5 +1,7 @@
 export const LASTFM_OFFICIAL_API_BASE_URL = 'https://ws.audioscrobbler.com/2.0/'
 export const LASTFM_OFFICIAL_PROFILE_ID = 'official-lastfm'
+export const LISTENBRAINZ_OFFICIAL_API_BASE_URL = 'https://api.listenbrainz.org'
+export const LISTENBRAINZ_OFFICIAL_PROFILE_ID = 'official-listenbrainz'
 
 export type LastFmProfileKind = 'official' | 'custom'
 export type LastFmScrobbleProtocol = 'lastfm2' | 'audioscrobbler' | 'listenbrainz'
@@ -26,6 +28,7 @@ export interface LastFmProfileConfig {
   name: string
   apiBaseUrl: string
   enabled: boolean
+  nowPlayingEnabled?: boolean
   sessionKey: string | null
   username: string | null
   pendingScrobbles: LastFmPendingScrobble[]
@@ -39,6 +42,7 @@ export interface LastFmProfileStatus {
   name: string
   apiBaseUrl: string
   enabled: boolean
+  nowPlayingEnabled: boolean
   username: string | null
   connected: boolean
   active: boolean
@@ -67,6 +71,8 @@ export interface LastFmStatus {
   activeProfileId: string
   activeProfile: LastFmProfileStatus
   profiles: LastFmProfileStatus[]
+  lastFmProfile?: LastFmProfileStatus
+  listenBrainzProfile?: LastFmProfileStatus
   authPending: boolean
   authPendingProfileId: string | null
   pendingScrobbles: number
@@ -96,6 +102,7 @@ export interface LastFmCustomProfileInput {
   apiBaseUrl: string
   username?: string | null
   sessionKey?: string | null
+  nowPlayingEnabled?: boolean
 }
 
 function parseHttpUrl(value: unknown): URL | null {
@@ -119,7 +126,9 @@ export function normalizeLastFmScrobbleProtocol(value: unknown): LastFmScrobbleP
 }
 
 export function getLastFmProtocolLabel(protocol: LastFmScrobbleProtocol, kind: LastFmProfileKind): string {
-  if (kind === 'official') return 'Official Last.fm'
+  if (kind === 'official') {
+    return protocol === 'listenbrainz' ? 'Official ListenBrainz' : 'Official Last.fm'
+  }
   if (protocol === 'audioscrobbler') return 'AudioScrobbler'
   if (protocol === 'listenbrainz') return 'ListenBrainz'
   return 'Last.fm 2.0'

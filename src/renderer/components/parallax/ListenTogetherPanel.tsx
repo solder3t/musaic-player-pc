@@ -224,7 +224,7 @@ export default function ListenTogetherPanel() {
               <div>
                 <h3 className="text-md font-bold text-white">Guest Track Suggestions</h3>
                 <p className="text-xs text-gray-400">
-                  Peers connected via Musaic Android or Linux can recommend tracks. Approve suggestions to merge them into the synchronized play queue.
+                  Peers connected via Musaic Android or Desktop can recommend tracks. Approve suggestions to merge them into the synchronized play queue.
                 </p>
               </div>
               <button

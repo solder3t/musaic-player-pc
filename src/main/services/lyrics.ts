@@ -13,7 +13,8 @@ import {
   BetterLyricsProvider,
   GeniusProvider,
   KuGouProvider,
-  NetEaseProvider
+  NetEaseProvider,
+  type LyricsSearchResult
 } from './lyricsProviders'
 import { validateResult } from './lyricsValidation'
 import {
@@ -94,6 +95,40 @@ function normalizeMatchKey(value: string): string {
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function buildQueryVariants(title: string, artist: string): Array<{ title: string; artist: string }> {
+  const cleanTitle = title
+    .replace(/\s*\(.*?\)\s*/g, ' ')
+    .replace(/\s*\[.*?\]\s*/g, ' ')
+    .replace(/\b(?:feat\.|ft\.|featuring)\b.*$/i, ' ')
+    .split(' - ')[0]
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const cleanArtist = artist
+    .split('&')[0]
+    .split(',')[0]
+    .split(/\s+[xX]\s+/)[0]
+    .split(/\s+feat/i)[0]
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const variants: Array<{ title: string; artist: string }> = [
+    { title: title.trim(), artist: artist.trim() },
+    { title: cleanTitle, artist: artist.trim() },
+    { title: cleanTitle, artist: cleanArtist },
+    { title: title.trim(), artist: cleanArtist }
+  ]
+
+  const seen = new Set<string>()
+  return variants.filter((v) => {
+    if (!v.title || !v.artist) return false
+    const key = `${v.title.toLowerCase()}|||${v.artist.toLowerCase()}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 function normalizeDurationSeconds(value: unknown): number | null {
@@ -560,7 +595,7 @@ export class LyricsService {
 
     this.setLastError(null)
     
-    // --- NEW FALLBACK PROVIDERS ---
+    // --- FALLBACK PROVIDERS (PRIORITIZING SYNCED LYRICS) ---
     const providers = [
       new BetterLyricsProvider(),
       new KuGouProvider(),
@@ -568,36 +603,82 @@ export class LyricsService {
       new GeniusProvider()
     ]
     
-    for (const provider of providers) {
-      try {
-        const results = await provider.searchAll(normalizedQuery)
-        for (const res of results) {
-          if (validateResult(res, title, artist, durationSeconds ?? -1, true)) {
-            const payload = parseLyricsText(res.lyrics, 'online', 'lrc')
-            if (payload) {
-              await this.libraryApi.upsertLyricsCache({
-                trackPath: path,
-                metadataSignature,
-                status: 'hit',
-                source: 'online',
-                provider: provider.name.toLowerCase() as any,
-                plainLyrics: payload.plainLyrics,
-                syncedLyrics: payload.syncedLyrics,
-                syncedLines: payload.syncedLines
-              })
-              return {
-                status: 'hit',
-                lyrics: applyTrackOffsetToPayload(payload, trackOffsetMs),
-                cached: false
+    const targetDurationMs = (durationSeconds ?? -1) * 1000
+    const queryList = buildQueryVariants(title, artist)
+    
+    const validCandidates: Array<{
+      providerName: string
+      res: LyricsSearchResult
+      payload: LyricsPayload
+      isSynced: boolean
+    }> = []
+
+    for (const q of queryList) {
+      const qQuery: LyricsTrackQuery = {
+        ...normalizedQuery,
+        title: q.title,
+        artist: q.artist
+      }
+
+      for (const provider of providers) {
+        try {
+          const results = await provider.searchAll(qQuery)
+          for (const res of results) {
+            if (validateResult(res, title, artist, targetDurationMs, true)) {
+              const payload = parseLyricsText(res.lyrics, 'online', 'lrc')
+              if (payload) {
+                const isSynced = res.isSynced || payload.syncedLines.length > 0
+                validCandidates.push({
+                  providerName: provider.name.toLowerCase(),
+                  res,
+                  payload,
+                  isSynced
+                })
+                // Short circuit immediately on finding a verified synced result
+                if (isSynced && provider.name !== 'Genius') {
+                  break
+                }
               }
             }
           }
+          if (validCandidates.some((c) => c.isSynced)) {
+            break
+          }
+        } catch {
+          // Ignore provider errors and continue to the next one
         }
-      } catch (err) {
-        // Ignore provider errors and continue to the next one
+      }
+      if (validCandidates.some((c) => c.isSynced)) {
+        break
       }
     }
-    // --- END NEW FALLBACK PROVIDERS ---
+
+    if (validCandidates.length > 0) {
+      // Sort candidates: synced lyrics first, preserving provider quality order
+      validCandidates.sort((a, b) => {
+        if (a.isSynced && !b.isSynced) return -1
+        if (!a.isSynced && b.isSynced) return 1
+        return 0
+      })
+
+      const best = validCandidates[0]
+      await this.libraryApi.upsertLyricsCache({
+        trackPath: path,
+        metadataSignature,
+        status: 'hit',
+        source: 'online',
+        provider: best.providerName as any,
+        plainLyrics: best.payload.plainLyrics,
+        syncedLyrics: best.payload.syncedLyrics,
+        syncedLines: best.payload.syncedLines
+      })
+      return {
+        status: 'hit',
+        lyrics: applyTrackOffsetToPayload(best.payload, trackOffsetMs),
+        cached: false
+      }
+    }
+    // --- END FALLBACK PROVIDERS ---
 
     if (xlrcdbLookup.status === 'not_found') {
       await this.cacheOnlineNotFound(path, metadataSignature)

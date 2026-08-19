@@ -213,7 +213,7 @@ export class BetterLyricsProvider implements MusaicLyricsProvider {
     return [{
       provider: this.name,
       lyrics: lrc,
-      isSynced: true,
+      isSynced: /\[\d{1,2}:\d{2}/.test(lrc),
       trackTitle: query.title,
       artistName: query.artist,
       durationMs: query.durationSeconds ? query.durationSeconds * 1000 : null

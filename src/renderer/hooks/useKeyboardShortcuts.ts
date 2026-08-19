@@ -11,7 +11,7 @@ import {
   useInputBindingStore
 } from '../stores/inputBindingStore'
 import { useUIStore } from '../stores/uiStore'
-import { inputBindingsEqual, keyboardEventToRawInput, normalizeRawKeyboardBinding } from '../utils/inputBindings'
+import { getRuntimePlatform, inputBindingsEqual, keyboardEventToRawInput, normalizeRawKeyboardBinding } from '../utils/inputBindings'
 import { useInputActionDispatcher } from './useInputActionDispatcher'
 
 const isShortcutBlockedTarget = (target: EventTarget | null): boolean => {
@@ -99,7 +99,7 @@ export function useKeyboardShortcuts(): void {
       }
 
       const ui = useUIStore.getState()
-      const platform = window.electronAPI?.platform ?? 'linux'
+      const platform = getRuntimePlatform()
       const binding = input.device === 'mouse' ? input : normalizeRawKeyboardBinding(input, platform)
       if (!binding) return false
       const resolved = resolveAction(binding)

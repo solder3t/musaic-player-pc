@@ -65,7 +65,7 @@ test('createLrclibClientHeaders sends current LRCLIB client identity', () => {
     appVersion: '0.6.1 beta'
   }))
 
-  assert.equal(headers['Lrclib-Client'], 'Musaic/0.6.1-beta (https://github.com/solder3t/musaic-player-linux)')
+  assert.equal(headers['Lrclib-Client'], 'Musaic/0.6.1-beta (https://github.com/solder3t/musaic-player-pc)')
   assert.equal(headers['User-Agent'], headers['Lrclib-Client'])
   assert.equal(headers.Accept, 'application/json')
 })
@@ -110,8 +110,8 @@ test('fetchLrclibJson sends LRCLIB client headers', async () => {
   assert.equal(result.kind, 'ok')
   assert.deepEqual(capturedHeaders, {
     Accept: 'application/json',
-    'Lrclib-Client': 'Musaic/0.6.1-beta (https://github.com/solder3t/musaic-player-linux)',
-    'User-Agent': 'Musaic/0.6.1-beta (https://github.com/solder3t/musaic-player-linux)'
+    'Lrclib-Client': 'Musaic/0.6.1-beta (https://github.com/solder3t/musaic-player-pc)',
+    'User-Agent': 'Musaic/0.6.1-beta (https://github.com/solder3t/musaic-player-pc)'
   })
 })
 
