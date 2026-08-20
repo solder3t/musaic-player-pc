@@ -40,26 +40,48 @@ function formatBaseline(timestamp: number): string {
 function ActivityChart({ buckets }: { buckets: ListeningStatsActivityBucket[] }) {
   const maxSeconds = Math.max(0, ...buckets.map((bucket) => bucket.listenedSeconds))
 
+  const labelStep = useMemo(() => {
+    if (buckets.length <= 10) return 1
+    if (buckets.length <= 20) return 2
+    if (buckets.length <= 35) return 4
+    if (buckets.length <= 60) return 6
+    return Math.ceil(buckets.length / 10)
+  }, [buckets.length])
+
   return (
     <div className="listening-stats-chart" role="group" aria-label="Listening time activity chart">
       {buckets.map((bucket, index) => {
         const exactTime = formatExactDuration(bucket.listenedSeconds)
         const plays = formatCount(bucket.qualifiedPlays, 'play')
         const height = maxSeconds > 0 && bucket.listenedSeconds > 0
-          ? Math.max(2, (bucket.listenedSeconds / maxSeconds) * 100)
+          ? Math.max(3, (bucket.listenedSeconds / maxSeconds) * 100)
           : 0
         const animationDelay = buckets.length > 1
           ? `${Math.round((index / (buckets.length - 1)) * 240)}ms`
           : '0ms'
 
+        const showLabel = index === 0 || index === buckets.length - 1 || index % labelStep === 0
+
         return (
-          <div key={bucket.startAt} className="listening-stats-chart-column">
+          <div key={bucket.startAt} className="listening-stats-bar-column">
             <div
-              className="listening-stats-chart-bar"
-              style={{ height: `${height}%`, animationDelay }}
-              title={`${bucket.label}: ${exactTime} across ${plays}`}
-            />
-            <span className="listening-stats-chart-label">{bucket.label}</span>
+              className="listening-stats-bar-target"
+              tabIndex={0}
+              role="img"
+              aria-label={`${bucket.label}: ${exactTime} across ${plays}`}
+            >
+              <div
+                className="listening-stats-bar"
+                style={{ height: `${height}%`, animationDelay }}
+              />
+              <div className="listening-stats-bar-detail" role="tooltip">
+                <strong>{bucket.label}</strong>
+                <span>{exactTime} · {plays}</span>
+              </div>
+            </div>
+            <span className="listening-stats-bar-label">
+              {showLabel ? bucket.label : ''}
+            </span>
           </div>
         )
       })}
@@ -79,6 +101,7 @@ function RankingCard<T extends RankingItem>({
   title,
   items,
   emptyLabel,
+  rankingMetric,
   getKey,
   getTitle,
   getSubtitle,
@@ -91,6 +114,7 @@ function RankingCard<T extends RankingItem>({
   title: string
   items: T[]
   emptyLabel: string
+  rankingMetric: 'plays' | 'time'
   getKey: (item: T) => string
   getTitle: (item: T) => string
   getSubtitle: (item: T) => string
@@ -101,23 +125,28 @@ function RankingCard<T extends RankingItem>({
   onOpen: (item: T) => void
 }) {
   return (
-    <section className="listening-stats-card">
+    <section className="listening-stats-ranking-card">
       <header className="listening-stats-card-header">
         <h2>{title}</h2>
       </header>
       {items.length === 0 ? (
-        <p className="listening-stats-card-empty">{emptyLabel}</p>
+        <p className="listening-stats-ranking-empty">{emptyLabel}</p>
       ) : (
         <ol className="listening-stats-ranking-list">
           {items.map((item, index) => {
             const available = getAvailable ? getAvailable(item) : true
             const isMissing = available === false
+            const durationStr = formatExactDuration(getSeconds(item))
+            const playsStr = formatCount(getPlays(item), 'play')
+            const primaryMetric = rankingMetric === 'time' ? durationStr : playsStr
+            const secondaryMetric = rankingMetric === 'time' ? playsStr : durationStr
+
             return (
               <li
                 key={getKey(item)}
                 className={`listening-stats-ranking-row${isMissing ? ' is-missing-item' : ''}`}
               >
-                <span className="listening-stats-ranking-rank">{index + 1}</span>
+                <span className="listening-stats-ranking-position">{index + 1}</span>
                 <button
                   type="button"
                   className="listening-stats-ranking-main"
@@ -132,13 +161,17 @@ function RankingCard<T extends RankingItem>({
                     />
                   </span>
                   <span className="listening-stats-ranking-copy">
-                    <span className="listening-stats-ranking-title">{getTitle(item)}</span>
-                    <span className="listening-stats-ranking-subtitle">{getSubtitle(item)}</span>
+                    <span className="listening-stats-ranking-title" title={getTitle(item)}>
+                      {getTitle(item)}
+                    </span>
+                    <span className="listening-stats-ranking-subtitle" title={getSubtitle(item)}>
+                      {getSubtitle(item)}
+                    </span>
                   </span>
                 </button>
-                <span className="listening-stats-ranking-metrics">
-                  <strong>{formatExactDuration(getSeconds(item))}</strong>
-                  <span>{formatCount(getPlays(item), 'play')}</span>
+                <span className="listening-stats-ranking-values">
+                  <strong>{primaryMetric}</strong>
+                  <span>{secondaryMetric}</span>
                 </span>
               </li>
             )
@@ -348,6 +381,7 @@ export default function StatsView() {
                       title="Top Tracks"
                       items={dashboard.topTracks}
                       emptyLabel="No tracks in this range."
+                      rankingMetric={rankingMetric}
                       getKey={(track) => track.key}
                       getTitle={(track) => track.title}
                       getSubtitle={(track) => `${track.artist} · ${track.album}`}
@@ -361,6 +395,7 @@ export default function StatsView() {
                       title="Top Artists"
                       items={dashboard.topArtists}
                       emptyLabel="No artists in this range."
+                      rankingMetric={rankingMetric}
                       getKey={(artist) => artist.key}
                       getTitle={(artist) => artist.artist}
                       getSubtitle={() => 'Artist'}
@@ -374,6 +409,7 @@ export default function StatsView() {
                       title="Top Albums"
                       items={dashboard.topAlbums}
                       emptyLabel="No albums in this range."
+                      rankingMetric={rankingMetric}
                       getKey={(album) => album.key}
                       getTitle={(album) => album.album}
                       getSubtitle={(album) => album.artist}

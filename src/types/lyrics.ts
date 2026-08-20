@@ -119,3 +119,22 @@ export interface LyricsOffsetSetResult {
   updated: number
   offsetMs: number
 }
+
+export interface OnlineLyricsCandidate {
+  id: string
+  provider: LyricsProvider
+  providerLabel: string
+  title?: string | null
+  artist?: string | null
+  album?: string | null
+  durationMs?: number | null
+  isSynced: boolean
+  hasWordTiming?: boolean
+  hasTranslations?: boolean
+  hasFurigana?: boolean
+  format: LyricsFormat
+  sampleLyrics: string
+  plainLyrics: string | null
+  syncedLyrics: string | null
+  rawLyrics?: string | null
+}

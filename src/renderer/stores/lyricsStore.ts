@@ -1,5 +1,11 @@
 import { create } from 'zustand'
-import type { LyricsLookupResult, LyricsPayload, LyricsStatus, LyricsTrackQuery } from '../../types/lyrics'
+import type {
+  LyricsLookupResult,
+  LyricsPayload,
+  LyricsStatus,
+  LyricsTrackQuery,
+  OnlineLyricsCandidate
+} from '../../types/lyrics'
 import { useAiSettingsStore } from './aiSettingsStore'
 
 interface LyricsStore {
@@ -24,6 +30,16 @@ interface LyricsStore {
   aiProcessing: boolean
   toggleRomanized: () => Promise<void>
   toggleTranslated: () => Promise<void>
+  // Search Modal state
+  searchModalOpen: boolean
+  searchCandidates: OnlineLyricsCandidate[]
+  isSearchingCandidates: boolean
+  searchQuery: LyricsTrackQuery | null
+  searchError: string
+  openSearchModal: (query?: LyricsTrackQuery | null) => Promise<void>
+  closeSearchModal: () => void
+  performSearch: (title: string, artist: string) => Promise<void>
+  applyCandidate: (candidate: OnlineLyricsCandidate) => Promise<boolean>
 }
 
 let statusUnsubscribe: (() => void) | null = null
@@ -162,6 +178,11 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
     isRomanized: false,
     isTranslated: false,
     aiProcessing: false,
+    searchModalOpen: false,
+    searchCandidates: [],
+    isSearchingCandidates: false,
+    searchQuery: null,
+    searchError: '',
 
     init: async () => {
       if (get().isInitialized) return
@@ -572,6 +593,95 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           isTranslated: false,
           errorMessage: msg
         })
+      }
+    },
+
+    openSearchModal: async (query) => {
+      const state = get()
+      const targetQuery = query ?? (state.currentTrackPath ? { path: state.currentTrackPath, title: '', artist: '' } : null)
+      if (!targetQuery) return
+
+      set({
+        searchModalOpen: true,
+        searchQuery: targetQuery,
+        searchCandidates: [],
+        isSearchingCandidates: true,
+        searchError: ''
+      })
+
+      try {
+        const candidates = await window.electronAPI.lyrics.searchAllProviders(targetQuery)
+        set({
+          searchCandidates: candidates,
+          isSearchingCandidates: false,
+          searchError: candidates.length === 0 ? 'No lyrics candidates found across providers.' : ''
+        })
+      } catch (err) {
+        set({
+          isSearchingCandidates: false,
+          searchError: err instanceof Error ? err.message : 'Failed to search lyrics providers.'
+        })
+      }
+    },
+
+    closeSearchModal: () => {
+      set({ searchModalOpen: false, searchCandidates: [], isSearchingCandidates: false, searchError: '' })
+    },
+
+    performSearch: async (title: string, artist: string) => {
+      const state = get()
+      const currentQuery = state.searchQuery
+      const newQuery: LyricsTrackQuery = {
+        path: currentQuery?.path || state.currentTrackPath || '',
+        title: title.trim(),
+        artist: artist.trim(),
+        durationSeconds: currentQuery?.durationSeconds
+      }
+
+      set({
+        searchQuery: newQuery,
+        isSearchingCandidates: true,
+        searchError: ''
+      })
+
+      try {
+        const candidates = await window.electronAPI.lyrics.searchAllProviders(newQuery)
+        set({
+          searchCandidates: candidates,
+          isSearchingCandidates: false,
+          searchError: candidates.length === 0 ? 'No lyrics candidates found for this search query.' : ''
+        })
+      } catch (err) {
+        set({
+          isSearchingCandidates: false,
+          searchError: err instanceof Error ? err.message : 'Failed to search lyrics providers.'
+        })
+      }
+    },
+
+    applyCandidate: async (candidate: OnlineLyricsCandidate) => {
+      const state = get()
+      const trackPath = state.searchQuery?.path || state.currentTrackPath
+      if (!trackPath) return false
+
+      try {
+        const result = await window.electronAPI.lyrics.applyCandidate(trackPath, candidate)
+        if (result.status === 'hit') {
+          set((s) => ({
+            resultByTrackPath: putLyricsResultInCache(s.resultByTrackPath, trackPath, result, s.currentTrackPath),
+            currentResult: s.currentTrackPath === trackPath ? result : s.currentResult,
+            isRomanized: false,
+            isTranslated: false,
+            searchModalOpen: false,
+            searchCandidates: [],
+            searchError: ''
+          }))
+          return true
+        }
+        return false
+      } catch (err) {
+        set({ searchError: err instanceof Error ? err.message : 'Failed to apply selected lyrics.' })
+        return false
       }
     }
   }

@@ -5927,6 +5927,20 @@ ipcMain.handle('lyrics:refreshForTrack', async (_event, rawQuery: unknown, rawOp
   return lyricsService.getForTrack(query, { ...opts, forceRefresh: true })
 })
 
+ipcMain.handle('lyrics:searchAllProviders', async (_event, rawQuery: unknown) => {
+  const query = normalizeLyricsTrackQuery(rawQuery)
+  if (!query) return []
+  return lyricsService.searchAllProviders(query)
+})
+
+ipcMain.handle('lyrics:applyCandidate', async (_event, rawTrackPath: unknown, rawCandidate: unknown) => {
+  const trackPath = typeof rawTrackPath === 'string' ? rawTrackPath.trim() : ''
+  if (!trackPath || !rawCandidate || typeof rawCandidate !== 'object') {
+    return { status: 'not_found' as const, reason: 'embedded-missing' as const }
+  }
+  return lyricsService.applyCandidate(trackPath, rawCandidate as any)
+})
+
 ipcMain.handle('lyrics:getTrackOverride', (_event, rawTrackPath: unknown) => {
   const trackPath = typeof rawTrackPath === 'string' ? rawTrackPath.trim() : ''
   return lyricsService.getTrackOverride(trackPath)

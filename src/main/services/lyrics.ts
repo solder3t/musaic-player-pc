@@ -39,6 +39,7 @@ import type {
   LyricsStatus,
   LyricsTrackOverride,
   LyricsTrackQuery,
+  OnlineLyricsCandidate
 } from '../../types/lyrics'
 import {
   LRCLIB_OFFICIAL_BASE_URL,
@@ -414,6 +415,216 @@ export class LyricsService {
     return {
       updated,
       offsetMs: normalizedOffset
+    }
+  }
+
+  async searchAllProviders(query: LyricsTrackQuery): Promise<OnlineLyricsCandidate[]> {
+    const title = normalizeLrclibMetadataText(query.title)
+    const artist = normalizeLrclibMetadataText(query.artist)
+    const album = normalizeLrclibMetadataText(query.album)
+    const durationSeconds = normalizeDurationSeconds(query.durationSeconds) ?? undefined
+    const targetDurationMs = (durationSeconds ?? -1) * 1000
+
+    if (!title && !artist) return []
+
+    const normalizedQuery: LyricsTrackQuery = {
+      path: query.path || '',
+      title: title || '',
+      artist: artist || '',
+      album: album ?? undefined,
+      durationSeconds
+    }
+
+    const queryList = buildQueryVariants(title || '', artist || '')
+    const candidates: OnlineLyricsCandidate[] = []
+    const seenTexts = new Set<string>()
+
+    const helperExtractSample = (plainLyrics: string | null, syncedLyrics: string | null): string => {
+      const source = plainLyrics || (syncedLyrics ? syncedLyrics.replace(/\[\d+:\d+(?:\.\d+)?\]/g, '') : '')
+      if (!source) return ''
+      return source
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0 && !line.startsWith('[ti:') && !line.startsWith('[ar:') && !line.startsWith('[al:'))
+        .slice(0, 4)
+        .join('\n')
+    }
+
+    // 1. XLRCDB
+    const xlrcdbPromise = (async () => {
+      try {
+        const res = await this.xlrcdb.lookup(normalizedQuery, createMetadataSignature(normalizedQuery))
+        if (res.status === 'hit' && res.lyrics) {
+          const sample = helperExtractSample(res.lyrics.plainLyrics, res.lyrics.syncedLyrics)
+          const textKey = (res.lyrics.syncedLyrics || res.lyrics.plainLyrics || '').slice(0, 200)
+          if (!seenTexts.has(textKey)) {
+            seenTexts.add(textKey)
+            candidates.push({
+              id: 'xlrcdb-hit',
+              provider: 'xlrcdb',
+              providerLabel: 'XLRCDB',
+              title: normalizedQuery.title,
+              artist: normalizedQuery.artist,
+              album: normalizedQuery.album,
+              durationMs: targetDurationMs > 0 ? targetDurationMs : null,
+              isSynced: true,
+              hasWordTiming: res.lyrics.syncedLines.some((l) => Boolean(l.words && l.words.length > 0)),
+              hasTranslations: res.lyrics.syncedLines.some((l) => Boolean(l.translations && l.translations.length > 0)),
+              hasFurigana: res.lyrics.syncedLines.some((l) => Boolean(l.furigana && l.furigana.length > 0)),
+              format: 'xlrc',
+              sampleLyrics: sample,
+              plainLyrics: res.lyrics.plainLyrics,
+              syncedLyrics: res.lyrics.syncedLyrics
+            })
+          }
+        }
+      } catch {
+        // ignore
+      }
+    })()
+
+    // 2. LRCLIB (Search API)
+    const lrclibPromise = (async () => {
+      try {
+        if (this.lrclib && typeof (this.lrclib as any).searchCandidates === 'function') {
+          const lrclibResults: OnlineLyricsCandidate[] = await (this.lrclib as any).searchCandidates(normalizedQuery)
+          for (const item of lrclibResults) {
+            const textKey = (item.syncedLyrics || item.plainLyrics || '').slice(0, 200)
+            if (!seenTexts.has(textKey)) {
+              seenTexts.add(textKey)
+              candidates.push(item)
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    })()
+
+    // 3. Fallback Providers: BetterLyrics, KuGou, NetEase, Genius
+    const providers = [
+      new BetterLyricsProvider(),
+      new KuGouProvider(),
+      new NetEaseProvider(),
+      new GeniusProvider()
+    ]
+
+    const fallbackPromises = queryList.map(async (q) => {
+      const qQuery: LyricsTrackQuery = {
+        ...normalizedQuery,
+        title: q.title,
+        artist: q.artist
+      }
+
+      await Promise.allSettled(
+        providers.map(async (provider) => {
+          try {
+            const results = await provider.searchAll(qQuery)
+            for (let i = 0; i < results.length; i++) {
+              const res = results[i]
+              const payload = parseLyricsText(res.lyrics, 'online', 'lrc')
+              if (!payload) continue
+
+              const isSynced = res.isSynced || payload.syncedLines.length > 0
+              const sample = helperExtractSample(payload.plainLyrics, payload.syncedLyrics)
+              const textKey = (payload.syncedLyrics || payload.plainLyrics || '').slice(0, 200)
+
+              if (!seenTexts.has(textKey)) {
+                seenTexts.add(textKey)
+                candidates.push({
+                  id: `${provider.name.toLowerCase()}-${q.title}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+                  provider: provider.name.toLowerCase() as any,
+                  providerLabel: provider.name,
+                  title: res.trackTitle || q.title,
+                  artist: res.artistName || q.artist,
+                  durationMs: res.durationMs || null,
+                  isSynced,
+                  format: isSynced ? 'lrc' : 'plain',
+                  sampleLyrics: sample,
+                  plainLyrics: payload.plainLyrics,
+                  syncedLyrics: payload.syncedLyrics
+                })
+              }
+            }
+          } catch {
+            // ignore
+          }
+        })
+      )
+    })
+
+    await Promise.allSettled([xlrcdbPromise, lrclibPromise, ...fallbackPromises])
+
+    const providerPriority: Record<string, number> = {
+      xlrcdb: 1,
+      lrclib: 2,
+      betterlyrics: 3,
+      kugou: 4,
+      netease: 5,
+      genius: 6
+    }
+
+    candidates.sort((a, b) => {
+      // 1. Synced over plain
+      if (a.isSynced && !b.isSynced) return -1
+      if (!a.isSynced && b.isSynced) return 1
+
+      // 2. Duration match closeness (if duration is known)
+      if (targetDurationMs > 0 && a.durationMs && b.durationMs) {
+        const diffA = Math.abs(a.durationMs - targetDurationMs)
+        const diffB = Math.abs(b.durationMs - targetDurationMs)
+        if (Math.abs(diffA - diffB) > 3000) {
+          return diffA - diffB
+        }
+      }
+
+      // 3. Provider priority
+      const prioA = providerPriority[a.provider] || 99
+      const prioB = providerPriority[b.provider] || 99
+      return prioA - prioB
+    })
+
+    return candidates
+  }
+
+  async applyCandidate(
+    trackPath: string,
+    candidate: OnlineLyricsCandidate
+  ): Promise<LyricsLookupResult> {
+    const normalizedPath = normalizeText(trackPath)
+    if (!normalizedPath) {
+      return { status: 'not_found', reason: 'embedded-missing' }
+    }
+
+    const format = candidate.format || (candidate.isSynced ? 'lrc' : 'plain')
+    const rawLyrics = candidate.syncedLyrics || candidate.plainLyrics || ''
+    const payload = parseLyricsText(rawLyrics, 'online', format)
+    if (!payload) {
+      return { status: 'not_found', reason: 'provider-not-found' }
+    }
+
+    payload.provider = candidate.provider
+
+    const trackOverride = this.libraryApi.getLyricsTrackOverride(normalizedPath)
+    const trackOffsetMs = trackOverride?.syncOffsetMs ?? 0
+    const metadataSignature = `manual-selected-${candidate.id}-${Date.now()}`
+
+    await this.libraryApi.upsertLyricsCache({
+      trackPath: normalizedPath,
+      metadataSignature,
+      status: 'hit',
+      source: 'online',
+      provider: candidate.provider,
+      plainLyrics: payload.plainLyrics,
+      syncedLyrics: payload.syncedLyrics,
+      syncedLines: payload.syncedLines
+    })
+
+    return {
+      status: 'hit',
+      lyrics: applyTrackOffsetToPayload(payload, trackOffsetMs),
+      cached: false,
+      availableSources: ['online']
     }
   }
 

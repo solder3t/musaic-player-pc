@@ -18,7 +18,7 @@ export const DEFAULT_MODELS: Record<AiProviderType, string> = {
   openai: 'gpt-4o-mini',
   claude: 'claude-3-5-haiku-latest',
   deepseek: 'deepseek-chat',
-  groq: 'llama-3.3-70b-versatile',
+  groq: 'openai/gpt-oss-120b',
   ollama: 'llama3.2',
   none: ''
 };
@@ -46,9 +46,11 @@ export const PROVIDER_MODEL_PRESETS: Record<AiProviderType, string[]> = {
     'deepseek-reasoner'
   ],
   groq: [
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'mixtral-8x7b-32768'
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b',
+    'qwen/qwen3.6-27b',
+    'deepseek-r1-distill-llama-70b',
+    'gemma2-9b-it'
   ],
   ollama: [
     'llama3.2',
@@ -94,12 +96,20 @@ export const DEPRECATED_MODELS: Record<string, string> = {
   'claude-2.0': 'claude-3-5-haiku-latest',
   'claude-instant-1.2': 'claude-3-5-haiku-latest',
   // Groq (Remove decommissioned models)
-  'llama-3.1-70b-versatile': 'llama-3.3-70b-versatile',
-  'llama3-8b-8192': 'llama-3.1-8b-instant',
-  'llama3-70b-8192': 'llama-3.3-70b-versatile',
-  'llama2-70b-4096': 'llama-3.3-70b-versatile',
-  'gemma-7b-it': 'llama-3.3-70b-versatile',
-  'gemma2-9b-it': 'llama-3.3-70b-versatile'
+  'llama-3.3-70b-versatile': 'openai/gpt-oss-120b',
+  'llama-3.3-70b-specdec': 'openai/gpt-oss-120b',
+  'llama-3.1-8b-instant': 'openai/gpt-oss-20b',
+  'mixtral-8x7b-32768': 'openai/gpt-oss-120b',
+  'llama-3.1-70b-versatile': 'openai/gpt-oss-120b',
+  'llama-3.1-70b-specdec': 'openai/gpt-oss-120b',
+  'llama-3.2-1b-preview': 'openai/gpt-oss-20b',
+  'llama-3.2-3b-preview': 'openai/gpt-oss-20b',
+  'llama-3.2-11b-vision-preview': 'openai/gpt-oss-120b',
+  'llama-3.2-90b-vision-preview': 'openai/gpt-oss-120b',
+  'llama3-8b-8192': 'openai/gpt-oss-20b',
+  'llama3-70b-8192': 'openai/gpt-oss-120b',
+  'llama2-70b-4096': 'openai/gpt-oss-120b',
+  'gemma-7b-it': 'openai/gpt-oss-20b'
 };
 
 export function getModelForProvider(provider: AiProviderType, configuredModel?: string): string {

@@ -8803,8 +8803,11 @@ export function getListeningStatsDashboard(query: ListeningStatsQuery): Listenin
       CASE WHEN o.artwork_cleared = 1 THEN NULL ELSE COALESCE(o.artwork_hash, t.artwork_hash) END AS current_artwork_hash,
       t.is_available AS current_is_available
     FROM listening_sessions s
-    LEFT JOIN tracks t ON t.id = s.track_id
-    LEFT JOIN track_metadata_overrides o ON o.track_path = t.path
+    LEFT JOIN tracks t ON (
+      t.id = s.track_id
+      OR (s.track_path IS NOT NULL AND t.path = s.track_path)
+    )
+    LEFT JOIN track_metadata_overrides o ON o.track_path = COALESCE(t.path, s.track_path)
     WHERE s.generation = ?
       AND (
         (s.started_at <= ? AND COALESCE(s.ended_at, ?) >= ?)
@@ -8851,6 +8854,12 @@ export function getListeningStatsDashboard(query: ListeningStatsQuery): Listenin
         available: identity.available
       }
       trackAggregates.set(identity.trackKey, track)
+    } else {
+      if (!track.available && identity.available) {
+        track.available = true
+        track.trackPath = identity.trackPath
+      }
+      track.artworkHash ||= identity.artworkHash
     }
 
     const artists: ListeningStatsRankedArtist[] = []
@@ -8959,6 +8968,52 @@ export function getListeningStatsDashboard(query: ListeningStatsQuery): Listenin
       rankingMetric
     ))
     .slice(0, LISTENING_STATS_TOP_LIMIT)
+
+  // Verify availability against current live library in case track IDs changed after re-scan
+  for (const track of topTracks) {
+    if (!track.available && db) {
+      const candidate = track.trackPath
+        ? db.get<{ path: string; is_available: number }>(
+            'SELECT path, is_available FROM tracks WHERE path = ? AND is_available = 1 LIMIT 1',
+            [track.trackPath]
+          )
+        : db.get<{ path: string; is_available: number }>(
+            'SELECT path, is_available FROM tracks WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?) AND is_available = 1 LIMIT 1',
+            [track.title, track.artist]
+          )
+      if (candidate && candidate.is_available === 1) {
+        track.available = true
+        track.trackPath = candidate.path
+      }
+    }
+  }
+
+  for (const artist of topArtists) {
+    if (!artist.available && db) {
+      const candidate = db.get<{ id: number }>(
+        `SELECT id FROM tracks
+         WHERE is_available = 1
+           AND (LOWER(artist) = LOWER(?) OR LOWER(album_artist) = LOWER(?) OR artist_names_json LIKE ?)
+         LIMIT 1`,
+        [artist.artist, artist.artist, `%"${artist.artist}"%`]
+      )
+      if (candidate) {
+        artist.available = true
+      }
+    }
+  }
+
+  for (const album of topAlbums) {
+    if (!album.available && db) {
+      const candidate = db.get<{ id: number }>(
+        'SELECT id FROM tracks WHERE LOWER(album) = LOWER(?) AND is_available = 1 LIMIT 1',
+        [album.album]
+      )
+      if (candidate) {
+        album.available = true
+      }
+    }
+  }
 
   return {
     ...empty,

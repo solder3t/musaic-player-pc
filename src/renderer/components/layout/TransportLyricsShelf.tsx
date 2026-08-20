@@ -46,7 +46,7 @@ export default function TransportLyricsShelf() {
   const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
   const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
-  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
+  const openSearchModal = useLyricsStore((s) => s.openSearchModal)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
   const lastLyricsRequestKeyRef = useRef<string | null>(null)
 
@@ -369,17 +369,17 @@ export default function TransportLyricsShelf() {
                 {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
               </button>
             )}
-            {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+            {Boolean(currentTrack) && (
               <button
                 type="button"
                 className="transport-lyrics-inline-action"
                 onClick={() => {
-                  if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                  if (lyricsQuery) void openSearchModal(lyricsQuery)
                 }}
                 disabled={lyricsIsLoading}
-                title="Search and load synchronized lyrics from online providers"
+                title="Search and select lyrics across all online providers"
               >
-                {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
+                🔍 Search Online
               </button>
             )}
             {Boolean(currentTrack) && (

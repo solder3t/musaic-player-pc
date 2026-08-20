@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { LyricsPopoutSnapshot } from '../../../types/lyricsPopout'
 import { useLyricsSyncedView } from '../../hooks/useLyricsSyncedView'
 import { useLyricsDisplaySettingsStore } from '../../stores/lyricsDisplaySettingsStore'
+import { useLyricsStore } from '../../stores/lyricsStore'
 import LyricsLineContent from '../lyrics/LyricsLineContent'
+import LyricsSearchModal from '../lyrics/LyricsSearchModal'
 import {
   DEFAULT_LYRICS_BODY_COPY,
   BASE_COMPACT_LYRICS_LINE_HEIGHT_PX,
@@ -83,6 +85,7 @@ export default function LyricsPopoutApp() {
   const hasAdoptedPreferredExpandedRef = useRef(false)
   const currentTime = useLyricsPopoutClock(snapshot)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
+  const openSearchModal = useLyricsStore((s) => s.openSearchModal)
   const trackTitle = useMemo(() => snapshot.currentTrack?.title?.trim() || '', [snapshot.currentTrack?.title])
   const trackDetail = useMemo(() => (
     [snapshot.currentTrack?.artist, snapshot.currentTrack?.album]
@@ -344,15 +347,17 @@ export default function LyricsPopoutApp() {
                   {snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
                 </button>
               )}
-              {Boolean(snapshot.currentTrack) && (!snapshot.lyricsResult || snapshot.lyricsResult.status !== 'hit' || snapshot.lyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+              {Boolean(snapshot.currentTrack) && (
                 <button
                   type="button"
                   className="transport-lyrics-inline-action"
-                  onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'fetchOnlineLyrics' })}
+                  onClick={() => {
+                    if (snapshot.lyricsQuery) void openSearchModal(snapshot.lyricsQuery)
+                  }}
                   disabled={snapshot.isLoading}
-                  title="Search and load synchronized lyrics from online providers"
+                  title="Search and select lyrics across all online providers"
                 >
-                  {snapshot.isLoading ? 'Searching...' : '🔍 Search Online'}
+                  🔍 Search Online
                 </button>
               )}
               {Boolean(snapshot.currentTrack) && (
@@ -444,6 +449,7 @@ export default function LyricsPopoutApp() {
         </div>
         {renderBody()}
       </section>
+      <LyricsSearchModal />
     </main>
   )
 }

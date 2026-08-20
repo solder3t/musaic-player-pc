@@ -2253,58 +2253,75 @@ export default function SettingsView() {
                     </div>
                   )}
                   {provider !== 'none' && provider !== 'ollama' && (
-                    <div className="settings-field">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <label className="settings-field-label" style={{ margin: 0 }}>API Key</label>
-                        {apiKey && (
-                          <button
-                            type="button"
-                            onClick={() => setAiApiKey('')}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-muted, #9ca3af)',
-                              cursor: 'pointer',
-                              fontSize: '0.78em',
-                              padding: 0
-                            }}
-                            title={`Clear API key for ${provider}`}
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <div className="settings-field" style={{ width: '100%' }}>
+                      <label className="settings-field-label" style={{ marginBottom: '6px' }}>API Key</label>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
                         <input
                           type={showAiApiKey ? 'text' : 'password'}
                           className="settings-input"
-                          style={{ paddingRight: '58px' }}
-                          placeholder={`Enter your ${provider} API Key`}
+                          style={{
+                            width: '100%',
+                            minHeight: '40px',
+                            paddingRight: apiKey ? '110px' : '65px',
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontSize: '13px',
+                            letterSpacing: showAiApiKey ? 'normal' : '0.12em'
+                          }}
+                          placeholder={`Enter your ${provider === 'gemini' ? 'Google Gemini' : provider === 'claude' ? 'Anthropic Claude' : provider.toUpperCase()} API Key`}
                           value={apiKey}
                           onChange={(e) => setAiApiKey(e.target.value)}
                           autoComplete="off"
                           spellCheck={false}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowAiApiKey((v) => !v)}
+                        <div
                           style={{
                             position: 'absolute',
-                            right: '8px',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted, #9ca3af)',
-                            cursor: 'pointer',
-                            fontSize: '0.8em',
-                            padding: '4px 6px',
-                            borderRadius: '4px'
+                            right: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
                           }}
-                          title={showAiApiKey ? 'Hide API key' : 'Show API key'}
                         >
-                          {showAiApiKey ? 'Hide' : 'Show'}
-                        </button>
+                          {apiKey && (
+                            <button
+                              type="button"
+                              onClick={() => setAiApiKey('')}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                                color: 'var(--text-muted, #9ca3af)',
+                                cursor: 'pointer',
+                                fontSize: '0.78em',
+                                padding: '3px 8px',
+                                borderRadius: '4px',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title={`Clear API key for ${provider}`}
+                            >
+                              Clear
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setShowAiApiKey((v) => !v)}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                              color: showAiApiKey ? 'var(--accent, #60a5fa)' : 'var(--text-muted, #9ca3af)',
+                              cursor: 'pointer',
+                              fontSize: '0.78em',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontWeight: 500,
+                              transition: 'all 0.15s ease'
+                            }}
+                            title={showAiApiKey ? 'Hide API key' : 'Show API key'}
+                          >
+                            {showAiApiKey ? 'Hide' : 'Show'}
+                          </button>
+                        </div>
                       </div>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.78em', opacity: 0.65 }}>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.78em', opacity: 0.65 }}>
                         Keys are saved individually per provider and never shared or sent to third parties.
                       </p>
                     </div>

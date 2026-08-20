@@ -69,7 +69,8 @@ import type {
   LyricsOffsetSetResult,
   LyricsStatus,
   LyricsTrackOverride,
-  LyricsTrackQuery
+  LyricsTrackQuery,
+  OnlineLyricsCandidate
 } from '../types/lyrics'
 import type {
   JellyfinSource,
@@ -1138,6 +1139,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('lyrics:getForTrack', query, options),
     refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }): Promise<LyricsLookupResult> =>
       ipcRenderer.invoke('lyrics:refreshForTrack', query, options),
+    searchAllProviders: (query: LyricsTrackQuery): Promise<OnlineLyricsCandidate[]> =>
+      ipcRenderer.invoke('lyrics:searchAllProviders', query),
+    applyCandidate: (trackPath: string, candidate: OnlineLyricsCandidate): Promise<LyricsLookupResult> =>
+      ipcRenderer.invoke('lyrics:applyCandidate', trackPath, candidate),
     getTrackOverride: (trackPath: string): Promise<LyricsTrackOverride> =>
       ipcRenderer.invoke('lyrics:getTrackOverride', trackPath),
     importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat): Promise<LyricsManualImportResult> =>
@@ -1813,6 +1818,8 @@ declare global {
         setLrclibBaseUrl: (baseUrl: string) => Promise<LyricsStatus>
         getForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
         refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
+        searchAllProviders: (query: LyricsTrackQuery) => Promise<OnlineLyricsCandidate[]>
+        applyCandidate: (trackPath: string, candidate: OnlineLyricsCandidate) => Promise<LyricsLookupResult>
         getTrackOverride: (trackPath: string) => Promise<LyricsTrackOverride>
         importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat) => Promise<LyricsManualImportResult>
         clearManualLyrics: (trackPaths: string[]) => Promise<LyricsManualClearResult>

@@ -1,5 +1,5 @@
 cask "musaic-player" do
-  version "0.5.8"
+  version "0.5.9"
   sha256 "53df4c78c0779c2edc7555cec83400bd61347a5ffd20399e09cb21bc2b4c5f11"
 
   url "https://github.com/solder3t/musaic-player-pc/releases/download/v#{version}/Musaic-#{version}-Mac-arm64.dmg",
