@@ -48,7 +48,8 @@ export const PROVIDER_MODEL_PRESETS: Record<AiProviderType, string[]> = {
   groq: [
     'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant',
-    'mixtral-8x7b-32768'
+    'deepseek-r1-distill-llama-70b',
+    'gemma2-9b-it'
   ],
   ollama: [
     'llama3.2',
@@ -94,12 +95,17 @@ export const DEPRECATED_MODELS: Record<string, string> = {
   'claude-2.0': 'claude-3-5-haiku-latest',
   'claude-instant-1.2': 'claude-3-5-haiku-latest',
   // Groq (Remove decommissioned models)
+  'mixtral-8x7b-32768': 'llama-3.3-70b-versatile',
   'llama-3.1-70b-versatile': 'llama-3.3-70b-versatile',
+  'llama-3.1-70b-specdec': 'llama-3.3-70b-versatile',
+  'llama-3.2-1b-preview': 'llama-3.1-8b-instant',
+  'llama-3.2-3b-preview': 'llama-3.1-8b-instant',
+  'llama-3.2-11b-vision-preview': 'llama-3.3-70b-versatile',
+  'llama-3.2-90b-vision-preview': 'llama-3.3-70b-versatile',
   'llama3-8b-8192': 'llama-3.1-8b-instant',
   'llama3-70b-8192': 'llama-3.3-70b-versatile',
   'llama2-70b-4096': 'llama-3.3-70b-versatile',
-  'gemma-7b-it': 'llama-3.3-70b-versatile',
-  'gemma2-9b-it': 'llama-3.3-70b-versatile'
+  'gemma-7b-it': 'llama-3.1-8b-instant'
 };
 
 export function getModelForProvider(provider: AiProviderType, configuredModel?: string): string {

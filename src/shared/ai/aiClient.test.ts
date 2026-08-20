@@ -28,6 +28,7 @@ describe('aiClient model configuration and deprecation handling', () => {
     assert.equal(DEPRECATED_MODELS['gpt-3.5-turbo'], 'gpt-4o-mini');
     assert.equal(DEPRECATED_MODELS['gpt-4-turbo'], 'gpt-4o');
     assert.equal(DEPRECATED_MODELS['claude-3-haiku-20240307'], 'claude-3-5-haiku-latest');
+    assert.equal(DEPRECATED_MODELS['mixtral-8x7b-32768'], 'llama-3.3-70b-versatile');
     assert.equal(DEPRECATED_MODELS['llama-3.1-70b-versatile'], 'llama-3.3-70b-versatile');
     assert.equal(DEPRECATED_MODELS['llama3-70b-8192'], 'llama-3.3-70b-versatile');
   });
@@ -40,6 +41,7 @@ describe('aiClient model configuration and deprecation handling', () => {
 
     assert.equal(getModelForProvider('openai', 'gpt-3.5-turbo'), 'gpt-4o-mini');
     assert.equal(getModelForProvider('claude', 'claude-3-haiku-20240307'), 'claude-3-5-haiku-latest');
+    assert.equal(getModelForProvider('groq', 'mixtral-8x7b-32768'), 'llama-3.3-70b-versatile');
     assert.equal(getModelForProvider('groq', 'llama-3.1-70b-versatile'), 'llama-3.3-70b-versatile');
   });
 
