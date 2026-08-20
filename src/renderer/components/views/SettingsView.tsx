@@ -2231,7 +2231,7 @@ export default function SettingsView() {
                         value={
                           (PROVIDER_MODEL_PRESETS[provider] || []).includes(model)
                             ? model
-                            : (model ? '__custom__' : (DEFAULT_MODELS[provider] || ''))
+                            : '__custom__'
                         }
                         onChange={(e) => {
                           const val = e.target.value
@@ -2251,7 +2251,7 @@ export default function SettingsView() {
                         ))}
                         <option value="__custom__">Custom Model...</option>
                       </select>
-                      {(!((PROVIDER_MODEL_PRESETS[provider] || []).includes(model)) || !model) && (
+                      {!((PROVIDER_MODEL_PRESETS[provider] || []).includes(model)) && (
                         <div style={{ marginTop: '8px' }}>
                           <input
                             type="text"

@@ -20,7 +20,7 @@ export default function EQView() {
   const [isDropdownVisible, setIsDropdownVisible] = useState(false)
 
   const importPreset = useEQStore(s => s.importPreset)
-  const { settings: { provider, apiKey } } = useAiSettingsStore()
+  const { settings: { provider, apiKey, model, serverUrl } } = useAiSettingsStore()
   
   // Debounce search
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -35,7 +35,7 @@ export default function EQView() {
   const handleAiSubmit = () => {
     if (!aiPrompt.trim()) return
 
-    window.electronAPI.ai.generateEqProfile(aiPrompt, {}, { provider, apiKey }).then((result: any) => {
+    window.electronAPI.ai.generateEqProfile(aiPrompt, {}, { provider, apiKey, model, serverUrl }).then((result: any) => {
       const freqs = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
       const bands: EQBand[] = freqs.map((f, i) => ({
         id: `ai-${f}`,
