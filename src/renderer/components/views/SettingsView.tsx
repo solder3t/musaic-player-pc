@@ -360,6 +360,7 @@ export default function SettingsView() {
   const [settingsTransferWizardOpen, setSettingsTransferWizardOpen] = useState(false)
   const [showInlinePhoneQr, setShowInlinePhoneQr] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [showAiApiKey, setShowAiApiKey] = useState(false)
   const [resetStatuses, setResetStatuses] = useState<Record<ResetActionId, ResetActionStatus>>(
     () => buildInitialResetStatusMap()
   )
@@ -2187,7 +2188,44 @@ export default function SettingsView() {
                 </div>
                 <div className="settings-grid">
                   <div className="settings-field">
-                    <label className="settings-field-label">AI Provider</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label className="settings-field-label" style={{ margin: 0 }}>AI Provider</label>
+                      {provider !== 'none' && (
+                        (() => {
+                          const links: Record<string, { label: string; url: string }> = {
+                            gemini: { label: 'Get Gemini API Key', url: 'https://aistudio.google.com/app/apikey' },
+                            openai: { label: 'Get OpenAI API Key', url: 'https://platform.openai.com/api-keys' },
+                            claude: { label: 'Get Anthropic API Key', url: 'https://console.anthropic.com/settings/keys' },
+                            groq: { label: 'Get Groq API Key', url: 'https://console.groq.com/keys' },
+                            deepseek: { label: 'Get DeepSeek API Key', url: 'https://platform.deepseek.com/api_keys' },
+                            ollama: { label: 'Download Ollama', url: 'https://ollama.com/download' }
+                          }
+                          const target = links[provider]
+                          if (!target) return null
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => openExternalLink(target.url)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--accent, #60a5fa)',
+                                cursor: 'pointer',
+                                fontSize: '0.82em',
+                                padding: 0,
+                                textDecoration: 'underline',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                              title={`Open ${target.label} webpage in browser`}
+                            >
+                              🔑 {target.label} ↗
+                            </button>
+                          )
+                        })()
+                      )}
+                    </div>
                     <select
                       className="settings-select"
                       value={provider}
@@ -2216,14 +2254,59 @@ export default function SettingsView() {
                   )}
                   {provider !== 'none' && provider !== 'ollama' && (
                     <div className="settings-field">
-                      <label className="settings-field-label">API Key</label>
-                      <input
-                        type="password"
-                        className="settings-input"
-                        placeholder={`Enter your ${provider} API Key`}
-                        value={apiKey}
-                        onChange={(e) => setAiApiKey(e.target.value)}
-                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label className="settings-field-label" style={{ margin: 0 }}>API Key</label>
+                        {apiKey && (
+                          <button
+                            type="button"
+                            onClick={() => setAiApiKey('')}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--text-muted, #9ca3af)',
+                              cursor: 'pointer',
+                              fontSize: '0.78em',
+                              padding: 0
+                            }}
+                            title={`Clear API key for ${provider}`}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type={showAiApiKey ? 'text' : 'password'}
+                          className="settings-input"
+                          style={{ paddingRight: '58px' }}
+                          placeholder={`Enter your ${provider} API Key`}
+                          value={apiKey}
+                          onChange={(e) => setAiApiKey(e.target.value)}
+                          autoComplete="off"
+                          spellCheck={false}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAiApiKey((v) => !v)}
+                          style={{
+                            position: 'absolute',
+                            right: '8px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted, #9ca3af)',
+                            cursor: 'pointer',
+                            fontSize: '0.8em',
+                            padding: '4px 6px',
+                            borderRadius: '4px'
+                          }}
+                          title={showAiApiKey ? 'Hide API key' : 'Show API key'}
+                        >
+                          {showAiApiKey ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.78em', opacity: 0.65 }}>
+                        Keys are saved individually per provider and never shared or sent to third parties.
+                      </p>
                     </div>
                   )}
                   {provider !== 'none' && (

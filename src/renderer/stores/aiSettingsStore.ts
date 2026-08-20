@@ -18,6 +18,7 @@ export const AI_SETTINGS_STORAGE_KEY = 'musaic-ai-settings-v1';
 export interface AiSettings {
   provider: AiProviderType;
   apiKey: string;
+  apiKeys: Partial<Record<AiProviderType, string>>;
   serverUrl: string;
   model: string;
   autoRomanize: boolean;
@@ -40,6 +41,7 @@ export interface AiSettingsStore {
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   provider: 'gemini',
   apiKey: '',
+  apiKeys: {},
   serverUrl: 'http://localhost:11434',
   model: DEFAULT_MODELS.gemini,
   autoRomanize: false,
@@ -52,7 +54,7 @@ let storageListenerInstalled = false;
 function readSettings(): AiSettings {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(AI_SETTINGS_STORAGE_KEY) : null;
-    if (!raw) return { ...DEFAULT_AI_SETTINGS };
+    if (!raw) return { ...DEFAULT_AI_SETTINGS, apiKeys: {} };
     const parsed = JSON.parse(raw);
     const provider: AiProviderType = parsed?.provider || DEFAULT_AI_SETTINGS.provider;
     let loadedModel = typeof parsed?.model === 'string' ? parsed.model.trim() : '';
@@ -64,9 +66,21 @@ function readSettings(): AiSettings {
       loadedModel = DEPRECATED_MODELS[loadedModel];
     }
 
+    const apiKeys: Partial<Record<AiProviderType, string>> = typeof parsed?.apiKeys === 'object' && parsed.apiKeys !== null
+      ? parsed.apiKeys
+      : {};
+
+    // Backward compatibility: if legacy apiKey exists and apiKeys[provider] is empty, populate it
+    if (typeof parsed?.apiKey === 'string' && parsed.apiKey && !apiKeys[provider]) {
+      apiKeys[provider] = parsed.apiKey;
+    }
+
+    const activeApiKey = apiKeys[provider] || (typeof parsed?.apiKey === 'string' ? parsed.apiKey : '');
+
     return {
       provider,
-      apiKey: typeof parsed?.apiKey === 'string' ? parsed.apiKey : DEFAULT_AI_SETTINGS.apiKey,
+      apiKey: activeApiKey,
+      apiKeys,
       serverUrl: typeof parsed?.serverUrl === 'string' ? parsed.serverUrl : DEFAULT_AI_SETTINGS.serverUrl,
       model: loadedModel,
       autoRomanize: typeof parsed?.autoRomanize === 'boolean' ? parsed.autoRomanize : DEFAULT_AI_SETTINGS.autoRomanize,
@@ -74,7 +88,7 @@ function readSettings(): AiSettings {
       targetLanguage: typeof parsed?.targetLanguage === 'string' ? parsed.targetLanguage : DEFAULT_AI_SETTINGS.targetLanguage,
     };
   } catch {
-    return { ...DEFAULT_AI_SETTINGS };
+    return { ...DEFAULT_AI_SETTINGS, apiKeys: {} };
   }
 }
 
@@ -115,12 +129,17 @@ export const useAiSettingsStore = create<AiSettingsStore>((set) => {
         ? newDefault
         : state.settings.model;
 
-      const settings = { ...state.settings, provider, model };
+      // Load the API key saved specifically for the target provider
+      const apiKeys = state.settings.apiKeys || {};
+      const apiKey = apiKeys[provider] || '';
+
+      const settings: AiSettings = { ...state.settings, provider, model, apiKey, apiKeys };
       persistSettings(settings);
       return { settings };
     }),
     setApiKey: (apiKey) => set((state) => {
-      const settings = { ...state.settings, apiKey };
+      const apiKeys = { ...(state.settings.apiKeys || {}), [state.settings.provider]: apiKey };
+      const settings: AiSettings = { ...state.settings, apiKey, apiKeys };
       persistSettings(settings);
       return { settings };
     }),
@@ -149,6 +168,6 @@ export const useAiSettingsStore = create<AiSettingsStore>((set) => {
       persistSettings(settings);
       return { settings };
     }),
-    resetToDefaults: () => applySettings({ ...DEFAULT_AI_SETTINGS }),
+    resetToDefaults: () => applySettings({ ...DEFAULT_AI_SETTINGS, apiKeys: {} }),
   };
 });
