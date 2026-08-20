@@ -699,7 +699,7 @@ export function resolveLyricsBodyState(options: ResolveLyricsBodyStateOptions): 
 
 export function containsNonLatinScripts(text: string): boolean {
   if (!text) return false
-  const nonLatinRegex = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff\u0900-\u097f\u0e00-\u0e7f]/
+  const nonLatinRegex = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\uac00-\ud7af\u0400-\u04ff\u0590-\u05ff\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\u0900-\u0d7f\u0e00-\u0e7f]/
   return nonLatinRegex.test(text)
 }
 

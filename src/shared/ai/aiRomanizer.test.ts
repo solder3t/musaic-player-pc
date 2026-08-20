@@ -26,6 +26,11 @@ describe('aiRomanizer synced lyrics preservation', () => {
     assert.equal(containsNonLatinScripts('사랑해요'), true); // Korean Hangul
     assert.equal(containsNonLatinScripts('你好世界'), true); // Chinese Hanzi
     assert.equal(containsNonLatinScripts('Привет мир'), true); // Russian Cyrillic
+    assert.equal(containsNonLatinScripts('तुम ही हो'), true); // Hindi (Devanagari)
+    assert.equal(containsNonLatinScripts('ਮੇਰਾ ਦਿਲ'), true); // Punjabi (Gurmukhi)
+    assert.equal(containsNonLatinScripts('நான் உன்னை காதலிக்கிறேன்'), true); // Tamil
+    assert.equal(containsNonLatinScripts('నేను నిన్ను ప్రేమిస్తున్నాను'), true); // Telugu
+    assert.equal(containsNonLatinScripts('আমি তোমাকে ভালোবাসি'), true); // Bengali
   });
 
   it('transliterates Cyrillic fallback accurately', () => {
