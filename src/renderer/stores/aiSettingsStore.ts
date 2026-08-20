@@ -1,11 +1,24 @@
 import { create } from 'zustand';
-import type { AiProviderType } from '../../shared/ai/aiClient';
+import {
+  type AiProviderType,
+  DEFAULT_MODELS,
+  PROVIDER_MODEL_PRESETS,
+  DEPRECATED_MODELS
+} from '../../shared/ai/aiClient';
+
+export {
+  type AiProviderType,
+  DEFAULT_MODELS,
+  PROVIDER_MODEL_PRESETS,
+  DEPRECATED_MODELS
+};
 
 export const AI_SETTINGS_STORAGE_KEY = 'musaic-ai-settings-v1';
 
 export interface AiSettings {
   provider: AiProviderType;
   apiKey: string;
+  apiKeys: Partial<Record<AiProviderType, string>>;
   serverUrl: string;
   model: string;
   autoRomanize: boolean;
@@ -28,9 +41,10 @@ export interface AiSettingsStore {
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   provider: 'gemini',
   apiKey: '',
+  apiKeys: {},
   serverUrl: 'http://localhost:11434',
-  model: 'gemini-2.0-flash',
-  autoRomanize: true,
+  model: DEFAULT_MODELS.gemini,
+  autoRomanize: false,
   autoTranslate: false,
   targetLanguage: 'English',
 };
@@ -40,16 +54,33 @@ let storageListenerInstalled = false;
 function readSettings(): AiSettings {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(AI_SETTINGS_STORAGE_KEY) : null;
-    if (!raw) return { ...DEFAULT_AI_SETTINGS };
+    if (!raw) return { ...DEFAULT_AI_SETTINGS, apiKeys: {} };
     const parsed = JSON.parse(raw);
-    let loadedModel = typeof parsed?.model === 'string' ? parsed.model : DEFAULT_AI_SETTINGS.model;
-    if (loadedModel === 'gemini-2.5-flash') {
-      loadedModel = 'gemini-2.0-flash';
+    const provider: AiProviderType = parsed?.provider || DEFAULT_AI_SETTINGS.provider;
+    let loadedModel = typeof parsed?.model === 'string' ? parsed.model.trim() : '';
+
+    // Migrate deprecated models or populate missing model
+    if (!loadedModel) {
+      loadedModel = DEFAULT_MODELS[provider] || DEFAULT_AI_SETTINGS.model;
+    } else if (DEPRECATED_MODELS[loadedModel]) {
+      loadedModel = DEPRECATED_MODELS[loadedModel];
     }
 
+    const apiKeys: Partial<Record<AiProviderType, string>> = typeof parsed?.apiKeys === 'object' && parsed.apiKeys !== null
+      ? parsed.apiKeys
+      : {};
+
+    // Backward compatibility: if legacy apiKey exists and apiKeys[provider] is empty, populate it
+    if (typeof parsed?.apiKey === 'string' && parsed.apiKey && !apiKeys[provider]) {
+      apiKeys[provider] = parsed.apiKey;
+    }
+
+    const activeApiKey = apiKeys[provider] || (typeof parsed?.apiKey === 'string' ? parsed.apiKey : '');
+
     return {
-      provider: parsed?.provider || DEFAULT_AI_SETTINGS.provider,
-      apiKey: typeof parsed?.apiKey === 'string' ? parsed.apiKey : DEFAULT_AI_SETTINGS.apiKey,
+      provider,
+      apiKey: activeApiKey,
+      apiKeys,
       serverUrl: typeof parsed?.serverUrl === 'string' ? parsed.serverUrl : DEFAULT_AI_SETTINGS.serverUrl,
       model: loadedModel,
       autoRomanize: typeof parsed?.autoRomanize === 'boolean' ? parsed.autoRomanize : DEFAULT_AI_SETTINGS.autoRomanize,
@@ -57,7 +88,7 @@ function readSettings(): AiSettings {
       targetLanguage: typeof parsed?.targetLanguage === 'string' ? parsed.targetLanguage : DEFAULT_AI_SETTINGS.targetLanguage,
     };
   } catch {
-    return { ...DEFAULT_AI_SETTINGS };
+    return { ...DEFAULT_AI_SETTINGS, apiKeys: {} };
   }
 }
 
@@ -88,12 +119,27 @@ export const useAiSettingsStore = create<AiSettingsStore>((set) => {
   return {
     settings: readSettings(),
     setProvider: (provider) => set((state) => {
-      const settings = { ...state.settings, provider };
+      const prevProvider = state.settings.provider;
+      const prevDefault = DEFAULT_MODELS[prevProvider] || '';
+      const newDefault = DEFAULT_MODELS[provider] || '';
+      const prevPresets = PROVIDER_MODEL_PRESETS[prevProvider] || [];
+
+      // If the model was empty, was a preset of the old provider, or is deprecated, switch to the new provider's default
+      const model = (!state.settings.model || state.settings.model === prevDefault || prevPresets.includes(state.settings.model) || DEPRECATED_MODELS[state.settings.model])
+        ? newDefault
+        : state.settings.model;
+
+      // Load the API key saved specifically for the target provider
+      const apiKeys = state.settings.apiKeys || {};
+      const apiKey = apiKeys[provider] || '';
+
+      const settings: AiSettings = { ...state.settings, provider, model, apiKey, apiKeys };
       persistSettings(settings);
       return { settings };
     }),
     setApiKey: (apiKey) => set((state) => {
-      const settings = { ...state.settings, apiKey };
+      const apiKeys = { ...(state.settings.apiKeys || {}), [state.settings.provider]: apiKey };
+      const settings: AiSettings = { ...state.settings, apiKey, apiKeys };
       persistSettings(settings);
       return { settings };
     }),
@@ -122,6 +168,6 @@ export const useAiSettingsStore = create<AiSettingsStore>((set) => {
       persistSettings(settings);
       return { settings };
     }),
-    resetToDefaults: () => applySettings({ ...DEFAULT_AI_SETTINGS }),
+    resetToDefaults: () => applySettings({ ...DEFAULT_AI_SETTINGS, apiKeys: {} }),
   };
 });

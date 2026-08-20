@@ -6,6 +6,7 @@ import LyricsLineContent from '../lyrics/LyricsLineContent'
 import {
   DEFAULT_LYRICS_BODY_COPY,
   BASE_COMPACT_LYRICS_LINE_HEIGHT_PX,
+  containsNonLatinScripts,
   getCompactSyncedLyricsLineHeights,
   getCompensatedLyricsTime,
   getLyricsLineSeekTimeSeconds,
@@ -142,6 +143,12 @@ export default function LyricsPopoutApp() {
     }px`
   } as CSSProperties), [compactSyncedLineHeightsPx])
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = snapshot.lyricsResult?.status === 'hit' && Boolean(snapshot.lyricsResult.lyrics)
+  const rawLyricsText = snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics
+    ? (snapshot.lyricsResult.lyrics.syncedLyrics ?? snapshot.lyricsResult.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
+
   const syncedLyricsTiming = useMemo(
     () => resolveSyncedLyricsTiming(syncedLines, currentTime, { durationSeconds: snapshot.duration }),
     [currentTime, snapshot.duration, syncedLines]
@@ -321,14 +328,51 @@ export default function LyricsPopoutApp() {
                   Recenter
                 </button>
               )}
-              {snapshot.lyricsResult?.status === 'hit' && (
+              {snapshot.lyricsResult?.status === 'hit' && (snapshot.lyricsResult.embeddedAlternative || snapshot.lyricsResult.onlineAlternative) && (
+                <button
+                  type="button"
+                  className="transport-lyrics-inline-action"
+                  onClick={() => {
+                    if (snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded') {
+                      window.electronAPI.lyricsPopout.sendCommand({ type: 'selectLyricsSource', source: 'online' })
+                    } else {
+                      window.electronAPI.lyricsPopout.sendCommand({ type: 'selectLyricsSource', source: 'embedded' })
+                    }
+                  }}
+                  title={snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+                >
+                  {snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+                </button>
+              )}
+              {Boolean(snapshot.currentTrack) && (!snapshot.lyricsResult || snapshot.lyricsResult.status !== 'hit' || snapshot.lyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+                <button
+                  type="button"
+                  className="transport-lyrics-inline-action"
+                  onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'fetchOnlineLyrics' })}
+                  disabled={snapshot.isLoading}
+                  title="Search and load synchronized lyrics from online providers"
+                >
+                  {snapshot.isLoading ? 'Searching...' : '🔍 Search Online'}
+                </button>
+              )}
+              {Boolean(snapshot.currentTrack) && (
                 <>
                   <button
                     type="button"
-                    className={['transport-lyrics-inline-action', snapshot.isRomanized ? 'is-active' : ''].join(' ').trim()}
+                    className={[
+                      'transport-lyrics-inline-action',
+                      snapshot.isRomanized ? 'is-active' : '',
+                      hasNonLatin && !snapshot.isRomanized ? 'has-script-prompt' : ''
+                    ].filter(Boolean).join(' ').trim()}
                     onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'toggleRomanized' })}
-                    disabled={snapshot.aiProcessing || snapshot.isTranslated}
-                    title="Romanize Lyrics"
+                    disabled={!hasLyricsHit || snapshot.aiProcessing || snapshot.isTranslated}
+                    title={
+                      !hasLyricsHit
+                        ? 'Lyrics not available yet'
+                        : hasNonLatin
+                          ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                          : 'Romanize Lyrics with AI'
+                    }
                   >
                     {snapshot.aiProcessing && !snapshot.isTranslated ? '...' : 'Aa'}
                   </button>
@@ -336,8 +380,12 @@ export default function LyricsPopoutApp() {
                     type="button"
                     className={['transport-lyrics-inline-action', snapshot.isTranslated ? 'is-active' : ''].join(' ').trim()}
                     onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'toggleTranslated' })}
-                    disabled={snapshot.aiProcessing || snapshot.isRomanized}
-                    title="Translate Lyrics"
+                    disabled={!hasLyricsHit || snapshot.aiProcessing || snapshot.isRomanized}
+                    title={
+                      !hasLyricsHit
+                        ? 'Lyrics not available yet'
+                        : 'Translate Lyrics with AI'
+                    }
                   >
                     {snapshot.aiProcessing && !snapshot.isRomanized ? '...' : 'A文'}
                   </button>
@@ -375,6 +423,24 @@ export default function LyricsPopoutApp() {
               <span className="lyrics-popout-track-detail">{trackDetail}</span>
             )}
           </div>
+          {Boolean(snapshot.errorMessage) && (
+            <div className="lyrics-popout-error-banner" style={{
+              margin: '4px 12px 6px',
+              padding: '6px 10px',
+              fontSize: '0.82em',
+              background: 'rgba(239, 68, 68, 0.18)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: '6px',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '6px',
+              lineHeight: 1.35
+            }}>
+              <span>⚠️ {snapshot.errorMessage}</span>
+            </div>
+          )}
         </div>
         {renderBody()}
       </section>

@@ -79,6 +79,8 @@ export function useLyricsPopoutBridge(): void {
   const aiProcessing = useLyricsStore((s) => s.aiProcessing)
   const lyricsStoreError = useLyricsStore((s) => s.errorMessage)
   const refreshLyricsForTrack = useLyricsStore((s) => s.refreshForTrack)
+  const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
+  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
   const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
   const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const lyricsShelfExpanded = useUIStore((s) => s.lyricsShelfExpanded)
@@ -181,11 +183,21 @@ export function useLyricsPopoutBridge(): void {
           void toggleTranslated()
           break
         }
+        case 'selectLyricsSource': {
+          selectLyricsSource(command.source)
+          break
+        }
+        case 'fetchOnlineLyrics': {
+          const currentQuery = buildLyricsQuery(player.currentTrack)
+          if (!currentQuery) return
+          void fetchOnlineLyricsForTrack(currentQuery)
+          break
+        }
       }
     })
 
     return () => unsubscribe()
-  }, [refreshLyricsForTrack])
+  }, [refreshLyricsForTrack, selectLyricsSource, fetchOnlineLyricsForTrack, toggleRomanized, toggleTranslated])
 
   useEffect(() => {
     const nextSnapshot = buildLyricsPopoutSnapshot(bridgeState)

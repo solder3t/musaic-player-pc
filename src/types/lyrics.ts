@@ -62,6 +62,7 @@ export interface LyricsTrackQuery {
   artist: string
   album?: string
   durationSeconds?: number
+  preferSource?: 'auto' | 'embedded' | 'online'
 }
 
 export interface LyricsPayload {
@@ -74,7 +75,14 @@ export interface LyricsPayload {
 }
 
 export type LyricsLookupResult =
-  | { status: 'hit'; lyrics: LyricsPayload; cached: boolean }
+  | {
+      status: 'hit'
+      lyrics: LyricsPayload
+      cached: boolean
+      availableSources?: LyricsSource[]
+      embeddedAlternative?: LyricsPayload | null
+      onlineAlternative?: LyricsPayload | null
+    }
   | { status: 'not_found'; reason: 'embedded-missing' | 'online-disabled' | 'provider-not-found' | 'provider-unavailable' }
   | { status: 'transient_error'; message: string; code?: string }
 

@@ -11,6 +11,7 @@ import LyricsLineContent from '../lyrics/LyricsLineContent'
 import {
   buildLyricsQuery,
   BASE_COMPACT_LYRICS_LINE_HEIGHT_PX,
+  containsNonLatinScripts,
   DEFAULT_LYRICS_BODY_COPY,
   getCompensatedLyricsTime,
   getActiveLyricsResult,
@@ -44,6 +45,8 @@ export default function TransportLyricsShelf() {
   const aiProcessing = useLyricsStore((s) => s.aiProcessing)
   const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
   const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
+  const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
+  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
   const lastLyricsRequestKeyRef = useRef<string | null>(null)
 
@@ -89,6 +92,12 @@ export default function TransportLyricsShelf() {
     }px`
   } as CSSProperties), [compactSyncedLineHeightsPx])
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = activeLyricsResult?.status === 'hit' && Boolean(activeLyricsResult.lyrics)
+  const rawLyricsText = hasLyricsHit
+    ? (activeLyricsResult!.lyrics.syncedLyrics ?? activeLyricsResult!.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
+
   const syncedLyricsTiming = useMemo(
     () => resolveSyncedLyricsTiming(syncedLines, compensatedTime, { durationSeconds: duration }),
     [compensatedTime, duration, syncedLines]
@@ -344,14 +353,53 @@ export default function TransportLyricsShelf() {
                 Recenter
               </button>
             )}
-            {activeLyricsResult?.status === 'hit' && (
+            {activeLyricsResult?.status === 'hit' && (activeLyricsResult.embeddedAlternative || activeLyricsResult.onlineAlternative) && (
+              <button
+                type="button"
+                className="transport-lyrics-inline-action"
+                onClick={() => {
+                  if (activeLyricsResult.lyrics.source === 'embedded') {
+                    selectLyricsSource('online')
+                  } else {
+                    selectLyricsSource('embedded')
+                  }
+                }}
+                title={activeLyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+              >
+                {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+              </button>
+            )}
+            {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+              <button
+                type="button"
+                className="transport-lyrics-inline-action"
+                onClick={() => {
+                  if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                }}
+                disabled={lyricsIsLoading}
+                title="Search and load synchronized lyrics from online providers"
+              >
+                {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
+              </button>
+            )}
+            {Boolean(currentTrack) && (
               <>
                 <button
                   type="button"
-                  className={['transport-lyrics-inline-action', isRomanized ? 'is-active' : ''].join(' ').trim()}
+                  className={[
+                    'transport-lyrics-inline-action',
+                    isRomanized ? 'is-active' : '',
+                    hasNonLatin && !isRomanized ? 'has-script-prompt' : ''
+                  ].filter(Boolean).join(' ').trim()}
                   onClick={() => void toggleRomanized()}
-                  disabled={aiProcessing || isTranslated}
-                  title="Romanize Lyrics"
+                  disabled={!hasLyricsHit || aiProcessing || isTranslated}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : hasNonLatin
+                        ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                        : 'Romanize Lyrics with AI'
+                  }
                 >
                   {aiProcessing && !isTranslated ? '...' : 'Aa'}
                 </button>
@@ -359,8 +407,12 @@ export default function TransportLyricsShelf() {
                   type="button"
                   className={['transport-lyrics-inline-action', isTranslated ? 'is-active' : ''].join(' ').trim()}
                   onClick={() => void toggleTranslated()}
-                  disabled={aiProcessing || isRomanized}
-                  title="Translate Lyrics"
+                  disabled={!hasLyricsHit || aiProcessing || isRomanized}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : 'Translate Lyrics with AI'
+                  }
                 >
                   {aiProcessing && !isRomanized ? '...' : 'A文'}
                 </button>
@@ -401,6 +453,38 @@ export default function TransportLyricsShelf() {
             </button>
           </div>
         </header>
+        {Boolean(lyricsStoreError) && (
+          <div className="lyrics-shelf-error-banner" style={{
+            padding: '6px 12px',
+            fontSize: '0.8em',
+            background: 'rgba(239, 68, 68, 0.18)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#fca5a5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            lineHeight: 1.4
+          }}>
+            <span>⚠️ {lyricsStoreError}</span>
+            <button
+              type="button"
+              onClick={() => useLyricsStore.setState({ errorMessage: '' })}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#fca5a5',
+                cursor: 'pointer',
+                fontSize: '13px',
+                padding: '0 4px',
+                lineHeight: 1
+              }}
+              title="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {renderBody()}
       </div>
     </section>

@@ -240,8 +240,8 @@ declare global {
             }
             ai: {
                 generateEqProfile: (prompt: string, ...args: any[]) => Promise<any>
-                romanizeLyrics: (text: string, settings: any) => Promise<any>
-                translateLyrics: (text: string, settings: any, lang: string) => Promise<any>
+                romanizeLyrics: (input: string | any, settings: any) => Promise<any>
+                translateLyrics: (input: string | any, settings: any, lang: string) => Promise<any>
             }
             minimize: () => void
             maximize: () => void
@@ -477,8 +477,8 @@ declare global {
                 getStatus: () => Promise<LyricsStatus>
                 setEnabled: (enabled: boolean) => Promise<LyricsStatus>
                 setLrclibBaseUrl: (baseUrl: string) => Promise<LyricsStatus>
-                getForTrack: (query: LyricsTrackQuery) => Promise<LyricsLookupResult>
-                refreshForTrack: (query: LyricsTrackQuery) => Promise<LyricsLookupResult>
+                getForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
+                refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
                 getTrackOverride: (trackPath: string) => Promise<LyricsTrackOverride>
                 importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat) => Promise<LyricsManualImportResult>
                 clearManualLyrics: (trackPaths: string[]) => Promise<LyricsManualClearResult>

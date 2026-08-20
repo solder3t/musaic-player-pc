@@ -43,6 +43,8 @@ export type LyricsPopoutCommand =
   | { type: 'seek'; time: number }
   | { type: 'toggleRomanized' }
   | { type: 'toggleTranslated' }
+  | { type: 'selectLyricsSource'; source: 'embedded' | 'online' }
+  | { type: 'fetchOnlineLyrics' }
 
 export const LYRICS_POPOUT_WINDOW_MIN_WIDTH = 360
 export const LYRICS_POPOUT_WINDOW_MIN_HEIGHT = 220

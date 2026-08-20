@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { LyricsLookupResult, LyricsStatus, LyricsTrackQuery } from '../../types/lyrics'
+import type { LyricsLookupResult, LyricsPayload, LyricsStatus, LyricsTrackQuery } from '../../types/lyrics'
 import { useAiSettingsStore } from './aiSettingsStore'
 
 interface LyricsStore {
@@ -16,6 +16,8 @@ interface LyricsStore {
   setLrclibBaseUrl: (baseUrl: string) => Promise<LyricsStatus | null>
   loadForTrack: (query: LyricsTrackQuery | null) => Promise<LyricsLookupResult | null>
   refreshForTrack: (query: LyricsTrackQuery | null) => Promise<LyricsLookupResult | null>
+  selectLyricsSource: (source: 'embedded' | 'online') => void
+  fetchOnlineLyricsForTrack: (query: LyricsTrackQuery | null) => Promise<LyricsLookupResult | null>
   resetToDefaults: () => Promise<LyricsStatus | null>
   isRomanized: boolean
   isTranslated: boolean
@@ -88,6 +90,11 @@ function isProviderUnavailableResult(result: LyricsLookupResult): boolean {
   return result.status === 'not_found' && result.reason === 'provider-unavailable'
 }
 
+const aiLyricsCache = new Map<string, {
+  romanized?: LyricsPayload
+  translated?: Record<string, LyricsPayload>
+}>()
+
 export const useLyricsStore = create<LyricsStore>((set, get) => {
   const applyStatus = (status: LyricsStatus): LyricsStatus => {
     set({
@@ -131,7 +138,6 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
       errorMessage: result.status === 'transient_error' ? result.message : ''
     }))
 
-    // Automatically trigger romanization if enabled
     const { settings } = useAiSettingsStore.getState()
     if (settings.autoRomanize && result.status === 'hit') {
       setTimeout(() => {
@@ -139,7 +145,7 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         if (state.currentTrackPath === trackPath && !state.isRomanized) {
           void state.toggleRomanized()
         }
-      }, 50)
+      }, 100)
     }
 
     return result
@@ -152,31 +158,26 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
     currentResult: null,
     isLoading: false,
     isInitialized: false,
+    errorMessage: '',
     isRomanized: false,
     isTranslated: false,
     aiProcessing: false,
-    errorMessage: '',
 
     init: async () => {
       if (get().isInitialized) return
-      set({ isLoading: true })
+      set({ isInitialized: true })
       try {
         await fetchStatus()
       } catch (error) {
         set({ errorMessage: toErrorMessage(error) })
-      } finally {
-        set({ isLoading: false, isInitialized: true })
       }
     },
 
     refresh: async () => {
-      set({ isLoading: true })
       try {
         await fetchStatus()
       } catch (error) {
         set({ errorMessage: toErrorMessage(error) })
-      } finally {
-        set({ isLoading: false })
       }
     },
 
@@ -200,14 +201,17 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
       }
     },
 
-    loadForTrack: async (query) => {
+    loadForTrack: async (query: LyricsTrackQuery | null) => {
       const trackPath = normalizeTrackPath(query?.path)
-      if (!query || !trackPath) {
+      if (!trackPath || !query) {
         activeRequestId += 1
         set({
           currentTrackPath: null,
           currentResult: null,
           isLoading: false,
+          isRomanized: false,
+          isTranslated: false,
+          aiProcessing: false,
           errorMessage: ''
         })
         return null
@@ -220,6 +224,9 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         currentTrackPath: trackPath,
         currentResult: state.resultByTrackPath[trackPath] ?? null,
         isLoading: true,
+        isRomanized: false,
+        isTranslated: false,
+        aiProcessing: false,
         errorMessage: ''
       }))
 
@@ -236,18 +243,31 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
       }
     },
 
-    refreshForTrack: async (query) => {
+    refreshForTrack: async (query: LyricsTrackQuery | null) => {
       const trackPath = normalizeTrackPath(query?.path)
-      if (!query || !trackPath) {
+      if (!trackPath || !query) {
+        activeRequestId += 1
+        set({
+          currentTrackPath: null,
+          currentResult: null,
+          isLoading: false,
+          isRomanized: false,
+          isTranslated: false,
+          aiProcessing: false,
+          errorMessage: ''
+        })
         return null
       }
 
       const requestId = activeRequestId + 1
       activeRequestId = requestId
       set((state) => ({
-        resultByTrackPath: touchLyricsResultCacheEntry(state.resultByTrackPath, trackPath, trackPath),
         currentTrackPath: trackPath,
+        currentResult: state.resultByTrackPath[trackPath] ?? null,
         isLoading: true,
+        isRomanized: false,
+        isTranslated: false,
+        aiProcessing: false,
         errorMessage: ''
       }))
 
@@ -256,6 +276,99 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         return applyTrackResult(requestId, trackPath, result)
       } catch (error) {
         if (requestId !== activeRequestId) return null
+        set({
+          isLoading: false,
+          errorMessage: toErrorMessage(error)
+        })
+        return null
+      }
+    },
+
+    selectLyricsSource: (targetSource: 'embedded' | 'online') => {
+      const state = get()
+      const currentResult = state.currentResult
+      if (!currentResult || currentResult.status !== 'hit' || !state.currentTrackPath) return
+
+      const currentLyrics = currentResult.lyrics
+      if (targetSource === 'embedded' && currentLyrics.source !== 'embedded' && currentResult.embeddedAlternative) {
+        const nextResult: LyricsLookupResult = {
+          ...currentResult,
+          lyrics: currentResult.embeddedAlternative,
+          onlineAlternative: currentLyrics
+        }
+        set((s) => ({
+          resultByTrackPath: { ...s.resultByTrackPath, [s.currentTrackPath!]: nextResult },
+          currentResult: nextResult,
+          isRomanized: false,
+          isTranslated: false
+        }))
+      } else if (targetSource === 'online' && currentLyrics.source === 'embedded' && currentResult.onlineAlternative) {
+        const nextResult: LyricsLookupResult = {
+          ...currentResult,
+          lyrics: currentResult.onlineAlternative,
+          embeddedAlternative: currentLyrics
+        }
+        set((s) => ({
+          resultByTrackPath: { ...s.resultByTrackPath, [s.currentTrackPath!]: nextResult },
+          currentResult: nextResult,
+          isRomanized: false,
+          isTranslated: false
+        }))
+      }
+    },
+
+    fetchOnlineLyricsForTrack: async (query: LyricsTrackQuery | null) => {
+      const trackPath = normalizeTrackPath(query?.path)
+      if (!trackPath || !query) return null
+
+      const existingHit = get().resultByTrackPath[trackPath]
+      const currentEmbeddedPayload = existingHit?.status === 'hit' && existingHit.lyrics.source === 'embedded'
+        ? existingHit.lyrics
+        : existingHit?.status === 'hit' && existingHit.embeddedAlternative
+          ? existingHit.embeddedAlternative
+          : null
+
+      set({
+        isLoading: true,
+        isRomanized: false,
+        isTranslated: false,
+        aiProcessing: false,
+        errorMessage: ''
+      })
+      try {
+        const result = await window.electronAPI.lyrics.getForTrack(
+          {
+            ...query,
+            preferSource: 'online'
+          },
+          {
+            forceRefresh: true,
+            preferSource: 'online'
+          }
+        )
+
+        if (result.status === 'hit') {
+          const nextResult: LyricsLookupResult = {
+            ...result,
+            availableSources: currentEmbeddedPayload ? ['online', 'embedded'] : (result.availableSources || ['online']),
+            embeddedAlternative: currentEmbeddedPayload ?? result.embeddedAlternative ?? null
+          }
+          set((s) => ({
+            resultByTrackPath: putLyricsResultInCache(s.resultByTrackPath, trackPath, nextResult, trackPath),
+            currentResult: nextResult,
+            isLoading: false,
+            isRomanized: false,
+            isTranslated: false
+          }))
+          return nextResult
+        } else {
+          set({
+            isLoading: false,
+            errorMessage: 'No online synced lyrics found for this track.'
+          })
+          return result
+        }
+      } catch (error) {
         set({
           isLoading: false,
           errorMessage: toErrorMessage(error)
@@ -287,80 +400,178 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
 
     toggleRomanized: async () => {
       const state = get()
-      if (state.aiProcessing || !state.currentTrackPath) return
+      const currentTrackPath = state.currentTrackPath
+      if (state.aiProcessing || !currentTrackPath) return
       if (state.isRomanized) {
         set({
           isRomanized: false,
-          currentResult: state.resultByTrackPath[state.currentTrackPath] ?? null
+          currentResult: state.resultByTrackPath[currentTrackPath] ?? null
         })
         return
       }
 
-      const originalResult = state.resultByTrackPath[state.currentTrackPath]
-      if (!originalResult || originalResult.status !== 'hit' || !originalResult.lyrics) return
+      const activeResult = (state.currentResult && state.currentResult.status === 'hit' && state.currentResult.lyrics)
+        ? state.currentResult
+        : state.resultByTrackPath[currentTrackPath]
+      if (!activeResult || activeResult.status !== 'hit' || !activeResult.lyrics) return
 
-      const textToConvert = originalResult.lyrics.syncedLyrics ?? originalResult.lyrics.plainLyrics
-      if (!textToConvert) return
-
-      set({ aiProcessing: true })
-      try {
-        const { settings } = useAiSettingsStore.getState()
-        const aiResult = await window.electronAPI.ai.romanizeLyrics(textToConvert, settings)
-        
-        if (!aiResult.text || aiResult.text.trim() === textToConvert.trim()) {
-          set({ aiProcessing: false })
-          return
-        }
-
+      const cachedRomanized = aiLyricsCache.get(currentTrackPath)?.romanized
+      if (cachedRomanized) {
         set(() => ({
           isRomanized: true,
           isTranslated: false,
           aiProcessing: false,
           currentResult: {
-            ...originalResult,
+            ...activeResult,
+            lyrics: cachedRomanized
+          }
+        }))
+        return
+      }
+
+      const { syncedLines, syncedLyrics, plainLyrics, format } = activeResult.lyrics
+      const textToConvert = syncedLyrics ?? plainLyrics
+      if (!textToConvert && (!syncedLines || syncedLines.length === 0)) return
+
+      const inputPayload = (syncedLines && syncedLines.length > 0)
+        ? { text: textToConvert ?? '', syncedLines, format }
+        : (textToConvert ?? '')
+
+      set({ aiProcessing: true, errorMessage: '' })
+      try {
+        const { settings } = useAiSettingsStore.getState()
+        const aiResult = await window.electronAPI.ai.romanizeLyrics(inputPayload, settings)
+        
+        if (aiResult.error) {
+          set({
+            aiProcessing: false,
+            isRomanized: false,
+            errorMessage: aiResult.error
+          })
+          return
+        }
+
+        if (!aiResult.payload) {
+          set({
+            aiProcessing: false,
+            isRomanized: false,
+            errorMessage: 'AI romanization produced no output.'
+          })
+          return
+        }
+
+        const existing = aiLyricsCache.get(currentTrackPath) || {}
+        existing.romanized = aiResult.payload
+        aiLyricsCache.set(currentTrackPath, existing)
+
+        set(() => ({
+          isRomanized: true,
+          isTranslated: false,
+          aiProcessing: false,
+          errorMessage: '',
+          currentResult: {
+            ...activeResult,
             lyrics: aiResult.payload
           }
         }))
       } catch (err) {
         console.error('Romanization failed', err)
-        set({ aiProcessing: false, errorMessage: 'Romanization failed: ' + (err instanceof Error ? err.message : String(err)) })
+        const msg = err instanceof Error ? err.message : String(err)
+        set({
+          aiProcessing: false,
+          isRomanized: false,
+          errorMessage: msg
+        })
       }
     },
 
     toggleTranslated: async () => {
       const state = get()
-      if (state.aiProcessing || !state.currentTrackPath) return
+      const currentTrackPath = state.currentTrackPath
+      if (state.aiProcessing || !currentTrackPath) return
       if (state.isTranslated) {
         set({
           isTranslated: false,
-          currentResult: state.resultByTrackPath[state.currentTrackPath] ?? null
+          currentResult: state.resultByTrackPath[currentTrackPath] ?? null
         })
         return
       }
 
-      const originalResult = state.resultByTrackPath[state.currentTrackPath]
-      if (!originalResult || originalResult.status !== 'hit' || !originalResult.lyrics) return
+      const activeResult = (state.currentResult && state.currentResult.status === 'hit' && state.currentResult.lyrics)
+        ? state.currentResult
+        : state.resultByTrackPath[currentTrackPath]
+      if (!activeResult || activeResult.status !== 'hit' || !activeResult.lyrics) return
 
-      const textToConvert = originalResult.lyrics.syncedLyrics ?? originalResult.lyrics.plainLyrics
-      if (!textToConvert) return
+      const { settings } = useAiSettingsStore.getState()
+      const targetLanguage = settings.targetLanguage || 'English'
 
-      set({ aiProcessing: true })
-      try {
-        const { settings } = useAiSettingsStore.getState()
-        const aiResult = await window.electronAPI.ai.translateLyrics(textToConvert, settings, 'English')
-        
+      const cachedTranslated = aiLyricsCache.get(currentTrackPath)?.translated?.[targetLanguage]
+      if (cachedTranslated) {
         set(() => ({
           isTranslated: true,
           isRomanized: false,
           aiProcessing: false,
           currentResult: {
-            ...originalResult,
+            ...activeResult,
+            lyrics: cachedTranslated
+          }
+        }))
+        return
+      }
+
+      const { syncedLines, syncedLyrics, plainLyrics, format } = activeResult.lyrics
+      const textToConvert = syncedLyrics ?? plainLyrics
+      if (!textToConvert && (!syncedLines || syncedLines.length === 0)) return
+
+      const inputPayload = (syncedLines && syncedLines.length > 0)
+        ? { text: textToConvert ?? '', syncedLines, format }
+        : (textToConvert ?? '')
+
+      set({ aiProcessing: true, errorMessage: '' })
+      try {
+        const aiResult = await window.electronAPI.ai.translateLyrics(inputPayload, settings, targetLanguage)
+        
+        if (aiResult.error) {
+          set({
+            aiProcessing: false,
+            isTranslated: false,
+            errorMessage: aiResult.error
+          })
+          return
+        }
+
+        if (!aiResult.payload) {
+          set({
+            aiProcessing: false,
+            isTranslated: false,
+            errorMessage: 'AI translation produced no output.'
+          })
+          return
+        }
+
+        const existing = aiLyricsCache.get(currentTrackPath) || {}
+        if (!existing.translated) existing.translated = {}
+        existing.translated[targetLanguage] = aiResult.payload
+        aiLyricsCache.set(currentTrackPath, existing)
+
+        set(() => ({
+          isTranslated: true,
+          isRomanized: false,
+          aiProcessing: false,
+          errorMessage: '',
+          currentResult: {
+            ...activeResult,
             lyrics: aiResult.payload
           }
         }))
       } catch (err) {
         console.error('Translation failed', err)
-        set({ aiProcessing: false, errorMessage: 'Translation failed' })
+        const msg = err instanceof Error ? err.message : String(err)
+        set({
+          aiProcessing: false,
+          isTranslated: false,
+          errorMessage: msg
+        })
       }
     }
   }

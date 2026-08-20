@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22.x
+          node-version: 24.x
           cache: 'npm'
 
       - name: Cache Electron
@@ -78,6 +78,9 @@ jobs:
           node -e 'const fs=require("fs"); const key=process.env.LASTFM_API_KEY ?? ""; const secret=process.env.LASTFM_SHARED_SECRET ?? ""; fs.writeFileSync(".env.local", `LASTFM_API_KEY=${key}\nLASTFM_SHARED_SECRET=${secret}\n`, "utf8")'
 
       - name: Build distributable
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_SHARED_SECRET: ${{ secrets.LASTFM_SHARED_SECRET }}
         run: npm run ${{ matrix.dist_cmd }}
 
       - name: Verify release artifact names

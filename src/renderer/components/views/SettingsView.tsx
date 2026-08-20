@@ -32,7 +32,7 @@ import {
   type ReplayGainMode
 } from '../../stores/audioSettingsStore'
 import { useVisualizerSettingsStore } from '../../stores/visualizerSettingsStore'
-import { useAiSettingsStore } from '../../stores/aiSettingsStore'
+import { useAiSettingsStore, DEFAULT_MODELS, PROVIDER_MODEL_PRESETS } from '../../stores/aiSettingsStore'
 import {
   DISCORD_PAUSE_CLEAR_MINUTE_PRESETS,
   useDiscordSettingsStore,
@@ -360,6 +360,7 @@ export default function SettingsView() {
   const [settingsTransferWizardOpen, setSettingsTransferWizardOpen] = useState(false)
   const [showInlinePhoneQr, setShowInlinePhoneQr] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [showAiApiKey, setShowAiApiKey] = useState(false)
   const [resetStatuses, setResetStatuses] = useState<Record<ResetActionId, ResetActionStatus>>(
     () => buildInitialResetStatusMap()
   )
@@ -425,8 +426,17 @@ export default function SettingsView() {
     setPauseClearMinutes: setDiscordPauseClearMinutes,
   } = useDiscordSettingsStore()
 
-  const { settings: aiSettings, setProvider: setAiProvider, setApiKey: setAiApiKey } = useAiSettingsStore()
-  const { provider, apiKey } = aiSettings
+  const {
+    settings: aiSettings,
+    setProvider: setAiProvider,
+    setApiKey: setAiApiKey,
+    setModel: setAiModel,
+    setServerUrl: setAiServerUrl,
+    setAutoRomanize: setAiAutoRomanize,
+    setAutoTranslate: setAiAutoTranslate,
+    setTargetLanguage: setAiTargetLanguage
+  } = useAiSettingsStore()
+  const { provider, apiKey, model, serverUrl, autoRomanize, autoTranslate, targetLanguage } = aiSettings
 
   const {
     status: localApiStatus,
@@ -486,6 +496,7 @@ export default function SettingsView() {
   const setLyricsTranslationsEnabled = useLyricsDisplaySettingsStore((state) => state.setTranslationsEnabled)
   const setLyricsTranslationLanguagePriority = useLyricsDisplaySettingsStore((state) => state.setTranslationLanguagePriority)
   const setLyricsVoiceLabelsEnabled = useLyricsDisplaySettingsStore((state) => state.setVoiceLabelsEnabled)
+  const setLyricsPreferOnlineSyncedLyrics = useLyricsDisplaySettingsStore((state) => state.setPreferOnlineSyncedLyrics)
   const {
     autoCheckEnabled,
     checkState: updateCheckState,
@@ -2173,11 +2184,48 @@ export default function SettingsView() {
               <div className="settings-integration-card">
                 <div className="settings-integration-card-head">
                   <h4>AI Configuration</h4>
-                  <p>Configure your preferred API provider for AI Equalizer generation.</p>
+                  <p>Configure your preferred API provider for AI Equalizer generation and Lyrics Romanization.</p>
                 </div>
                 <div className="settings-grid">
                   <div className="settings-field">
-                    <label className="settings-field-label">AI Provider</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label className="settings-field-label" style={{ margin: 0 }}>AI Provider</label>
+                      {provider !== 'none' && (
+                        (() => {
+                          const links: Record<string, { label: string; url: string }> = {
+                            gemini: { label: 'Get Gemini API Key', url: 'https://aistudio.google.com/app/apikey' },
+                            openai: { label: 'Get OpenAI API Key', url: 'https://platform.openai.com/api-keys' },
+                            claude: { label: 'Get Anthropic API Key', url: 'https://console.anthropic.com/settings/keys' },
+                            groq: { label: 'Get Groq API Key', url: 'https://console.groq.com/keys' },
+                            deepseek: { label: 'Get DeepSeek API Key', url: 'https://platform.deepseek.com/api_keys' },
+                            ollama: { label: 'Download Ollama', url: 'https://ollama.com/download' }
+                          }
+                          const target = links[provider]
+                          if (!target) return null
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => openExternalLink(target.url)}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--accent, #60a5fa)',
+                                cursor: 'pointer',
+                                fontSize: '0.82em',
+                                padding: 0,
+                                textDecoration: 'underline',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                              title={`Open ${target.label} webpage in browser`}
+                            >
+                              🔑 {target.label} ↗
+                            </button>
+                          )
+                        })()
+                      )}
+                    </div>
                     <select
                       className="settings-select"
                       value={provider}
@@ -2192,17 +2240,161 @@ export default function SettingsView() {
                       <option value="ollama">Ollama (Local)</option>
                     </select>
                   </div>
-                  {provider !== 'none' && provider !== 'ollama' && (
+                  {provider === 'ollama' && (
                     <div className="settings-field">
-                      <label className="settings-field-label">API Key</label>
+                      <label className="settings-field-label">Server URL</label>
                       <input
-                        type="password"
+                        type="text"
                         className="settings-input"
-                        placeholder={`Enter your ${provider} API Key`}
-                        value={apiKey}
-                        onChange={(e) => setAiApiKey(e.target.value)}
+                        placeholder="http://localhost:11434"
+                        value={serverUrl}
+                        onChange={(e) => setAiServerUrl(e.target.value)}
                       />
                     </div>
+                  )}
+                  {provider !== 'none' && provider !== 'ollama' && (
+                    <div className="settings-field">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <label className="settings-field-label" style={{ margin: 0 }}>API Key</label>
+                        {apiKey && (
+                          <button
+                            type="button"
+                            onClick={() => setAiApiKey('')}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--text-muted, #9ca3af)',
+                              cursor: 'pointer',
+                              fontSize: '0.78em',
+                              padding: 0
+                            }}
+                            title={`Clear API key for ${provider}`}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type={showAiApiKey ? 'text' : 'password'}
+                          className="settings-input"
+                          style={{ paddingRight: '58px' }}
+                          placeholder={`Enter your ${provider} API Key`}
+                          value={apiKey}
+                          onChange={(e) => setAiApiKey(e.target.value)}
+                          autoComplete="off"
+                          spellCheck={false}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAiApiKey((v) => !v)}
+                          style={{
+                            position: 'absolute',
+                            right: '8px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted, #9ca3af)',
+                            cursor: 'pointer',
+                            fontSize: '0.8em',
+                            padding: '4px 6px',
+                            borderRadius: '4px'
+                          }}
+                          title={showAiApiKey ? 'Hide API key' : 'Show API key'}
+                        >
+                          {showAiApiKey ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.78em', opacity: 0.65 }}>
+                        Keys are saved individually per provider and never shared or sent to third parties.
+                      </p>
+                    </div>
+                  )}
+                  {provider !== 'none' && (
+                    <div className="settings-field">
+                      <label className="settings-field-label">Model</label>
+                      <select
+                        className="settings-select"
+                        value={
+                          (PROVIDER_MODEL_PRESETS[provider] || []).includes(model)
+                            ? model
+                            : '__custom__'
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value
+                          if (val === '__custom__') {
+                            if ((PROVIDER_MODEL_PRESETS[provider] || []).includes(model)) {
+                              setAiModel('')
+                            }
+                          } else {
+                            setAiModel(val)
+                          }
+                        }}
+                      >
+                        {((PROVIDER_MODEL_PRESETS[provider] || []) as string[]).map((preset: string) => (
+                          <option key={preset} value={preset}>
+                            {preset}{preset === DEFAULT_MODELS[provider] ? ' (Default)' : ''}
+                          </option>
+                        ))}
+                        <option value="__custom__">Custom Model...</option>
+                      </select>
+                      {!((PROVIDER_MODEL_PRESETS[provider] || []).includes(model)) && (
+                        <div style={{ marginTop: '8px' }}>
+                          <input
+                            type="text"
+                            className="settings-input"
+                            placeholder={DEFAULT_MODELS[provider] ? `e.g. ${DEFAULT_MODELS[provider]}` : 'Enter custom model name'}
+                            value={model}
+                            onChange={(e) => setAiModel(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {provider !== 'none' && (
+                    <>
+                      <div className="settings-field settings-field-inline">
+                        <div>
+                          <span className="settings-field-label">Auto-Romanize Non-Latin Lyrics</span>
+                          <p style={{ margin: '2px 0 0', fontSize: '0.82em', opacity: 0.7 }}>
+                            Automatically transliterate Hangul, Kana/Kanji, Hanzi, and Cyrillic lyrics to Latin script on track start.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`settings-toggle ${autoRomanize ? 'active' : ''}`}
+                          onClick={() => setAiAutoRomanize(!autoRomanize)}
+                        >
+                          {autoRomanize ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+
+                      <div className="settings-field settings-field-inline">
+                        <div>
+                          <span className="settings-field-label">Auto-Translate Lyrics</span>
+                          <p style={{ margin: '2px 0 0', fontSize: '0.82em', opacity: 0.7 }}>
+                            Automatically translate lyrics into your target language on track start.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`settings-toggle ${autoTranslate ? 'active' : ''}`}
+                          onClick={() => setAiAutoTranslate(!autoTranslate)}
+                        >
+                          {autoTranslate ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+
+                      <div className="settings-field">
+                        <label className="settings-field-label">Translation Target Language</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          placeholder="English"
+                          value={targetLanguage}
+                          onChange={(e) => setAiTargetLanguage(e.target.value)}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -2339,9 +2531,53 @@ export default function SettingsView() {
                   {lastFmAuthHint && <p className="settings-note settings-note-success">{lastFmAuthHint}</p>}
                   {lastFmResolvedError && <p className="settings-note settings-note-error">{lastFmResolvedError}</p>}
                   {!lastFmHasApiCredentials && (
-                    <p className="settings-note settings-note-error">
-                      Last.fm API credentials are missing in this build. Please provide custom credentials below.
-                    </p>
+                    <div style={{ background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', padding: '12px', marginTop: '4px' }}>
+                      <p className="settings-note settings-note-error" style={{ margin: 0, marginBottom: '8px' }}>
+                        Last.fm API credentials are missing in this build. Provide your custom API credentials below to connect:
+                      </p>
+                      <div className="settings-grid">
+                        <label className="settings-field">
+                          <span className="settings-field-label">Custom Last.fm API Key</span>
+                          <input
+                            className="settings-input"
+                            type="text"
+                            placeholder="Enter Last.fm API Key"
+                            value={lastFmCustomApiKeyInput}
+                            onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
+                            onBlur={() => {
+                              const nextKey = lastFmCustomApiKeyInput.trim() || null
+                              const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                              if (
+                                nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                                nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                              ) {
+                                void setLastFmCustomCredentials(nextKey, nextSecret)
+                              }
+                            }}
+                          />
+                        </label>
+                        <label className="settings-field">
+                          <span className="settings-field-label">Custom Last.fm Shared Secret</span>
+                          <input
+                            className="settings-input"
+                            type="password"
+                            placeholder="Enter Last.fm Shared Secret"
+                            value={lastFmCustomSharedSecretInput}
+                            onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
+                            onBlur={() => {
+                              const nextKey = lastFmCustomApiKeyInput.trim() || null
+                              const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                              if (
+                                nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                                nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                              ) {
+                                void setLastFmCustomCredentials(nextKey, nextSecret)
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
                   )}
 
                   {/* Advanced / Custom Endpoints */}
@@ -2508,6 +2744,15 @@ export default function SettingsView() {
                       {lyricsEnabled ? 'Enabled' : 'Disabled'}
                     </button>
                   </div>
+                  <div className="settings-field settings-field-inline">
+                    <span className="settings-field-label">Prefer Online Synced</span>
+                    <button
+                      className={`settings-toggle ${lyricsDisplaySettings.preferOnlineSyncedLyrics ? 'active' : ''}`}
+                      onClick={() => setLyricsPreferOnlineSyncedLyrics(!lyricsDisplaySettings.preferOnlineSyncedLyrics)}
+                    >
+                      {lyricsDisplaySettings.preferOnlineSyncedLyrics ? 'Enabled' : 'Disabled'}
+                    </button>
+                  </div>
                   <label className="settings-field">
                     <span className="settings-field-label">LRCLIB Base URL</span>
                     <input
@@ -2564,22 +2809,161 @@ export default function SettingsView() {
                       {lyricsDisplaySettings.voiceLabelsEnabled ? 'Enabled' : 'Disabled'}
                     </button>
                   </div>
-                  <label className="settings-field">
-                    <span className="settings-field-label">Translation Priority</span>
-                    <input
-                      className="settings-select"
-                      type="text"
-                      value={lyricsTranslationPriorityInput}
-                      onChange={(event) => setLyricsTranslationPriorityInput(event.target.value)}
-                      onBlur={() => setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)
-                        }
-                      }}
-                      placeholder="en, ja-Latn"
-                    />
-                  </label>
+                  <div className="settings-field" style={{ gridColumn: '1 / -1' }}>
+                    <span className="settings-field-label">XLRC Translation Language Priority</span>
+                    <p style={{ margin: '2px 0 8px', fontSize: '0.82em', opacity: 0.7 }}>
+                      Prioritize which translation tracks in .xlrc files are displayed under original lyrics lines (matched left to right).
+                    </p>
+                    
+                    {/* Active priority chips */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
+                      {lyricsDisplaySettings.translationLanguagePriority.map((lang, index) => {
+                        const suggestions = [
+                          { code: 'en', label: 'English' },
+                          { code: 'hi-Latn', label: 'Hindi (Romanized)' },
+                          { code: 'pa-Latn', label: 'Punjabi (Romanized)' },
+                          { code: 'ta-Latn', label: 'Tamil (Romanized)' },
+                          { code: 'te-Latn', label: 'Telugu (Romanized)' },
+                          { code: 'bn-Latn', label: 'Bengali (Romanized)' },
+                          { code: 'ml-Latn', label: 'Malayalam (Romanized)' },
+                          { code: 'kn-Latn', label: 'Kannada (Romanized)' },
+                          { code: 'mr-Latn', label: 'Marathi (Romanized)' },
+                          { code: 'gu-Latn', label: 'Gujarati (Romanized)' },
+                          { code: 'ur-Latn', label: 'Urdu (Romanized)' },
+                          { code: 'hi', label: 'Hindi' },
+                          { code: 'pa', label: 'Punjabi' },
+                          { code: 'ta', label: 'Tamil' },
+                          { code: 'te', label: 'Telugu' },
+                          { code: 'bn', label: 'Bengali' },
+                          { code: 'ml', label: 'Malayalam' },
+                          { code: 'kn', label: 'Kannada' },
+                          { code: 'mr', label: 'Marathi' },
+                          { code: 'gu', label: 'Gujarati' },
+                          { code: 'ur', label: 'Urdu' },
+                          { code: 'ja-Latn', label: 'Japanese (Romaji)' },
+                          { code: 'ko-Latn', label: 'Korean (Romaja)' },
+                          { code: 'zh-Latn', label: 'Chinese (Pinyin)' },
+                          { code: 'ja', label: 'Japanese' },
+                          { code: 'ko', label: 'Korean' },
+                          { code: 'zh', label: 'Chinese' },
+                          { code: 'es', label: 'Spanish' },
+                          { code: 'fr', label: 'French' },
+                          { code: 'de', label: 'German' },
+                          { code: 'ru', label: 'Russian' },
+                          { code: 'ar', label: 'Arabic' }
+                        ]
+                        const match = suggestions.find(s => s.code.toLowerCase() === lang.toLowerCase())
+                        return (
+                          <span
+                            key={lang}
+                            className="settings-chip"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px' }}
+                          >
+                            <span style={{ opacity: 0.5, fontSize: '0.85em' }}>{index + 1}.</span>
+                            <strong>{lang}</strong>
+                            {match && <span style={{ opacity: 0.65, fontSize: '0.85em' }}>({match.label})</span>}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = lyricsDisplaySettings.translationLanguagePriority.filter((_, i) => i !== index)
+                                setLyricsTranslationLanguagePriority(next)
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                marginLeft: '2px',
+                                opacity: 0.6,
+                                lineHeight: 1
+                              }}
+                              title={`Remove ${lang}`}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        )
+                      })}
+                    </div>
+
+                    {/* Quick Add Suggestions */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8em', opacity: 0.65 }}>Quick add:</span>
+                      {[
+                        { code: 'en', label: 'English' },
+                        { code: 'hi-Latn', label: 'Hindi (Romanized)' },
+                        { code: 'pa-Latn', label: 'Punjabi (Romanized)' },
+                        { code: 'ta-Latn', label: 'Tamil (Romanized)' },
+                        { code: 'te-Latn', label: 'Telugu (Romanized)' },
+                        { code: 'bn-Latn', label: 'Bengali (Romanized)' },
+                        { code: 'ml-Latn', label: 'Malayalam (Romanized)' },
+                        { code: 'kn-Latn', label: 'Kannada (Romanized)' },
+                        { code: 'mr-Latn', label: 'Marathi (Romanized)' },
+                        { code: 'gu-Latn', label: 'Gujarati (Romanized)' },
+                        { code: 'ur-Latn', label: 'Urdu (Romanized)' },
+                        { code: 'hi', label: 'Hindi' },
+                        { code: 'pa', label: 'Punjabi' },
+                        { code: 'ta', label: 'Tamil' },
+                        { code: 'te', label: 'Telugu' },
+                        { code: 'bn', label: 'Bengali' },
+                        { code: 'ml', label: 'Malayalam' },
+                        { code: 'kn', label: 'Kannada' },
+                        { code: 'mr', label: 'Marathi' },
+                        { code: 'gu', label: 'Gujarati' },
+                        { code: 'ur', label: 'Urdu' },
+                        { code: 'ja-Latn', label: 'Japanese (Romaji)' },
+                        { code: 'ko-Latn', label: 'Korean (Romaja)' },
+                        { code: 'zh-Latn', label: 'Chinese (Pinyin)' },
+                        { code: 'ja', label: 'Japanese' },
+                        { code: 'ko', label: 'Korean' },
+                        { code: 'zh', label: 'Chinese' },
+                        { code: 'es', label: 'Spanish' },
+                        { code: 'fr', label: 'French' },
+                        { code: 'de', label: 'German' },
+                        { code: 'ru', label: 'Russian' },
+                        { code: 'ar', label: 'Arabic' }
+                      ].filter(
+                        s => !lyricsDisplaySettings.translationLanguagePriority.some(p => p.toLowerCase() === s.code.toLowerCase())
+                      ).map(suggestion => (
+                        <button
+                          key={suggestion.code}
+                          type="button"
+                          className="settings-chip settings-chip-mono"
+                          style={{ cursor: 'pointer', opacity: 0.85, padding: '2px 8px', fontSize: '0.8em' }}
+                          onClick={() => {
+                            const next = [...lyricsDisplaySettings.translationLanguagePriority, suggestion.code]
+                            setLyricsTranslationLanguagePriority(next)
+                          }}
+                        >
+                          + {suggestion.code} ({suggestion.label})
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom input */}
+                    <div style={{ display: 'flex', gap: '8px', maxWidth: '380px' }}>
+                      <input
+                        className="settings-input"
+                        type="text"
+                        value={lyricsTranslationPriorityInput}
+                        onChange={(event) => setLyricsTranslationPriorityInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)
+                          }
+                        }}
+                        placeholder="e.g. it, pt-BR, vi"
+                      />
+                      <button
+                        type="button"
+                        className="settings-button"
+                        style={{ whiteSpace: 'nowrap' }}
+                        onClick={() => setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)}
+                      >
+                        Set Custom Priority
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <p className="settings-note">{lyricsStatusLabel}</p>
                 <p className="settings-note">Musaic appends <code>/api/get</code> and <code>/api/search</code>. HTTP is supported for local mirrors.</p>
@@ -3496,6 +3880,34 @@ export default function SettingsView() {
                     Scrobbles after 50% or 4 minutes (whichever comes first)
                   </div>
                 </div>
+              ) : !lastFmHasApiCredentials ? (
+                <div style={{ padding: '8px 0', fontSize: '0.85rem', color: 'var(--color-text-secondary, #94a3b8)', textAlign: 'left' }}>
+                  <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                    Last.fm credentials are not configured in this build. Provide your API Key and Shared Secret below to authorize:
+                  </div>
+                  <div className="settings-grid" style={{ gap: '10px' }}>
+                    <label className="settings-field">
+                      <span className="settings-field-label">API Key</span>
+                      <input
+                        className="settings-input"
+                        type="text"
+                        placeholder="Enter Last.fm API Key"
+                        value={lastFmCustomApiKeyInput}
+                        onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
+                      />
+                    </label>
+                    <label className="settings-field">
+                      <span className="settings-field-label">Shared Secret</span>
+                      <input
+                        className="settings-input"
+                        type="password"
+                        placeholder="Enter Last.fm Shared Secret"
+                        value={lastFmCustomSharedSecretInput}
+                        onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                </div>
               ) : (
                 <div style={{ padding: '8px 0', fontSize: '0.85rem', color: 'var(--color-text-secondary, #94a3b8)' }}>
                   {lastFmAuthPending || lastFmIsAuthorizing
@@ -3527,7 +3939,12 @@ export default function SettingsView() {
               ) : (
                 <button
                   className="settings-btn settings-btn-primary"
-                  onClick={() => {
+                  onClick={async () => {
+                    const nextKey = lastFmCustomApiKeyInput.trim() || null
+                    const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                    if (nextKey && nextSecret) {
+                      await setLastFmCustomCredentials(nextKey, nextSecret)
+                    }
                     void beginLastFmAuth(LASTFM_OFFICIAL_PROFILE_ID)
                   }}
                   disabled={lastFmIsAuthorizing}

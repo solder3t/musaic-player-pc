@@ -15,6 +15,7 @@ import { usePlaybackClock } from '../../hooks/usePlaybackClock'
 import { getFullscreenBackdropArtworkCandidates } from '../../utils/fullscreenBackdropArtwork'
 import {
   buildLyricsQuery,
+  containsNonLatinScripts,
   DEFAULT_LYRICS_BODY_COPY,
   getActiveLyricsResult,
   getCompensatedLyricsTime,
@@ -144,6 +145,13 @@ function FullscreenLyricsFocusBand({
   const lyricsIsLoading = useLyricsStore((s) => s.isLoading)
   const lyricsStoreError = useLyricsStore((s) => s.errorMessage)
   const loadLyricsForTrack = useLyricsStore((s) => s.loadForTrack)
+  const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
+  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
+  const isRomanized = useLyricsStore((s) => s.isRomanized)
+  const isTranslated = useLyricsStore((s) => s.isTranslated)
+  const aiProcessing = useLyricsStore((s) => s.aiProcessing)
+  const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
+  const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
   const lastLyricsRequestKeyRef = useRef<string | null>(null)
   const hideLyricsContentTimeoutRef = useRef<number | null>(null)
@@ -190,6 +198,12 @@ function FullscreenLyricsFocusBand({
   )
   const activeSyncedLineIndex = syncedLyricsTiming.activeLineIndex
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = activeLyricsResult?.status === 'hit' && Boolean(activeLyricsResult.lyrics)
+  const rawLyricsText = hasLyricsHit
+    ? (activeLyricsResult!.lyrics.syncedLyrics ?? activeLyricsResult!.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
+
   const metaChipText = useMemo(() => (
     getLyricsMetaChipText({
       currentTrack,
@@ -214,7 +228,7 @@ function FullscreenLyricsFocusBand({
     hasSyncedLyrics,
     activeSyncedLineIndex,
     focusedSyncedLineIndex: syncedLyricsTiming.focusLineIndex,
-    contentKey: currentTrack?.path ?? null,
+    contentKey: `${currentTrack?.path ?? ''}:${isRomanized ? 'rom' : ''}:${isTranslated ? 'trans' : ''}:${activeLyricsResult?.status === 'hit' ? activeLyricsResult.lyrics.source : ''}`,
     expandedActiveAnchorRatio: 0.43
   })
 
@@ -379,17 +393,120 @@ function FullscreenLyricsFocusBand({
     >
       {shouldRenderLyricsContent && (
         <>
-          <span className="fullscreen-lyrics-focus-meta">{metaChipText}</span>
-          {renderBody()}
-          {followPaused && hasSyncedLyrics && (
-            <button
-              type="button"
-              className="fullscreen-lyrics-recenter"
-              onClick={handleRecenter}
-            >
-              Recenter
-            </button>
+          <div className="fullscreen-lyrics-toolbar">
+            <span className="fullscreen-lyrics-focus-meta">{metaChipText}</span>
+            <div className="fullscreen-lyrics-actions">
+              {followPaused && hasSyncedLyrics && (
+                <button
+                  type="button"
+                  className="fullscreen-lyrics-action-btn"
+                  onClick={handleRecenter}
+                >
+                  Recenter
+                </button>
+              )}
+              {activeLyricsResult?.status === 'hit' && (activeLyricsResult.embeddedAlternative || activeLyricsResult.onlineAlternative) && (
+                <button
+                  type="button"
+                  className="fullscreen-lyrics-action-btn"
+                  onClick={() => {
+                    if (activeLyricsResult.lyrics.source === 'embedded') {
+                      selectLyricsSource('online')
+                    } else {
+                      selectLyricsSource('embedded')
+                    }
+                  }}
+                  title={activeLyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+                >
+                  🔄 {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+                </button>
+              )}
+              {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+                <button
+                  type="button"
+                  className="fullscreen-lyrics-action-btn"
+                  onClick={() => {
+                    if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                  }}
+                  disabled={lyricsIsLoading}
+                  title="Search and load synchronized lyrics from online providers"
+                >
+                  {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
+                </button>
+              )}
+            {Boolean(currentTrack) && (
+              <>
+                <button
+                  type="button"
+                  className={[
+                    'fullscreen-lyrics-action-btn',
+                    isRomanized ? 'active' : '',
+                    hasNonLatin && !isRomanized ? 'has-script-prompt' : ''
+                  ].filter(Boolean).join(' ').trim()}
+                  onClick={() => void toggleRomanized()}
+                  disabled={!hasLyricsHit || aiProcessing || isTranslated}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : hasNonLatin
+                        ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                        : 'Romanize Lyrics with AI'
+                  }
+                >
+                  {aiProcessing && !isTranslated ? '...' : 'Aa'}
+                </button>
+                <button
+                  type="button"
+                  className={`fullscreen-lyrics-action-btn ${isTranslated ? 'active' : ''}`}
+                  onClick={() => void toggleTranslated()}
+                  disabled={!hasLyricsHit || aiProcessing || isRomanized}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : 'Translate Lyrics with AI'
+                  }
+                >
+                  {aiProcessing && !isRomanized ? '...' : 'A文'}
+                </button>
+              </>
+            )}
+            </div>
+          </div>
+          {Boolean(lyricsStoreError) && (
+            <div className="fullscreen-lyrics-error-banner" style={{
+              margin: '6px 16px',
+              padding: '6px 12px',
+              fontSize: '0.85em',
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: '8px',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              lineHeight: 1.4
+            }}>
+              <span>⚠️ {lyricsStoreError}</span>
+              <button
+                type="button"
+                onClick={() => useLyricsStore.setState({ errorMessage: '' })}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fca5a5',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  padding: '0 4px',
+                  lineHeight: 1
+                }}
+                title="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
           )}
+          {renderBody()}
         </>
       )}
     </section>

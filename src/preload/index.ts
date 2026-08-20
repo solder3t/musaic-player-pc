@@ -690,10 +690,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ai: {
     generateEqProfile: (prompt: string, settings: any, customOptions: any) => 
       ipcRenderer.invoke('ai:generateEqProfile', prompt, settings, customOptions),
-    romanizeLyrics: (text: string, settings: any) => 
-      ipcRenderer.invoke('ai:romanizeLyrics', text, settings),
-    translateLyrics: (text: string, settings: any, lang: string) => 
-      ipcRenderer.invoke('ai:translateLyrics', text, settings, lang)
+    romanizeLyrics: (input: string | any, settings: any) => 
+      ipcRenderer.invoke('ai:romanizeLyrics', input, settings),
+    translateLyrics: (input: string | any, settings: any, lang?: string) => 
+      ipcRenderer.invoke('ai:translateLyrics', input, settings, lang)
   },
   // Window controls
   minimize: () => ipcRenderer.send('window:minimize'),
@@ -1134,9 +1134,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setEnabled: (enabled: boolean): Promise<LyricsStatus> => ipcRenderer.invoke('lyrics:setEnabled', enabled),
     setLrclibBaseUrl: (baseUrl: string): Promise<LyricsStatus> =>
       ipcRenderer.invoke('lyrics:setLrclibBaseUrl', baseUrl),
-    getForTrack: (query: LyricsTrackQuery): Promise<LyricsLookupResult> => ipcRenderer.invoke('lyrics:getForTrack', query),
-    refreshForTrack: (query: LyricsTrackQuery): Promise<LyricsLookupResult> =>
-      ipcRenderer.invoke('lyrics:refreshForTrack', query),
+    getForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }): Promise<LyricsLookupResult> =>
+      ipcRenderer.invoke('lyrics:getForTrack', query, options),
+    refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }): Promise<LyricsLookupResult> =>
+      ipcRenderer.invoke('lyrics:refreshForTrack', query, options),
     getTrackOverride: (trackPath: string): Promise<LyricsTrackOverride> =>
       ipcRenderer.invoke('lyrics:getTrackOverride', trackPath),
     importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat): Promise<LyricsManualImportResult> =>
@@ -1520,8 +1521,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // AI
     ai: {
-      romanizeLyrics: (text: string, options: any) => ipcRenderer.invoke('ai:romanizeLyrics', text, options),
-      translateLyrics: (text: string, options: any, targetLang?: string) => ipcRenderer.invoke('ai:translateLyrics', text, options, targetLang),
+      romanizeLyrics: (input: string | any, options: any) => ipcRenderer.invoke('ai:romanizeLyrics', input, options),
+      translateLyrics: (input: string | any, options: any, targetLang?: string) => ipcRenderer.invoke('ai:translateLyrics', input, options, targetLang),
       generateEqProfile: (prompt: string, currentEq: any, options: any) => ipcRenderer.invoke('ai:generateEqProfile', prompt, currentEq, options)
     }
   }
@@ -1597,8 +1598,8 @@ declare global {
       }
       ai: {
         generateEqProfile: (prompt: string, ...args: any[]) => Promise<any>
-        romanizeLyrics: (text: string, settings: any) => Promise<any>
-        translateLyrics: (text: string, settings: any, lang: string) => Promise<any>
+        romanizeLyrics: (input: string | any, settings: any) => Promise<any>
+        translateLyrics: (input: string | any, settings: any, lang?: string) => Promise<any>
       }
       // Window controls
       minimize: () => void
@@ -1810,8 +1811,8 @@ declare global {
         getStatus: () => Promise<LyricsStatus>
         setEnabled: (enabled: boolean) => Promise<LyricsStatus>
         setLrclibBaseUrl: (baseUrl: string) => Promise<LyricsStatus>
-        getForTrack: (query: LyricsTrackQuery) => Promise<LyricsLookupResult>
-        refreshForTrack: (query: LyricsTrackQuery) => Promise<LyricsLookupResult>
+        getForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
+        refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
         getTrackOverride: (trackPath: string) => Promise<LyricsTrackOverride>
         importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat) => Promise<LyricsManualImportResult>
         clearManualLyrics: (trackPaths: string[]) => Promise<LyricsManualClearResult>
@@ -2056,8 +2057,8 @@ declare global {
 
         // AI
         ai: {
-          romanizeLyrics: (text: string, options: any) => Promise<{ text: string; tokens: number; fromCache: boolean; payload: any }>
-          translateLyrics: (text: string, options: any, targetLang?: string) => Promise<{ text: string; tokens: number; fromCache: boolean; payload: any }>
+          romanizeLyrics: (input: string | any, options: any) => Promise<{ text: string; tokens: number; fromCache: boolean; payload: any }>
+          translateLyrics: (input: string | any, options: any, targetLang?: string) => Promise<{ text: string; tokens: number; fromCache: boolean; payload: any }>
           generateEqProfile: (prompt: string, currentEq: any, options: any) => Promise<any>
         }
       }

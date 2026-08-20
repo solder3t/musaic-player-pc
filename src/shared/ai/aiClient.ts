@@ -13,8 +13,8 @@ export interface AiRequestOptions {
   model?: string;
 }
 
-const DEFAULT_MODELS: Record<AiProviderType, string> = {
-  gemini: 'gemini-2.0-flash',
+export const DEFAULT_MODELS: Record<AiProviderType, string> = {
+  gemini: 'gemini-3.6-flash',
   openai: 'gpt-4o-mini',
   claude: 'claude-3-5-haiku-latest',
   deepseek: 'deepseek-chat',
@@ -22,6 +22,93 @@ const DEFAULT_MODELS: Record<AiProviderType, string> = {
   ollama: 'llama3.2',
   none: ''
 };
+
+export const PROVIDER_MODEL_PRESETS: Record<AiProviderType, string[]> = {
+  gemini: [
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite'
+  ],
+  openai: [
+    'gpt-4o-mini',
+    'gpt-4o',
+    'o3-mini',
+    'o1-mini'
+  ],
+  claude: [
+    'claude-3-7-sonnet-latest',
+    'claude-3-5-haiku-latest',
+    'claude-3-5-sonnet-latest'
+  ],
+  deepseek: [
+    'deepseek-chat',
+    'deepseek-reasoner'
+  ],
+  groq: [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'mixtral-8x7b-32768'
+  ],
+  ollama: [
+    'llama3.2',
+    'llama3.3',
+    'mistral',
+    'qwen2.5',
+    'deepseek-r1'
+  ],
+  none: []
+};
+
+export const DEPRECATED_MODELS: Record<string, string> = {
+  // Gemini (Remove all 2.x and 1.x, and Pro models -> map to Flash)
+  'gemini-2.5-pro': 'gemini-3.6-flash',
+  'gemini-2.5-flash': 'gemini-3.6-flash',
+  'gemini-2.0-flash': 'gemini-3.6-flash',
+  'gemini-2.0-flash-exp': 'gemini-3.6-flash',
+  'gemini-2.0-flash-lite-preview': 'gemini-3.5-flash-lite',
+  'gemini-2.0-flash-thinking-exp': 'gemini-3.7-flash',
+  'gemini-2.0-pro-exp-02-05': 'gemini-3.7-flash',
+  'gemini-1.5-flash': 'gemini-3.6-flash',
+  'gemini-1.5-flash-8b': 'gemini-3.5-flash-lite',
+  'gemini-1.5-pro': 'gemini-3.6-flash',
+  'gemini-1.0-pro': 'gemini-3.6-flash',
+  'gemini-pro': 'gemini-3.6-flash',
+  'gemini-3.1-pro': 'gemini-3.7-flash',
+  // OpenAI (Remove legacy gpt-3.5 and deprecated preview models)
+  'gpt-3.5-turbo': 'gpt-4o-mini',
+  'gpt-3.5-turbo-0125': 'gpt-4o-mini',
+  'gpt-3.5-turbo-1106': 'gpt-4o-mini',
+  'gpt-4-turbo': 'gpt-4o',
+  'gpt-4-turbo-preview': 'gpt-4o-mini',
+  'gpt-4-0125-preview': 'gpt-4o',
+  'gpt-4-1106-preview': 'gpt-4o',
+  'gpt-4-vision-preview': 'gpt-4o',
+  'text-davinci-003': 'gpt-4o-mini',
+  'text-davinci-002': 'gpt-4o-mini',
+  // Claude (Remove legacy 2.x and retired 3.0 models)
+  'claude-3-haiku-20240307': 'claude-3-5-haiku-latest',
+  'claude-3-sonnet-20240229': 'claude-3-7-sonnet-latest',
+  'claude-3-opus-20240229': 'claude-3-7-sonnet-latest',
+  'claude-2.1': 'claude-3-5-haiku-latest',
+  'claude-2.0': 'claude-3-5-haiku-latest',
+  'claude-instant-1.2': 'claude-3-5-haiku-latest',
+  // Groq (Remove decommissioned models)
+  'llama-3.1-70b-versatile': 'llama-3.3-70b-versatile',
+  'llama3-8b-8192': 'llama-3.1-8b-instant',
+  'llama3-70b-8192': 'llama-3.3-70b-versatile',
+  'llama2-70b-4096': 'llama-3.3-70b-versatile',
+  'gemma-7b-it': 'llama-3.3-70b-versatile',
+  'gemma2-9b-it': 'llama-3.3-70b-versatile'
+};
+
+export function getModelForProvider(provider: AiProviderType, configuredModel?: string): string {
+  const trimmed = configuredModel?.trim() || '';
+  if (!trimmed) {
+    return DEFAULT_MODELS[provider] || '';
+  }
+  return DEPRECATED_MODELS[trimmed] || trimmed;
+}
 
 /**
  * Sends a prompt to the designated AI provider using standard fetch.
@@ -37,7 +124,7 @@ export async function sendAiPrompt(
     return { text: '', error: 'API Key required for provider: ' + provider };
   }
 
-  const model = options.model || DEFAULT_MODELS[provider];
+  const model = getModelForProvider(provider, options.model);
 
   try {
     switch (provider) {
@@ -88,6 +175,35 @@ export async function sendAiPrompt(
   }
 }
 
+function parseApiErrorMessage(rawText: string, status: number, providerName: string): string {
+  let message = rawText;
+  try {
+    const json = JSON.parse(rawText);
+    if (json?.error?.message) {
+      message = json.error.message;
+    } else if (typeof json?.error === 'string') {
+      message = json.error;
+    } else if (json?.message) {
+      message = json.message;
+    }
+  } catch {}
+
+  const lower = message.toLowerCase();
+  if (status === 429 || lower.includes('resource_exhausted') || lower.includes('quota') || lower.includes('rate limit') || lower.includes('too many requests')) {
+    return `${providerName} Quota Exceeded (429): API rate limit or credit quota reached. Check your provider quota or switch model in Settings.`;
+  }
+  if (status === 401 || status === 403 || lower.includes('api_key_invalid') || lower.includes('invalid api key') || lower.includes('unauthorized')) {
+    return `${providerName} Authentication Failed (${status}): API key is invalid or lacks permissions. Please check Settings.`;
+  }
+  if (status === 404 || lower.includes('model not found') || lower.includes('does not exist')) {
+    return `${providerName} Model Error (404): The selected model is unavailable or discontinued. Please select a supported model in Settings.`;
+  }
+  if (status >= 500) {
+    return `${providerName} Service Error (${status}): Provider is overloaded or temporarily unavailable.`;
+  }
+  return `${providerName} error (${status}): ${message}`;
+}
+
 async function callGemini(
   systemPrompt: string,
   userPrompt: string,
@@ -113,7 +229,8 @@ async function callGemini(
   });
 
   if (!res.ok) {
-    throw new Error(`Gemini API error (${res.status}): ${await res.text()}`);
+    const errorText = await res.text();
+    throw new Error(parseApiErrorMessage(errorText, res.status, 'Gemini'));
   }
 
   const data = await res.json();
@@ -152,7 +269,9 @@ async function callOpenAiCompatible(
   });
 
   if (!res.ok) {
-    throw new Error(`OpenAI-compatible API error (${res.status}): ${await res.text()}`);
+    const errorText = await res.text();
+    const providerName = url.includes('groq') ? 'Groq' : url.includes('deepseek') ? 'DeepSeek' : 'OpenAI';
+    throw new Error(parseApiErrorMessage(errorText, res.status, providerName));
   }
 
   const data = await res.json();
@@ -189,7 +308,8 @@ async function callClaude(
   });
 
   if (!res.ok) {
-    throw new Error(`Claude API error (${res.status}): ${await res.text()}`);
+    const errorText = await res.text();
+    throw new Error(parseApiErrorMessage(errorText, res.status, 'Claude'));
   }
 
   const data = await res.json();
