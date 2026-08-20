@@ -423,6 +423,24 @@ export default function LyricsPopoutApp() {
               <span className="lyrics-popout-track-detail">{trackDetail}</span>
             )}
           </div>
+          {Boolean(snapshot.errorMessage) && (
+            <div className="lyrics-popout-error-banner" style={{
+              margin: '4px 12px 6px',
+              padding: '6px 10px',
+              fontSize: '0.82em',
+              background: 'rgba(239, 68, 68, 0.18)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: '6px',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '6px',
+              lineHeight: 1.35
+            }}>
+              <span>⚠️ {snapshot.errorMessage}</span>
+            </div>
+          )}
         </div>
         {renderBody()}
       </section>

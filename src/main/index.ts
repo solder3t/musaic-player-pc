@@ -5618,83 +5618,95 @@ ipcMain.handle('diagnostics:revealCurrentLog', async () => {
 })
 
 ipcMain.handle('ai:romanizeLyrics', async (_event, input: string | { text?: string; syncedLines?: SyncedLyricsLineInput[]; format?: string }, options: any) => {
-  let lines: SyncedLyricsLineInput[] = []
-  let rawText = ''
-  let format: LyricsFormat = 'lrc'
+  try {
+    let lines: SyncedLyricsLineInput[] = []
+    let rawText = ''
+    let format: LyricsFormat = 'lrc'
 
-  if (typeof input === 'object' && input !== null) {
-    rawText = input.text ?? ''
-    format = (input.format as LyricsFormat) || 'lrc'
-    if (Array.isArray(input.syncedLines) && input.syncedLines.length > 0) {
-      lines = input.syncedLines
+    if (typeof input === 'object' && input !== null) {
+      rawText = input.text ?? ''
+      format = (input.format as LyricsFormat) || 'lrc'
+      if (Array.isArray(input.syncedLines) && input.syncedLines.length > 0) {
+        lines = input.syncedLines
+      }
+    } else if (typeof input === 'string') {
+      rawText = input
     }
-  } else if (typeof input === 'string') {
-    rawText = input
-  }
 
-  if (lines.length === 0 && rawText && /\[\d{2}:\d{2}[\.:]\d{2,3}\]/.test(rawText)) {
-    const parsed = parseLyricsText(rawText, 'ai-romanized', format)
-    if (parsed && parsed.syncedLines.length > 0) {
-      lines = parsed.syncedLines as unknown as SyncedLyricsLineInput[]
+    if (lines.length === 0 && rawText && /\[\d{2}:\d{2}[\.:]\d{2,3}\]/.test(rawText)) {
+      const parsed = parseLyricsText(rawText, 'ai-romanized', format)
+      if (parsed && parsed.syncedLines.length > 0) {
+        lines = parsed.syncedLines as unknown as SyncedLyricsLineInput[]
+      }
     }
-  }
 
-  if (lines.length > 0) {
-    const result = await romanizeSyncedLyrics(lines, options)
-    const payload: LyricsPayload = {
-      source: 'ai-romanized',
-      provider: null,
-      format: (format === 'xlrc' ? 'lrc' : format) || 'lrc',
-      plainLyrics: result.plainLyrics,
-      syncedLyrics: result.syncedLyrics,
-      syncedLines: result.syncedLines as LyricsLine[]
+    if (lines.length > 0) {
+      const result = await romanizeSyncedLyrics(lines, options)
+      const payload: LyricsPayload = {
+        source: 'ai-romanized',
+        provider: null,
+        format: (format === 'xlrc' ? 'lrc' : format) || 'lrc',
+        plainLyrics: result.plainLyrics,
+        syncedLyrics: result.syncedLyrics,
+        syncedLines: result.syncedLines as LyricsLine[]
+      }
+      return { ...result, payload }
     }
+
+    const result = await romanizeLyrics(rawText, options)
+    const payload = parseLyricsText(result.text, 'ai-romanized')
     return { ...result, payload }
+  } catch (err: any) {
+    const errorMsg = err?.message || String(err)
+    console.error('[Main] ai:romanizeLyrics failed:', errorMsg)
+    return { error: errorMsg, payload: null, text: '' }
   }
-
-  const result = await romanizeLyrics(rawText, options)
-  const payload = parseLyricsText(result.text, 'ai-romanized')
-  return { ...result, payload }
 })
 
 ipcMain.handle('ai:translateLyrics', async (_event, input: string | { text?: string; syncedLines?: SyncedLyricsLineInput[]; format?: string }, options: any, targetLang?: string) => {
-  let lines: SyncedLyricsLineInput[] = []
-  let rawText = ''
-  let format: LyricsFormat = 'lrc'
+  try {
+    let lines: SyncedLyricsLineInput[] = []
+    let rawText = ''
+    let format: LyricsFormat = 'lrc'
 
-  if (typeof input === 'object' && input !== null) {
-    rawText = input.text ?? ''
-    format = (input.format as LyricsFormat) || 'lrc'
-    if (Array.isArray(input.syncedLines) && input.syncedLines.length > 0) {
-      lines = input.syncedLines
+    if (typeof input === 'object' && input !== null) {
+      rawText = input.text ?? ''
+      format = (input.format as LyricsFormat) || 'lrc'
+      if (Array.isArray(input.syncedLines) && input.syncedLines.length > 0) {
+        lines = input.syncedLines
+      }
+    } else if (typeof input === 'string') {
+      rawText = input
     }
-  } else if (typeof input === 'string') {
-    rawText = input
-  }
 
-  if (lines.length === 0 && rawText && /\[\d{2}:\d{2}[\.:]\d{2,3}\]/.test(rawText)) {
-    const parsed = parseLyricsText(rawText, 'ai-translated', format)
-    if (parsed && parsed.syncedLines.length > 0) {
-      lines = parsed.syncedLines as unknown as SyncedLyricsLineInput[]
+    if (lines.length === 0 && rawText && /\[\d{2}:\d{2}[\.:]\d{2,3}\]/.test(rawText)) {
+      const parsed = parseLyricsText(rawText, 'ai-translated', format)
+      if (parsed && parsed.syncedLines.length > 0) {
+        lines = parsed.syncedLines as unknown as SyncedLyricsLineInput[]
+      }
     }
-  }
 
-  if (lines.length > 0) {
-    const result = await translateSyncedLyrics(lines, options, targetLang)
-    const payload: LyricsPayload = {
-      source: 'ai-translated',
-      provider: null,
-      format: (format === 'xlrc' ? 'lrc' : format) || 'lrc',
-      plainLyrics: result.plainLyrics,
-      syncedLyrics: result.syncedLyrics,
-      syncedLines: result.syncedLines as LyricsLine[]
+    if (lines.length > 0) {
+      const result = await translateSyncedLyrics(lines, options, targetLang)
+      const payload: LyricsPayload = {
+        source: 'ai-translated',
+        provider: null,
+        format: (format === 'xlrc' ? 'lrc' : format) || 'lrc',
+        plainLyrics: result.plainLyrics,
+        syncedLyrics: result.syncedLyrics,
+        syncedLines: result.syncedLines as LyricsLine[]
+      }
+      return { ...result, payload }
     }
+
+    const result = await translateLyrics(rawText, options, targetLang)
+    const payload = parseLyricsText(result.text, 'ai-translated')
     return { ...result, payload }
+  } catch (err: any) {
+    const errorMsg = err?.message || String(err)
+    console.error('[Main] ai:translateLyrics failed:', errorMsg)
+    return { error: errorMsg, payload: null, text: '' }
   }
-
-  const result = await translateLyrics(rawText, options, targetLang)
-  const payload = parseLyricsText(result.text, 'ai-translated')
-  return { ...result, payload }
 })
 
 ipcMain.handle('ai:generateEqProfile', async (_event, prompt, _currentEq, customOptions) => {

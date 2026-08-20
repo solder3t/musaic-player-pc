@@ -52,4 +52,14 @@ describe('aiClient model configuration and deprecation handling', () => {
       assert.ok(presets.includes(defaultModel), `Provider ${provider} presets include default model ${defaultModel}`);
     }
   });
+
+  it('validates API keys and returns clean error descriptions', async () => {
+    const { sendAiPrompt } = await import('./aiClient.ts');
+    const resNoKey = await sendAiPrompt('sys', 'user', { provider: 'gemini', apiKey: '' });
+    assert.ok(resNoKey.error?.includes('API Key required'));
+
+    const resNone = await sendAiPrompt('sys', 'user', { provider: 'none' });
+    assert.equal(resNone.text, '');
+    assert.equal(resNone.error, undefined);
+  });
 });

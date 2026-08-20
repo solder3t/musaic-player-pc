@@ -338,6 +338,40 @@ export default function InfoSidebar() {
               {lyricsIsLoading ? 'Loading...' : 'Refresh'}
             </button>
           </div>
+          {Boolean(lyricsStoreError) && (
+            <div className="info-lyrics-error-banner" style={{
+              margin: '8px 0',
+              padding: '6px 10px',
+              fontSize: '0.82em',
+              background: 'rgba(239, 68, 68, 0.18)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: '6px',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '6px',
+              lineHeight: 1.35
+            }}>
+              <span>⚠️ {lyricsStoreError}</span>
+              <button
+                type="button"
+                onClick={() => useLyricsStore.setState({ errorMessage: '' })}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fca5a5',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  padding: '0 2px',
+                  lineHeight: 1
+                }}
+                title="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {renderLyricsContent()}
         </div>
       ) : currentTrack ? (

@@ -472,6 +472,40 @@ function FullscreenLyricsFocusBand({
             )}
             </div>
           </div>
+          {Boolean(lyricsStoreError) && (
+            <div className="fullscreen-lyrics-error-banner" style={{
+              margin: '6px 16px',
+              padding: '6px 12px',
+              fontSize: '0.85em',
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: '8px',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              lineHeight: 1.4
+            }}>
+              <span>⚠️ {lyricsStoreError}</span>
+              <button
+                type="button"
+                onClick={() => useLyricsStore.setState({ errorMessage: '' })}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fca5a5',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  padding: '0 4px',
+                  lineHeight: 1
+                }}
+                title="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {renderBody()}
         </>
       )}

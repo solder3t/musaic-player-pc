@@ -238,6 +238,10 @@ export async function romanizeSyncedLyrics(
       options
     );
 
+    if (res.error) {
+      throw new Error(res.error);
+    }
+
     const convertedTexts = parseNumberedLinesResponse(res.text, lineTexts.length);
     const reconstructed = reconstructSyncedLyrics(syncedLines, convertedTexts);
 
@@ -254,15 +258,8 @@ export async function romanizeSyncedLyrics(
       fromCache: false
     };
   } catch (err) {
-    console.warn('[AiRomanizer] Synced romanization failed, falling back to offline transliteration:', err);
-    const fallbackTexts = lineTexts.map((t) => offlineFallbackRomanize(t));
-    const reconstructed = reconstructSyncedLyrics(syncedLines, fallbackTexts);
-    return {
-      text: reconstructed.syncedLyrics,
-      ...reconstructed,
-      tokens: 0,
-      fromCache: false
-    };
+    console.error('[AiRomanizer] Synced romanization failed:', err);
+    throw err;
   }
 }
 
@@ -314,6 +311,10 @@ export async function translateSyncedLyrics(
       options
     );
 
+    if (res.error) {
+      throw new Error(res.error);
+    }
+
     const convertedTexts = parseNumberedLinesResponse(res.text, lineTexts.length);
     const reconstructed = reconstructSyncedLyrics(syncedLines, convertedTexts);
 
@@ -330,14 +331,8 @@ export async function translateSyncedLyrics(
       fromCache: false
     };
   } catch (err) {
-    console.warn('[AiRomanizer] Synced translation failed:', err);
-    const reconstructed = reconstructSyncedLyrics(syncedLines, lineTexts);
-    return {
-      text: reconstructed.syncedLyrics,
-      ...reconstructed,
-      tokens: 0,
-      fromCache: false
-    };
+    console.error('[AiRomanizer] Synced translation failed:', err);
+    throw err;
   }
 }
 
@@ -369,8 +364,12 @@ export async function romanizeLyrics(
       options
     );
 
+    if (res.error) {
+      throw new Error(res.error);
+    }
+
     const cleaned = cleanMarkdown(res.text);
-    if (cleaned && !res.error && cleaned !== text) {
+    if (cleaned && cleaned !== text) {
       if (romanizeCache.size >= CACHE_LIMIT) {
         const firstKey = romanizeCache.keys().next().value;
         if (firstKey) romanizeCache.delete(firstKey);
@@ -378,18 +377,13 @@ export async function romanizeLyrics(
       romanizeCache.set(cacheKey, cleaned);
       return { text: cleaned, tokens: res.tokens || 0, fromCache: false };
     } else {
-      if (res.error) throw new Error(res.error);
       const fallback = offlineFallbackRomanize(text);
-      if (fallback === text) throw new Error("AI Romanization returned identical text and offline fallback cannot transliterate this script.");
+      if (fallback === text) throw new Error("AI Romanization returned identical text.");
       return { text: fallback, tokens: res.tokens || 0, fromCache: false };
     }
   } catch (err) {
-    console.warn('[AiRomanizer] AI romanization failed, using fallback:', err);
-    const fallback = offlineFallbackRomanize(text);
-    if (fallback === text) {
-      throw err;
-    }
-    return { text: fallback, tokens: 0, fromCache: false };
+    console.error('[AiRomanizer] AI romanization failed:', err);
+    throw err;
   }
 }
 
@@ -417,8 +411,12 @@ export async function translateLyrics(
       options
     );
 
+    if (res.error) {
+      throw new Error(res.error);
+    }
+
     const cleaned = cleanMarkdown(res.text);
-    if (cleaned && !res.error) {
+    if (cleaned) {
       if (translateCache.size >= CACHE_LIMIT) {
         const firstKey = translateCache.keys().next().value;
         if (firstKey) translateCache.delete(firstKey);
@@ -426,9 +424,9 @@ export async function translateLyrics(
       translateCache.set(cacheKey, cleaned);
       return { text: cleaned, tokens: res.tokens || 0, fromCache: false };
     }
+    throw new Error('AI returned empty translation response.');
   } catch (err) {
-    console.warn('[AiRomanizer] AI translation failed:', err);
+    console.error('[AiRomanizer] AI translation failed:', err);
+    throw err;
   }
-
-  return { text, tokens: 0, fromCache: false };
 }

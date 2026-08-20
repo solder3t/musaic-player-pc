@@ -437,13 +437,26 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         ? { text: textToConvert ?? '', syncedLines, format }
         : (textToConvert ?? '')
 
-      set({ aiProcessing: true })
+      set({ aiProcessing: true, errorMessage: '' })
       try {
         const { settings } = useAiSettingsStore.getState()
         const aiResult = await window.electronAPI.ai.romanizeLyrics(inputPayload, settings)
         
+        if (aiResult.error) {
+          set({
+            aiProcessing: false,
+            isRomanized: false,
+            errorMessage: aiResult.error
+          })
+          return
+        }
+
         if (!aiResult.payload) {
-          set({ aiProcessing: false })
+          set({
+            aiProcessing: false,
+            isRomanized: false,
+            errorMessage: 'AI romanization produced no output.'
+          })
           return
         }
 
@@ -455,6 +468,7 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           isRomanized: true,
           isTranslated: false,
           aiProcessing: false,
+          errorMessage: '',
           currentResult: {
             ...activeResult,
             lyrics: aiResult.payload
@@ -462,7 +476,12 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         }))
       } catch (err) {
         console.error('Romanization failed', err)
-        set({ aiProcessing: false, errorMessage: 'Romanization failed: ' + (err instanceof Error ? err.message : String(err)) })
+        const msg = err instanceof Error ? err.message : String(err)
+        set({
+          aiProcessing: false,
+          isRomanized: false,
+          errorMessage: msg
+        })
       }
     },
 
@@ -508,12 +527,25 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         ? { text: textToConvert ?? '', syncedLines, format }
         : (textToConvert ?? '')
 
-      set({ aiProcessing: true })
+      set({ aiProcessing: true, errorMessage: '' })
       try {
         const aiResult = await window.electronAPI.ai.translateLyrics(inputPayload, settings, targetLanguage)
         
+        if (aiResult.error) {
+          set({
+            aiProcessing: false,
+            isTranslated: false,
+            errorMessage: aiResult.error
+          })
+          return
+        }
+
         if (!aiResult.payload) {
-          set({ aiProcessing: false })
+          set({
+            aiProcessing: false,
+            isTranslated: false,
+            errorMessage: 'AI translation produced no output.'
+          })
           return
         }
 
@@ -526,6 +558,7 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           isTranslated: true,
           isRomanized: false,
           aiProcessing: false,
+          errorMessage: '',
           currentResult: {
             ...activeResult,
             lyrics: aiResult.payload
@@ -533,7 +566,12 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         }))
       } catch (err) {
         console.error('Translation failed', err)
-        set({ aiProcessing: false, errorMessage: 'Translation failed' })
+        const msg = err instanceof Error ? err.message : String(err)
+        set({
+          aiProcessing: false,
+          isTranslated: false,
+          errorMessage: msg
+        })
       }
     }
   }

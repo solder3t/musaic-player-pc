@@ -175,6 +175,35 @@ export async function sendAiPrompt(
   }
 }
 
+function parseApiErrorMessage(rawText: string, status: number, providerName: string): string {
+  let message = rawText;
+  try {
+    const json = JSON.parse(rawText);
+    if (json?.error?.message) {
+      message = json.error.message;
+    } else if (typeof json?.error === 'string') {
+      message = json.error;
+    } else if (json?.message) {
+      message = json.message;
+    }
+  } catch {}
+
+  const lower = message.toLowerCase();
+  if (status === 429 || lower.includes('resource_exhausted') || lower.includes('quota') || lower.includes('rate limit') || lower.includes('too many requests')) {
+    return `${providerName} Quota Exceeded (429): API rate limit or credit quota reached. Check your provider quota or switch model in Settings.`;
+  }
+  if (status === 401 || status === 403 || lower.includes('api_key_invalid') || lower.includes('invalid api key') || lower.includes('unauthorized')) {
+    return `${providerName} Authentication Failed (${status}): API key is invalid or lacks permissions. Please check Settings.`;
+  }
+  if (status === 404 || lower.includes('model not found') || lower.includes('does not exist')) {
+    return `${providerName} Model Error (404): The selected model is unavailable or discontinued. Please select a supported model in Settings.`;
+  }
+  if (status >= 500) {
+    return `${providerName} Service Error (${status}): Provider is overloaded or temporarily unavailable.`;
+  }
+  return `${providerName} error (${status}): ${message}`;
+}
+
 async function callGemini(
   systemPrompt: string,
   userPrompt: string,
@@ -200,7 +229,8 @@ async function callGemini(
   });
 
   if (!res.ok) {
-    throw new Error(`Gemini API error (${res.status}): ${await res.text()}`);
+    const errorText = await res.text();
+    throw new Error(parseApiErrorMessage(errorText, res.status, 'Gemini'));
   }
 
   const data = await res.json();
@@ -239,7 +269,9 @@ async function callOpenAiCompatible(
   });
 
   if (!res.ok) {
-    throw new Error(`OpenAI-compatible API error (${res.status}): ${await res.text()}`);
+    const errorText = await res.text();
+    const providerName = url.includes('groq') ? 'Groq' : url.includes('deepseek') ? 'DeepSeek' : 'OpenAI';
+    throw new Error(parseApiErrorMessage(errorText, res.status, providerName));
   }
 
   const data = await res.json();
@@ -276,7 +308,8 @@ async function callClaude(
   });
 
   if (!res.ok) {
-    throw new Error(`Claude API error (${res.status}): ${await res.text()}`);
+    const errorText = await res.text();
+    throw new Error(parseApiErrorMessage(errorText, res.status, 'Claude'));
   }
 
   const data = await res.json();

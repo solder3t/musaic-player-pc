@@ -453,6 +453,38 @@ export default function TransportLyricsShelf() {
             </button>
           </div>
         </header>
+        {Boolean(lyricsStoreError) && (
+          <div className="lyrics-shelf-error-banner" style={{
+            padding: '6px 12px',
+            fontSize: '0.8em',
+            background: 'rgba(239, 68, 68, 0.18)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#fca5a5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            lineHeight: 1.4
+          }}>
+            <span>⚠️ {lyricsStoreError}</span>
+            <button
+              type="button"
+              onClick={() => useLyricsStore.setState({ errorMessage: '' })}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#fca5a5',
+                cursor: 'pointer',
+                fontSize: '13px',
+                padding: '0 4px',
+                lineHeight: 1
+              }}
+              title="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {renderBody()}
       </div>
     </section>
