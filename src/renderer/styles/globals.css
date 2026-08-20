@@ -4105,6 +4105,15 @@ body:has(.fullscreen-overlay) .controller-hints {
   cursor: not-allowed;
 }
 
+.transport-lyrics-inline-action.has-script-prompt,
+.fullscreen-lyrics-action-btn.has-script-prompt,
+.info-lyrics-refresh-btn.has-script-prompt {
+  border-color: rgba(var(--accent-rgb), 0.55) !important;
+  color: var(--text-strong) !important;
+  background: rgba(var(--accent-rgb), 0.14) !important;
+  box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.28);
+}
+
 .transport-lyrics-recenter-btn {
   color: var(--accent-text);
   border-color: rgba(var(--accent-rgb), 0.4);

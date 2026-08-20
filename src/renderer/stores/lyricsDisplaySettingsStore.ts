@@ -1,7 +1,18 @@
 import { create } from 'zustand'
 
 export const LYRICS_DISPLAY_SETTINGS_STORAGE_KEY = 'musaic-lyrics-display-settings-v1'
-export const DEFAULT_LYRICS_TRANSLATION_PRIORITY = ['en', 'ja-Latn'] as const
+export const DEFAULT_LYRICS_TRANSLATION_PRIORITY = [
+  'en',
+  'ja-Latn',
+  'ko-Latn',
+  'zh-Latn',
+  'ko',
+  'ja',
+  'zh',
+  'es',
+  'fr',
+  'de'
+] as const
 
 export interface LyricsDisplaySettings {
   wordTimingEnabled: boolean

@@ -6,6 +6,7 @@ import LyricsLineContent from '../lyrics/LyricsLineContent'
 import {
   DEFAULT_LYRICS_BODY_COPY,
   BASE_COMPACT_LYRICS_LINE_HEIGHT_PX,
+  containsNonLatinScripts,
   getCompactSyncedLyricsLineHeights,
   getCompensatedLyricsTime,
   getLyricsLineSeekTimeSeconds,
@@ -142,6 +143,12 @@ export default function LyricsPopoutApp() {
     }px`
   } as CSSProperties), [compactSyncedLineHeightsPx])
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = snapshot.lyricsResult?.status === 'hit' && Boolean(snapshot.lyricsResult.lyrics)
+  const rawLyricsText = snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics
+    ? (snapshot.lyricsResult.lyrics.syncedLyrics ?? snapshot.lyricsResult.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
+
   const syncedLyricsTiming = useMemo(
     () => resolveSyncedLyricsTiming(syncedLines, currentTime, { durationSeconds: snapshot.duration }),
     [currentTime, snapshot.duration, syncedLines]
@@ -348,14 +355,24 @@ export default function LyricsPopoutApp() {
                   {snapshot.isLoading ? 'Searching...' : '🔍 Search Online'}
                 </button>
               )}
-              {snapshot.lyricsResult?.status === 'hit' && (
+              {Boolean(snapshot.currentTrack) && (
                 <>
                   <button
                     type="button"
-                    className={['transport-lyrics-inline-action', snapshot.isRomanized ? 'is-active' : ''].join(' ').trim()}
+                    className={[
+                      'transport-lyrics-inline-action',
+                      snapshot.isRomanized ? 'is-active' : '',
+                      hasNonLatin && !snapshot.isRomanized ? 'has-script-prompt' : ''
+                    ].filter(Boolean).join(' ').trim()}
                     onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'toggleRomanized' })}
-                    disabled={snapshot.aiProcessing || snapshot.isTranslated}
-                    title="Romanize Lyrics"
+                    disabled={!hasLyricsHit || snapshot.aiProcessing || snapshot.isTranslated}
+                    title={
+                      !hasLyricsHit
+                        ? 'Lyrics not available yet'
+                        : hasNonLatin
+                          ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                          : 'Romanize Lyrics with AI'
+                    }
                   >
                     {snapshot.aiProcessing && !snapshot.isTranslated ? '...' : 'Aa'}
                   </button>
@@ -363,8 +380,12 @@ export default function LyricsPopoutApp() {
                     type="button"
                     className={['transport-lyrics-inline-action', snapshot.isTranslated ? 'is-active' : ''].join(' ').trim()}
                     onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'toggleTranslated' })}
-                    disabled={snapshot.aiProcessing || snapshot.isRomanized}
-                    title="Translate Lyrics"
+                    disabled={!hasLyricsHit || snapshot.aiProcessing || snapshot.isRomanized}
+                    title={
+                      !hasLyricsHit
+                        ? 'Lyrics not available yet'
+                        : 'Translate Lyrics with AI'
+                    }
                   >
                     {snapshot.aiProcessing && !snapshot.isRomanized ? '...' : 'A文'}
                   </button>

@@ -15,6 +15,7 @@ import { usePlaybackClock } from '../../hooks/usePlaybackClock'
 import { getFullscreenBackdropArtworkCandidates } from '../../utils/fullscreenBackdropArtwork'
 import {
   buildLyricsQuery,
+  containsNonLatinScripts,
   DEFAULT_LYRICS_BODY_COPY,
   getActiveLyricsResult,
   getCompensatedLyricsTime,
@@ -197,6 +198,12 @@ function FullscreenLyricsFocusBand({
   )
   const activeSyncedLineIndex = syncedLyricsTiming.activeLineIndex
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = activeLyricsResult?.status === 'hit' && Boolean(activeLyricsResult.lyrics)
+  const rawLyricsText = hasLyricsHit
+    ? (activeLyricsResult!.lyrics.syncedLyrics ?? activeLyricsResult!.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
+
   const metaChipText = useMemo(() => (
     getLyricsMetaChipText({
       currentTrack,
@@ -427,28 +434,42 @@ function FullscreenLyricsFocusBand({
                   {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
                 </button>
               )}
-              {activeLyricsResult?.status === 'hit' && (
-                <>
-                  <button
-                    type="button"
-                    className={`fullscreen-lyrics-action-btn ${isRomanized ? 'active' : ''}`}
-                    onClick={() => void toggleRomanized()}
-                    disabled={aiProcessing || isTranslated}
-                    title="Romanize Lyrics with AI"
-                  >
-                    {aiProcessing && !isTranslated ? '...' : 'Aa'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`fullscreen-lyrics-action-btn ${isTranslated ? 'active' : ''}`}
-                    onClick={() => void toggleTranslated()}
-                    disabled={aiProcessing || isRomanized}
-                    title="Translate Lyrics with AI"
-                  >
-                    {aiProcessing && !isRomanized ? '...' : 'A文'}
-                  </button>
-                </>
-              )}
+            {Boolean(currentTrack) && (
+              <>
+                <button
+                  type="button"
+                  className={[
+                    'fullscreen-lyrics-action-btn',
+                    isRomanized ? 'active' : '',
+                    hasNonLatin && !isRomanized ? 'has-script-prompt' : ''
+                  ].filter(Boolean).join(' ').trim()}
+                  onClick={() => void toggleRomanized()}
+                  disabled={!hasLyricsHit || aiProcessing || isTranslated}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : hasNonLatin
+                        ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                        : 'Romanize Lyrics with AI'
+                  }
+                >
+                  {aiProcessing && !isTranslated ? '...' : 'Aa'}
+                </button>
+                <button
+                  type="button"
+                  className={`fullscreen-lyrics-action-btn ${isTranslated ? 'active' : ''}`}
+                  onClick={() => void toggleTranslated()}
+                  disabled={!hasLyricsHit || aiProcessing || isRomanized}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : 'Translate Lyrics with AI'
+                  }
+                >
+                  {aiProcessing && !isRomanized ? '...' : 'A文'}
+                </button>
+              </>
+            )}
             </div>
           </div>
           {renderBody()}

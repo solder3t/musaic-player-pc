@@ -42,7 +42,7 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   apiKey: '',
   serverUrl: 'http://localhost:11434',
   model: DEFAULT_MODELS.gemini,
-  autoRomanize: true,
+  autoRomanize: false,
   autoTranslate: false,
   targetLanguage: 'English',
 };

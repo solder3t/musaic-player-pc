@@ -430,9 +430,12 @@ export default function SettingsView() {
     setProvider: setAiProvider,
     setApiKey: setAiApiKey,
     setModel: setAiModel,
-    setServerUrl: setAiServerUrl
+    setServerUrl: setAiServerUrl,
+    setAutoRomanize: setAiAutoRomanize,
+    setAutoTranslate: setAiAutoTranslate,
+    setTargetLanguage: setAiTargetLanguage
   } = useAiSettingsStore()
-  const { provider, apiKey, model, serverUrl } = aiSettings
+  const { provider, apiKey, model, serverUrl, autoRomanize, autoTranslate, targetLanguage } = aiSettings
 
   const {
     status: localApiStatus,
@@ -2264,6 +2267,52 @@ export default function SettingsView() {
                       )}
                     </div>
                   )}
+                  {provider !== 'none' && (
+                    <>
+                      <div className="settings-field settings-field-inline">
+                        <div>
+                          <span className="settings-field-label">Auto-Romanize Non-Latin Lyrics</span>
+                          <p style={{ margin: '2px 0 0', fontSize: '0.82em', opacity: 0.7 }}>
+                            Automatically transliterate Hangul, Kana/Kanji, Hanzi, and Cyrillic lyrics to Latin script on track start.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`settings-toggle ${autoRomanize ? 'active' : ''}`}
+                          onClick={() => setAiAutoRomanize(!autoRomanize)}
+                        >
+                          {autoRomanize ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+
+                      <div className="settings-field settings-field-inline">
+                        <div>
+                          <span className="settings-field-label">Auto-Translate Lyrics</span>
+                          <p style={{ margin: '2px 0 0', fontSize: '0.82em', opacity: 0.7 }}>
+                            Automatically translate lyrics into your target language on track start.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`settings-toggle ${autoTranslate ? 'active' : ''}`}
+                          onClick={() => setAiAutoTranslate(!autoTranslate)}
+                        >
+                          {autoTranslate ? 'Enabled' : 'Disabled'}
+                        </button>
+                      </div>
+
+                      <div className="settings-field">
+                        <label className="settings-field-label">Translation Target Language</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          placeholder="English"
+                          value={targetLanguage}
+                          onChange={(e) => setAiTargetLanguage(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -2677,22 +2726,119 @@ export default function SettingsView() {
                       {lyricsDisplaySettings.voiceLabelsEnabled ? 'Enabled' : 'Disabled'}
                     </button>
                   </div>
-                  <label className="settings-field">
-                    <span className="settings-field-label">Translation Priority</span>
-                    <input
-                      className="settings-select"
-                      type="text"
-                      value={lyricsTranslationPriorityInput}
-                      onChange={(event) => setLyricsTranslationPriorityInput(event.target.value)}
-                      onBlur={() => setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)
-                        }
-                      }}
-                      placeholder="en, ja-Latn"
-                    />
-                  </label>
+                  <div className="settings-field" style={{ gridColumn: '1 / -1' }}>
+                    <span className="settings-field-label">XLRC Translation Language Priority</span>
+                    <p style={{ margin: '2px 0 8px', fontSize: '0.82em', opacity: 0.7 }}>
+                      Prioritize which translation tracks in .xlrc files are displayed under original lyrics lines (matched left to right).
+                    </p>
+                    
+                    {/* Active priority chips */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
+                      {lyricsDisplaySettings.translationLanguagePriority.map((lang, index) => {
+                        const suggestions = [
+                          { code: 'en', label: 'English' },
+                          { code: 'ko-Latn', label: 'Korean Romaja' },
+                          { code: 'ja-Latn', label: 'Japanese Romaji' },
+                          { code: 'zh-Latn', label: 'Chinese Pinyin' },
+                          { code: 'ko', label: 'Korean' },
+                          { code: 'ja', label: 'Japanese' },
+                          { code: 'zh', label: 'Chinese' },
+                          { code: 'es', label: 'Spanish' },
+                          { code: 'fr', label: 'French' },
+                          { code: 'de', label: 'German' },
+                          { code: 'ru', label: 'Russian' }
+                        ]
+                        const match = suggestions.find(s => s.code.toLowerCase() === lang.toLowerCase())
+                        return (
+                          <span
+                            key={lang}
+                            className="settings-chip"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px' }}
+                          >
+                            <span style={{ opacity: 0.5, fontSize: '0.85em' }}>{index + 1}.</span>
+                            <strong>{lang}</strong>
+                            {match && <span style={{ opacity: 0.65, fontSize: '0.85em' }}>({match.label})</span>}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = lyricsDisplaySettings.translationLanguagePriority.filter((_, i) => i !== index)
+                                setLyricsTranslationLanguagePriority(next)
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '0 2px',
+                                marginLeft: '2px',
+                                opacity: 0.6,
+                                lineHeight: 1
+                              }}
+                              title={`Remove ${lang}`}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        )
+                      })}
+                    </div>
+
+                    {/* Quick Add Suggestions */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.8em', opacity: 0.65 }}>Quick add:</span>
+                      {[
+                        { code: 'en', label: 'English' },
+                        { code: 'ko-Latn', label: 'Korean Romaja' },
+                        { code: 'ja-Latn', label: 'Japanese Romaji' },
+                        { code: 'zh-Latn', label: 'Chinese Pinyin' },
+                        { code: 'ko', label: 'Korean' },
+                        { code: 'ja', label: 'Japanese' },
+                        { code: 'zh', label: 'Chinese' },
+                        { code: 'es', label: 'Spanish' },
+                        { code: 'fr', label: 'French' },
+                        { code: 'de', label: 'German' },
+                        { code: 'ru', label: 'Russian' }
+                      ].filter(
+                        s => !lyricsDisplaySettings.translationLanguagePriority.some(p => p.toLowerCase() === s.code.toLowerCase())
+                      ).map(suggestion => (
+                        <button
+                          key={suggestion.code}
+                          type="button"
+                          className="settings-chip settings-chip-mono"
+                          style={{ cursor: 'pointer', opacity: 0.85, padding: '2px 8px', fontSize: '0.8em' }}
+                          onClick={() => {
+                            const next = [...lyricsDisplaySettings.translationLanguagePriority, suggestion.code]
+                            setLyricsTranslationLanguagePriority(next)
+                          }}
+                        >
+                          + {suggestion.code} ({suggestion.label})
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom input */}
+                    <div style={{ display: 'flex', gap: '8px', maxWidth: '380px' }}>
+                      <input
+                        className="settings-input"
+                        type="text"
+                        value={lyricsTranslationPriorityInput}
+                        onChange={(event) => setLyricsTranslationPriorityInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)
+                          }
+                        }}
+                        placeholder="e.g. it, pt-BR, vi"
+                      />
+                      <button
+                        type="button"
+                        className="settings-button"
+                        style={{ whiteSpace: 'nowrap' }}
+                        onClick={() => setLyricsTranslationLanguagePriority(lyricsTranslationPriorityInput)}
+                      >
+                        Set Custom Priority
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <p className="settings-note">{lyricsStatusLabel}</p>
                 <p className="settings-note">Musaic appends <code>/api/get</code> and <code>/api/search</code>. HTTP is supported for local mirrors.</p>

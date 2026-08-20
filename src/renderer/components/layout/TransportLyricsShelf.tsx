@@ -11,6 +11,7 @@ import LyricsLineContent from '../lyrics/LyricsLineContent'
 import {
   buildLyricsQuery,
   BASE_COMPACT_LYRICS_LINE_HEIGHT_PX,
+  containsNonLatinScripts,
   DEFAULT_LYRICS_BODY_COPY,
   getCompensatedLyricsTime,
   getActiveLyricsResult,
@@ -91,6 +92,12 @@ export default function TransportLyricsShelf() {
     }px`
   } as CSSProperties), [compactSyncedLineHeightsPx])
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = activeLyricsResult?.status === 'hit' && Boolean(activeLyricsResult.lyrics)
+  const rawLyricsText = hasLyricsHit
+    ? (activeLyricsResult!.lyrics.syncedLyrics ?? activeLyricsResult!.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
+
   const syncedLyricsTiming = useMemo(
     () => resolveSyncedLyricsTiming(syncedLines, compensatedTime, { durationSeconds: duration }),
     [compensatedTime, duration, syncedLines]
@@ -375,14 +382,24 @@ export default function TransportLyricsShelf() {
                 {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
               </button>
             )}
-            {activeLyricsResult?.status === 'hit' && (
+            {Boolean(currentTrack) && (
               <>
                 <button
                   type="button"
-                  className={['transport-lyrics-inline-action', isRomanized ? 'is-active' : ''].join(' ').trim()}
+                  className={[
+                    'transport-lyrics-inline-action',
+                    isRomanized ? 'is-active' : '',
+                    hasNonLatin && !isRomanized ? 'has-script-prompt' : ''
+                  ].filter(Boolean).join(' ').trim()}
                   onClick={() => void toggleRomanized()}
-                  disabled={aiProcessing || isTranslated}
-                  title="Romanize Lyrics"
+                  disabled={!hasLyricsHit || aiProcessing || isTranslated}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : hasNonLatin
+                        ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                        : 'Romanize Lyrics with AI'
+                  }
                 >
                   {aiProcessing && !isTranslated ? '...' : 'Aa'}
                 </button>
@@ -390,8 +407,12 @@ export default function TransportLyricsShelf() {
                   type="button"
                   className={['transport-lyrics-inline-action', isTranslated ? 'is-active' : ''].join(' ').trim()}
                   onClick={() => void toggleTranslated()}
-                  disabled={aiProcessing || isRomanized}
-                  title="Translate Lyrics"
+                  disabled={!hasLyricsHit || aiProcessing || isRomanized}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : 'Translate Lyrics with AI'
+                  }
                 >
                   {aiProcessing && !isRomanized ? '...' : 'A文'}
                 </button>

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { LyricsLookupResult, LyricsStatus, LyricsTrackQuery } from '../../types/lyrics'
+import type { LyricsLookupResult, LyricsPayload, LyricsStatus, LyricsTrackQuery } from '../../types/lyrics'
 import { useAiSettingsStore } from './aiSettingsStore'
 
 interface LyricsStore {
@@ -90,6 +90,11 @@ function isProviderUnavailableResult(result: LyricsLookupResult): boolean {
   return result.status === 'not_found' && result.reason === 'provider-unavailable'
 }
 
+const aiLyricsCache = new Map<string, {
+  romanized?: LyricsPayload
+  translated?: Record<string, LyricsPayload>
+}>()
+
 export const useLyricsStore = create<LyricsStore>((set, get) => {
   const applyStatus = (status: LyricsStatus): LyricsStatus => {
     set({
@@ -133,7 +138,6 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
       errorMessage: result.status === 'transient_error' ? result.message : ''
     }))
 
-    // Automatically trigger romanization if enabled
     const { settings } = useAiSettingsStore.getState()
     if (settings.autoRomanize && result.status === 'hit') {
       setTimeout(() => {
@@ -205,6 +209,9 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           currentTrackPath: null,
           currentResult: null,
           isLoading: false,
+          isRomanized: false,
+          isTranslated: false,
+          aiProcessing: false,
           errorMessage: ''
         })
         return null
@@ -217,6 +224,9 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         currentTrackPath: trackPath,
         currentResult: state.resultByTrackPath[trackPath] ?? null,
         isLoading: true,
+        isRomanized: false,
+        isTranslated: false,
+        aiProcessing: false,
         errorMessage: ''
       }))
 
@@ -241,16 +251,23 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           currentTrackPath: null,
           currentResult: null,
           isLoading: false,
+          isRomanized: false,
+          isTranslated: false,
+          aiProcessing: false,
           errorMessage: ''
         })
         return null
       }
 
-      const requestId = (activeRequestId += 1)
+      const requestId = activeRequestId + 1
+      activeRequestId = requestId
       set((state) => ({
         currentTrackPath: trackPath,
         currentResult: state.resultByTrackPath[trackPath] ?? null,
         isLoading: true,
+        isRomanized: false,
+        isTranslated: false,
+        aiProcessing: false,
         errorMessage: ''
       }))
 
@@ -311,7 +328,13 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           ? existingHit.embeddedAlternative
           : null
 
-      set({ isLoading: true, errorMessage: '' })
+      set({
+        isLoading: true,
+        isRomanized: false,
+        isTranslated: false,
+        aiProcessing: false,
+        errorMessage: ''
+      })
       try {
         const result = await window.electronAPI.lyrics.getForTrack(
           {
@@ -392,6 +415,20 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         : state.resultByTrackPath[currentTrackPath]
       if (!activeResult || activeResult.status !== 'hit' || !activeResult.lyrics) return
 
+      const cachedRomanized = aiLyricsCache.get(currentTrackPath)?.romanized
+      if (cachedRomanized) {
+        set(() => ({
+          isRomanized: true,
+          isTranslated: false,
+          aiProcessing: false,
+          currentResult: {
+            ...activeResult,
+            lyrics: cachedRomanized
+          }
+        }))
+        return
+      }
+
       const { syncedLines, syncedLyrics, plainLyrics, format } = activeResult.lyrics
       const textToConvert = syncedLyrics ?? plainLyrics
       if (!textToConvert && (!syncedLines || syncedLines.length === 0)) return
@@ -409,6 +446,10 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           set({ aiProcessing: false })
           return
         }
+
+        const existing = aiLyricsCache.get(currentTrackPath) || {}
+        existing.romanized = aiResult.payload
+        aiLyricsCache.set(currentTrackPath, existing)
 
         set(() => ({
           isRomanized: true,
@@ -442,6 +483,23 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         : state.resultByTrackPath[currentTrackPath]
       if (!activeResult || activeResult.status !== 'hit' || !activeResult.lyrics) return
 
+      const { settings } = useAiSettingsStore.getState()
+      const targetLanguage = settings.targetLanguage || 'English'
+
+      const cachedTranslated = aiLyricsCache.get(currentTrackPath)?.translated?.[targetLanguage]
+      if (cachedTranslated) {
+        set(() => ({
+          isTranslated: true,
+          isRomanized: false,
+          aiProcessing: false,
+          currentResult: {
+            ...activeResult,
+            lyrics: cachedTranslated
+          }
+        }))
+        return
+      }
+
       const { syncedLines, syncedLyrics, plainLyrics, format } = activeResult.lyrics
       const textToConvert = syncedLyrics ?? plainLyrics
       if (!textToConvert && (!syncedLines || syncedLines.length === 0)) return
@@ -452,13 +510,17 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
 
       set({ aiProcessing: true })
       try {
-        const { settings } = useAiSettingsStore.getState()
-        const aiResult = await window.electronAPI.ai.translateLyrics(inputPayload, settings, 'English')
+        const aiResult = await window.electronAPI.ai.translateLyrics(inputPayload, settings, targetLanguage)
         
         if (!aiResult.payload) {
           set({ aiProcessing: false })
           return
         }
+
+        const existing = aiLyricsCache.get(currentTrackPath) || {}
+        if (!existing.translated) existing.translated = {}
+        existing.translated[targetLanguage] = aiResult.payload
+        aiLyricsCache.set(currentTrackPath, existing)
 
         set(() => ({
           isTranslated: true,

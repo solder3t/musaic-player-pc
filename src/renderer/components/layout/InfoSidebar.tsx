@@ -13,6 +13,7 @@ import { useLyricsDisplaySettingsStore } from '../../stores/lyricsDisplaySetting
 import LyricsLineContent from '../lyrics/LyricsLineContent'
 import {
   buildLyricsQuery,
+  containsNonLatinScripts,
   getCompensatedLyricsTime,
   getActiveLyricsResult,
   getLyricsLineSeekTimeSeconds,
@@ -77,6 +78,11 @@ export default function InfoSidebar() {
   )
   const activeSyncedLineIndex = syncedLyricsTiming.activeLineIndex
   const hasSyncedLyrics = displayedSyncedLines.some((line) => line.kind === 'lyric')
+  const hasLyricsHit = activeLyricsResult?.status === 'hit' && Boolean(activeLyricsResult.lyrics)
+  const rawLyricsText = hasLyricsHit
+    ? (activeLyricsResult!.lyrics.syncedLyrics ?? activeLyricsResult!.lyrics.plainLyrics ?? '')
+    : ''
+  const hasNonLatin = useMemo(() => containsNonLatinScripts(rawLyricsText), [rawLyricsText])
 
   const {
     followPaused,
@@ -273,25 +279,42 @@ export default function InfoSidebar() {
                 {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
               </button>
             )}
-            {activeLyricsResult?.status === 'hit' && (
+            {Boolean(currentTrack) && (
               <>
                 <button
                   type="button"
-                  className="info-lyrics-refresh-btn"
-                  style={{ background: isRomanized ? 'var(--accent)' : 'var(--control-bg)', color: isRomanized ? 'var(--on-accent)' : 'var(--text-primary)' }}
+                  className={['info-lyrics-refresh-btn', hasNonLatin && !isRomanized ? 'has-script-prompt' : ''].filter(Boolean).join(' ')}
+                  style={{
+                    background: isRomanized ? 'var(--accent)' : 'var(--control-bg)',
+                    color: isRomanized ? 'var(--on-accent)' : 'var(--text-primary)',
+                    boxShadow: hasNonLatin && !isRomanized ? '0 0 0 1.5px var(--accent)' : undefined
+                  }}
                   onClick={() => void toggleRomanized()}
-                  disabled={aiProcessing || isTranslated}
-                  title="Romanize Lyrics with AI"
+                  disabled={!hasLyricsHit || aiProcessing || isTranslated}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : hasNonLatin
+                        ? 'Romanize Non-Latin Lyrics (Hangul/Kana/Hanzi/Cyrillic)'
+                        : 'Romanize Lyrics with AI'
+                  }
                 >
                   {aiProcessing && !isTranslated ? '...' : isRomanized ? '🗣️ Romanized' : '🗣️ Romanize'}
                 </button>
                 <button
                   type="button"
                   className="info-lyrics-refresh-btn"
-                  style={{ background: isTranslated ? 'var(--accent)' : 'var(--control-bg)', color: isTranslated ? 'var(--on-accent)' : 'var(--text-primary)' }}
+                  style={{
+                    background: isTranslated ? 'var(--accent)' : 'var(--control-bg)',
+                    color: isTranslated ? 'var(--on-accent)' : 'var(--text-primary)'
+                  }}
                   onClick={() => void toggleTranslated()}
-                  disabled={aiProcessing || isRomanized}
-                  title="Translate Lyrics with AI"
+                  disabled={!hasLyricsHit || aiProcessing || isRomanized}
+                  title={
+                    !hasLyricsHit
+                      ? 'Lyrics not available yet'
+                      : 'Translate Lyrics with AI'
+                  }
                 >
                   {aiProcessing && !isRomanized ? '...' : isTranslated ? '🌐 Translated' : '🌐 Translate'}
                 </button>
