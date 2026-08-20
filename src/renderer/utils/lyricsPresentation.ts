@@ -44,8 +44,8 @@ export const DEFAULT_LYRICS_BODY_COPY: LyricsBodyCopy = {
   loadingMessage: 'Loading lyrics...',
   idleMessage: 'Lyrics are ready when a track is selected.',
   noReadableTextMessage: 'Lyrics were found, but no readable text is available.',
-  onlineDisabledMessage: 'No local or embedded lyrics found. Enable Online Lyrics Lookup in Settings to fetch from XLRCDB or LRCLIB.',
-  providerNotFoundMessage: 'No lyrics found on XLRCDB or LRCLIB for this track.',
+  onlineDisabledMessage: 'No local or embedded lyrics found. Enable Online Lyrics Lookup in Settings to fetch online lyrics.',
+  providerNotFoundMessage: 'No lyrics found across online providers for this track.',
   providerUnavailableMessage: "Lyrics providers didn't respond in time. A retry may work.",
   embeddedMissingMessage: 'No local or embedded lyrics found for this track.'
 }
