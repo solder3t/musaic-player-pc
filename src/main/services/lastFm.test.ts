@@ -158,12 +158,16 @@ function cloneConfig(config: LastFmServiceConfig): LastFmServiceConfig {
   }
 }
 
-function createService(configOverrides: Partial<LastFmServiceConfig> = {}) {
+function createService(
+  configOverrides: Partial<LastFmServiceConfig> = {},
+  apiKey: string = 'test-api-key',
+  sharedSecret: string = 'test-shared-secret'
+) {
   const persisted: LastFmServiceConfig[] = []
   const service = new LastFmService({
     config: createConfig(configOverrides),
-    apiKey: 'test-api-key',
-    sharedSecret: 'test-shared-secret',
+    apiKey,
+    sharedSecret,
     appVersion: '0.0.0-test',
     openExternal: async () => {},
     onConfigChange: (config) => {
@@ -1040,3 +1044,41 @@ test('setProfileNowPlaying toggles Now Playing and respects disabled state', asy
   // Should NOT have incremented nowPlayingCalls
   assert.equal(nowPlayingCalls, 1)
 })
+
+test('custom API credentials enable official Last.fm when default credentials are empty', async (t) => {
+  const { service } = createService({
+    enabled: true,
+    profiles: [
+      createOfficialProfile({
+        sessionKey: 'official-session',
+        username: 'official-user'
+      })
+    ]
+  }, '', '')
+  t.after(() => service.stop())
+
+  let status = service.getStatus()
+  assert.equal(status.hasApiCredentials, false)
+  assert.equal(status.lastFmProfile?.enabled, false)
+
+  await service.applyConfig({
+    enabled: true,
+    activeProfileId: LASTFM_OFFICIAL_PROFILE_ID,
+    customApiKey: 'my-custom-key',
+    customSharedSecret: 'my-custom-secret',
+    profiles: [
+      createOfficialProfile({
+        sessionKey: 'official-session',
+        username: 'official-user',
+        enabled: true
+      })
+    ]
+  })
+
+  status = service.getStatus()
+  assert.equal(status.hasApiCredentials, true)
+  assert.equal(status.customApiKey, 'my-custom-key')
+  assert.equal(status.customSharedSecret, 'my-custom-secret')
+  assert.equal(status.lastFmProfile?.enabled, true)
+})
+

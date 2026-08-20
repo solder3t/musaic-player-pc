@@ -388,10 +388,35 @@ function createLegacyConfig(record: Record<string, unknown>, hasApiCredentials: 
   }
 }
 
-function normalizeConfig(config: LastFmServiceConfig, hasApiCredentials: boolean): LastFmServiceConfig {
+function normalizeConfig(
+  config: LastFmServiceConfig,
+  defaultApiKeyOrHasCreds: string | boolean,
+  defaultSharedSecret: string = ''
+): LastFmServiceConfig {
   const record = config as unknown as Record<string, unknown>
+  const customApiKey = typeof record.customApiKey === 'string'
+    ? record.customApiKey.trim() || null
+    : (record.customApiKey === null ? null : (config.customApiKey ?? null))
+  const customSharedSecret = typeof record.customSharedSecret === 'string'
+    ? record.customSharedSecret.trim() || null
+    : (record.customSharedSecret === null ? null : (config.customSharedSecret ?? null))
+
+  let hasApiCredentials = false
+  if (typeof defaultApiKeyOrHasCreds === 'boolean') {
+    hasApiCredentials = defaultApiKeyOrHasCreds || (Boolean(customApiKey) && Boolean(customSharedSecret))
+  } else {
+    const effectiveApiKey = (customApiKey && customApiKey.length > 0) ? customApiKey : defaultApiKeyOrHasCreds
+    const effectiveSharedSecret = (customSharedSecret && customSharedSecret.length > 0) ? customSharedSecret : defaultSharedSecret
+    hasApiCredentials = Boolean(effectiveApiKey && effectiveApiKey.length > 0 && effectiveSharedSecret && effectiveSharedSecret.length > 0)
+  }
+
   if (!Array.isArray(record.profiles)) {
-    return createLegacyConfig(record, hasApiCredentials)
+    const legacy = createLegacyConfig(record, hasApiCredentials)
+    return {
+      ...legacy,
+      customApiKey,
+      customSharedSecret
+    }
   }
 
   const rawProfiles = record.profiles
@@ -442,7 +467,9 @@ function normalizeConfig(config: LastFmServiceConfig, hasApiCredentials: boolean
   return {
     enabled: Boolean(record.enabled),
     activeProfileId: activeProfile.id,
-    profiles
+    profiles,
+    customApiKey,
+    customSharedSecret
   }
 }
 
@@ -529,7 +556,7 @@ export class LastFmService {
     this.openExternal = options.openExternal
     this.onConfigChange = options.onConfigChange
     this.onStatusChange = options.onStatusChange
-    this.config = normalizeConfig(options.config, this.hasApiCredentials)
+    this.config = normalizeConfig(options.config, this._defaultApiKey, this._defaultSharedSecret)
   }
 
   private get apiKey(): string {
@@ -613,7 +640,7 @@ export class LastFmService {
   }
 
   async applyConfig(config: LastFmServiceConfig): Promise<LastFmStatus> {
-    this.config = normalizeConfig(config, this.hasApiCredentials)
+    this.config = normalizeConfig(config, this._defaultApiKey, this._defaultSharedSecret)
     this.audioScrobblerSessions.clear()
     if (!this.config.enabled) {
       this.currentPlayback = null
@@ -988,7 +1015,7 @@ export class LastFmService {
       enabled: false,
       activeProfileId: LASTFM_OFFICIAL_PROFILE_ID,
       profiles: [createOfficialProfile()]
-    }, this.hasApiCredentials)
+    }, this._defaultApiKey, this._defaultSharedSecret)
     this.lastError = null
     this.profileErrors.clear()
     await this.persistAndEmitStatus()

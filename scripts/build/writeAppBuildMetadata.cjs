@@ -39,36 +39,58 @@ function execGit(args) {
   })
 }
 
+function loadEnvFile(filePath) {
+  const env = {}
+  if (!fs.existsSync(filePath)) return env
+  try {
+    const content = fs.readFileSync(filePath, 'utf8')
+    for (const line of content.split(/\r?\n/)) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith('#')) continue
+      const eqIdx = trimmed.indexOf('=')
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim()
+        let val = trimmed.slice(eqIdx + 1).trim()
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1)
+        }
+        env[key] = val
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+  return env
+}
+
 function resolveBuildMetadata() {
   const envCommitHash = normalizeCommitHash(process.env.MUSAIC_GIT_COMMIT)
   const envDirty = parseDirtyEnvValue(process.env.MUSAIC_GIT_DIRTY)
 
-  if (envCommitHash) {
-    return {
-      commitHash: envCommitHash,
-      isDirty: envDirty ?? false,
+  const localEnv = loadEnvFile(path.resolve(repoRoot, '.env.local'))
+  const rootEnv = loadEnvFile(path.resolve(repoRoot, '.env'))
+
+  const lastFmApiKey = (process.env.LASTFM_API_KEY || localEnv.LASTFM_API_KEY || rootEnv.LASTFM_API_KEY || '').trim() || null
+  const lastFmSharedSecret = (process.env.LASTFM_SHARED_SECRET || localEnv.LASTFM_SHARED_SECRET || rootEnv.LASTFM_SHARED_SECRET || '').trim() || null
+
+  let commitHash = envCommitHash
+  let isDirty = envDirty ?? false
+
+  if (!commitHash) {
+    try {
+      commitHash = normalizeCommitHash(execGit(['rev-parse', 'HEAD']))
+      isDirty = envDirty ?? execGit(['status', '--porcelain']).trim().length > 0
+    } catch {
+      commitHash = null
+      isDirty = false
     }
   }
 
-  try {
-    const commitHash = normalizeCommitHash(execGit(['rev-parse', 'HEAD']))
-    if (!commitHash) {
-      return {
-        commitHash: null,
-        isDirty: false,
-      }
-    }
-
-    const isDirty = envDirty ?? execGit(['status', '--porcelain']).trim().length > 0
-    return {
-      commitHash,
-      isDirty,
-    }
-  } catch {
-    return {
-      commitHash: null,
-      isDirty: false,
-    }
+  return {
+    commitHash,
+    isDirty,
+    lastFmApiKey,
+    lastFmSharedSecret
   }
 }
 
