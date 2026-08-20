@@ -74,7 +74,7 @@ interface LyricsServiceOptions {
   requestTimeoutMs?: number
   now?: () => number
   onStatusChange?: (status: LyricsStatus) => void
-  libraryApi?: LyricsServiceLibraryApi
+  libraryApi: LyricsServiceLibraryApi
   sidecarLookup?: typeof lookupSidecarLyrics
   embeddedResolver?: typeof resolveEmbeddedLyrics
   xlrcdbProvider?: LyricsOnlineLookupProvider
@@ -243,14 +243,7 @@ export class LyricsService {
   constructor(options: LyricsServiceOptions) {
     this.enabled = Boolean(options.enabled)
     this.lrclibBaseUrl = normalizeLrclibBaseUrl(options.lrclibBaseUrl ?? LRCLIB_OFFICIAL_BASE_URL)
-    this.libraryApi = options.libraryApi ?? {
-      getLyricsTrackOverride: (path: string) => require('./library').getLyricsTrackOverride(path),
-      upsertLyricsTrackManual: (paths: string[], input: library.LyricsTrackManualInput) => require('./library').upsertLyricsTrackManual(paths, input),
-      clearLyricsTrackManual: (paths: string[]) => require('./library').clearLyricsTrackManual(paths),
-      setLyricsTrackSyncOffset: (paths: string[], offset: number) => require('./library').setLyricsTrackSyncOffset(paths, offset),
-      getLyricsCache: (path: string, sig: string) => require('./library').getLyricsCache(path, sig),
-      upsertLyricsCache: (entry: library.LyricsCacheUpsertInput) => require('./library').upsertLyricsCache(entry)
-    }
+    this.libraryApi = options.libraryApi
     this.sidecarLookup = options.sidecarLookup ?? lookupSidecarLyrics
     this.embeddedResolver = options.embeddedResolver ?? resolveEmbeddedLyrics
     this.xlrcdb = options.xlrcdbProvider ?? new XlrcdbLookupCoordinator(createXlrcdbClientConfig({

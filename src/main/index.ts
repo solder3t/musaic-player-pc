@@ -1331,6 +1331,14 @@ const lyricsService = new LyricsService({
   enabled: lyricsOnlineEnabled,
   appVersion: app.getVersion(),
   lrclibBaseUrl: lyricsLrclibBaseUrl,
+  libraryApi: {
+    getLyricsTrackOverride: (path: string) => library.getLyricsTrackOverride(path),
+    upsertLyricsTrackManual: (paths: string[], input: library.LyricsTrackManualInput) => library.upsertLyricsTrackManual(paths, input),
+    clearLyricsTrackManual: (paths: string[]) => library.clearLyricsTrackManual(paths),
+    setLyricsTrackSyncOffset: (paths: string[], offset: number) => library.setLyricsTrackSyncOffset(paths, offset),
+    getLyricsCache: (path: string, sig: string) => library.getLyricsCache(path, sig),
+    upsertLyricsCache: (entry: library.LyricsCacheUpsertInput) => library.upsertLyricsCache(entry)
+  },
   onStatusChange: () => {
     broadcastLyricsStatus()
     const status = lyricsService.getStatus()
