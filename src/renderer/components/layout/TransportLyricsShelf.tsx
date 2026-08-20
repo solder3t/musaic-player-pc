@@ -44,6 +44,8 @@ export default function TransportLyricsShelf() {
   const aiProcessing = useLyricsStore((s) => s.aiProcessing)
   const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
   const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
+  const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
+  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
   const lastLyricsRequestKeyRef = useRef<string | null>(null)
 
@@ -342,6 +344,35 @@ export default function TransportLyricsShelf() {
                 onClick={handleRecenter}
               >
                 Recenter
+              </button>
+            )}
+            {activeLyricsResult?.status === 'hit' && (activeLyricsResult.embeddedAlternative || activeLyricsResult.onlineAlternative) && (
+              <button
+                type="button"
+                className="transport-lyrics-inline-action"
+                onClick={() => {
+                  if (activeLyricsResult.lyrics.source === 'embedded') {
+                    selectLyricsSource('online')
+                  } else {
+                    selectLyricsSource('embedded')
+                  }
+                }}
+                title={activeLyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+              >
+                {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+              </button>
+            )}
+            {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+              <button
+                type="button"
+                className="transport-lyrics-inline-action"
+                onClick={() => {
+                  if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                }}
+                disabled={lyricsIsLoading}
+                title="Search and load synchronized lyrics from online providers"
+              >
+                {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
               </button>
             )}
             {activeLyricsResult?.status === 'hit' && (

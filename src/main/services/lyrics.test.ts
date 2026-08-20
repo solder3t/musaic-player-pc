@@ -263,3 +263,71 @@ test('LyricsService rewrites legacy LRCLIB miss cache after a definitive XLRCDB 
   assert.equal(upserts[0]?.source, 'xlrcdb')
   assert.equal(upserts[0]?.provider, 'xlrcdb')
 })
+
+test('LyricsService falls back to online synced lyrics when embedded lyrics are unsynced', async () => {
+  const embeddedPlainPayload: LyricsPayload = {
+    source: 'embedded',
+    provider: null,
+    format: 'plain',
+    plainLyrics: 'Embedded plain lyrics',
+    syncedLyrics: null,
+    syncedLines: []
+  }
+
+  const onlineSyncedPayload: LyricsPayload = {
+    source: 'lrclib',
+    provider: 'lrclib',
+    format: 'lrc',
+    plainLyrics: 'Synced lyrics',
+    syncedLyrics: '[00:10.00]Synced lyrics',
+    syncedLines: [{ timestampMs: 10000, text: 'Synced lyrics' }]
+  }
+
+  const service = new LyricsService({
+    enabled: true,
+    appVersion: '0.6.1-beta',
+    libraryApi: createLibraryApi(),
+    sidecarLookup: async () => null,
+    embeddedResolver: async () => embeddedPlainPayload,
+    xlrcdbProvider: createProvider([{ status: 'not_found' }]),
+    lrclibProvider: createProvider([{ status: 'hit', lyrics: onlineSyncedPayload }])
+  })
+
+  const result = await service.getForTrack(makeQuery())
+  assert.equal(result.status, 'hit')
+  if (result.status === 'hit') {
+    assert.equal(result.lyrics.source, 'lrclib')
+    assert.equal(result.lyrics.syncedLines.length, 1)
+    assert.deepEqual(result.availableSources, ['online', 'embedded'])
+    assert.ok(result.embeddedAlternative)
+    assert.equal(result.embeddedAlternative?.plainLyrics, 'Embedded plain lyrics')
+  }
+})
+
+test('LyricsService obeys preferSource: embedded even when unsynced', async () => {
+  const embeddedPlainPayload: LyricsPayload = {
+    source: 'embedded',
+    provider: null,
+    format: 'plain',
+    plainLyrics: 'Embedded plain lyrics',
+    syncedLyrics: null,
+    syncedLines: []
+  }
+
+  const service = new LyricsService({
+    enabled: true,
+    appVersion: '0.6.1-beta',
+    libraryApi: createLibraryApi(),
+    sidecarLookup: async () => null,
+    embeddedResolver: async () => embeddedPlainPayload,
+    xlrcdbProvider: createProvider([]),
+    lrclibProvider: createProvider([])
+  })
+
+  const result = await service.getForTrack(makeQuery(), { preferSource: 'embedded' })
+  assert.equal(result.status, 'hit')
+  if (result.status === 'hit') {
+    assert.equal(result.lyrics.source, 'embedded')
+    assert.equal(result.lyrics.plainLyrics, 'Embedded plain lyrics')
+  }
+})

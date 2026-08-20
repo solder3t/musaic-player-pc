@@ -9,6 +9,7 @@ export interface LyricsDisplaySettings {
   translationsEnabled: boolean
   translationLanguagePriority: string[]
   voiceLabelsEnabled: boolean
+  preferOnlineSyncedLyrics: boolean
 }
 
 interface LyricsDisplaySettingsStore {
@@ -18,6 +19,7 @@ interface LyricsDisplaySettingsStore {
   setTranslationsEnabled: (enabled: boolean) => void
   setTranslationLanguagePriority: (value: string[] | string) => void
   setVoiceLabelsEnabled: (enabled: boolean) => void
+  setPreferOnlineSyncedLyrics: (enabled: boolean) => void
   resetToDefaults: () => void
 }
 
@@ -26,7 +28,8 @@ export const DEFAULT_LYRICS_DISPLAY_SETTINGS: LyricsDisplaySettings = {
   furiganaEnabled: true,
   translationsEnabled: true,
   translationLanguagePriority: [...DEFAULT_LYRICS_TRANSLATION_PRIORITY],
-  voiceLabelsEnabled: false
+  voiceLabelsEnabled: false,
+  preferOnlineSyncedLyrics: true
 }
 
 let storageListenerInstalled = false
@@ -65,7 +68,10 @@ function normalizeSettings(value: unknown): LyricsDisplaySettings {
       : [...DEFAULT_LYRICS_DISPLAY_SETTINGS.translationLanguagePriority],
     voiceLabelsEnabled: typeof raw.voiceLabelsEnabled === 'boolean'
       ? raw.voiceLabelsEnabled
-      : DEFAULT_LYRICS_DISPLAY_SETTINGS.voiceLabelsEnabled
+      : DEFAULT_LYRICS_DISPLAY_SETTINGS.voiceLabelsEnabled,
+    preferOnlineSyncedLyrics: typeof raw.preferOnlineSyncedLyrics === 'boolean'
+      ? raw.preferOnlineSyncedLyrics
+      : DEFAULT_LYRICS_DISPLAY_SETTINGS.preferOnlineSyncedLyrics
   }
 }
 
@@ -130,6 +136,11 @@ export const useLyricsDisplaySettingsStore = create<LyricsDisplaySettingsStore>(
     }),
     setVoiceLabelsEnabled: (enabled) => set((state) => {
       const settings = { ...state.settings, voiceLabelsEnabled: Boolean(enabled) }
+      persistSettings(settings)
+      return { settings }
+    }),
+    setPreferOnlineSyncedLyrics: (enabled) => set((state) => {
+      const settings = { ...state.settings, preferOnlineSyncedLyrics: Boolean(enabled) }
       persistSettings(settings)
       return { settings }
     }),

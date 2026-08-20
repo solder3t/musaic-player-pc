@@ -41,10 +41,14 @@ export default function InfoSidebar() {
   const lyricsStoreError = useLyricsStore((s) => s.errorMessage)
   const loadLyricsForTrack = useLyricsStore((s) => s.loadForTrack)
   const refreshLyricsForTrack = useLyricsStore((s) => s.refreshForTrack)
+  const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
+  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
+  const isRomanized = useLyricsStore((s) => s.isRomanized)
+  const isTranslated = useLyricsStore((s) => s.isTranslated)
+  const aiProcessing = useLyricsStore((s) => s.aiProcessing)
+  const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
+  const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
-  const setWordTimingEnabled = useLyricsDisplaySettingsStore((s) => s.setWordTimingEnabled)
-  const setFuriganaEnabled = useLyricsDisplaySettingsStore((s) => s.setFuriganaEnabled)
-  const setTranslationsEnabled = useLyricsDisplaySettingsStore((s) => s.setTranslationsEnabled)
 
   const lyricsQuery = useMemo(() => buildLyricsQuery(currentTrack), [currentTrack])
   const activeLyricsResult = useMemo(() => (
@@ -240,33 +244,59 @@ export default function InfoSidebar() {
       {activeTab === 'lyrics' ? (
         <div className="info-lyrics-panel">
           <div className="info-sidebar-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            <button
-              type="button"
-              className="info-lyrics-refresh-btn"
-              style={{ background: lyricsDisplaySettings.wordTimingEnabled ? 'var(--accent)' : 'var(--control-bg)', color: lyricsDisplaySettings.wordTimingEnabled ? 'var(--on-accent)' : 'var(--text-primary)' }}
-              onClick={() => setWordTimingEnabled(!lyricsDisplaySettings.wordTimingEnabled)}
-              title="Toggle Karaoke Word Timing"
-            >
-              🎤 Karaoke {lyricsDisplaySettings.wordTimingEnabled ? 'ON' : 'OFF'}
-            </button>
-            <button
-              type="button"
-              className="info-lyrics-refresh-btn"
-              style={{ background: lyricsDisplaySettings.furiganaEnabled ? 'var(--accent)' : 'var(--control-bg)', color: lyricsDisplaySettings.furiganaEnabled ? 'var(--on-accent)' : 'var(--text-primary)' }}
-              onClick={() => setFuriganaEnabled(!lyricsDisplaySettings.furiganaEnabled)}
-              title="Toggle AI Romanization / Furigana"
-            >
-              🗣️ Romanize {lyricsDisplaySettings.furiganaEnabled ? 'ON' : 'OFF'}
-            </button>
-            <button
-              type="button"
-              className="info-lyrics-refresh-btn"
-              style={{ background: lyricsDisplaySettings.translationsEnabled ? 'var(--accent)' : 'var(--control-bg)', color: lyricsDisplaySettings.translationsEnabled ? 'var(--on-accent)' : 'var(--text-primary)' }}
-              onClick={() => setTranslationsEnabled(!lyricsDisplaySettings.translationsEnabled)}
-              title="Toggle AI Translation"
-            >
-              🌐 Translate {lyricsDisplaySettings.translationsEnabled ? 'ON' : 'OFF'}
-            </button>
+            {activeLyricsResult?.status === 'hit' && (activeLyricsResult.embeddedAlternative || activeLyricsResult.onlineAlternative) && (
+              <button
+                type="button"
+                className="info-lyrics-refresh-btn"
+                onClick={() => {
+                  if (activeLyricsResult.lyrics.source === 'embedded') {
+                    selectLyricsSource('online')
+                  } else {
+                    selectLyricsSource('embedded')
+                  }
+                }}
+                title={activeLyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+              >
+                🔄 {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+              </button>
+            )}
+            {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+              <button
+                type="button"
+                className="info-lyrics-refresh-btn"
+                onClick={() => {
+                  if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                }}
+                disabled={lyricsIsLoading}
+                title="Search and load synchronized lyrics from online providers"
+              >
+                {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
+              </button>
+            )}
+            {activeLyricsResult?.status === 'hit' && (
+              <>
+                <button
+                  type="button"
+                  className="info-lyrics-refresh-btn"
+                  style={{ background: isRomanized ? 'var(--accent)' : 'var(--control-bg)', color: isRomanized ? 'var(--on-accent)' : 'var(--text-primary)' }}
+                  onClick={() => void toggleRomanized()}
+                  disabled={aiProcessing || isTranslated}
+                  title="Romanize Lyrics with AI"
+                >
+                  {aiProcessing && !isTranslated ? '...' : isRomanized ? '🗣️ Romanized' : '🗣️ Romanize'}
+                </button>
+                <button
+                  type="button"
+                  className="info-lyrics-refresh-btn"
+                  style={{ background: isTranslated ? 'var(--accent)' : 'var(--control-bg)', color: isTranslated ? 'var(--on-accent)' : 'var(--text-primary)' }}
+                  onClick={() => void toggleTranslated()}
+                  disabled={aiProcessing || isRomanized}
+                  title="Translate Lyrics with AI"
+                >
+                  {aiProcessing && !isRomanized ? '...' : isTranslated ? '🌐 Translated' : '🌐 Translate'}
+                </button>
+              </>
+            )}
             {followPaused && hasSyncedLyrics && (
               <button
                 type="button"

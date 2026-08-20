@@ -321,6 +321,33 @@ export default function LyricsPopoutApp() {
                   Recenter
                 </button>
               )}
+              {snapshot.lyricsResult?.status === 'hit' && (snapshot.lyricsResult.embeddedAlternative || snapshot.lyricsResult.onlineAlternative) && (
+                <button
+                  type="button"
+                  className="transport-lyrics-inline-action"
+                  onClick={() => {
+                    if (snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded') {
+                      window.electronAPI.lyricsPopout.sendCommand({ type: 'selectLyricsSource', source: 'online' })
+                    } else {
+                      window.electronAPI.lyricsPopout.sendCommand({ type: 'selectLyricsSource', source: 'embedded' })
+                    }
+                  }}
+                  title={snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+                >
+                  {snapshot.lyricsResult?.status === 'hit' && snapshot.lyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+                </button>
+              )}
+              {Boolean(snapshot.currentTrack) && (!snapshot.lyricsResult || snapshot.lyricsResult.status !== 'hit' || snapshot.lyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+                <button
+                  type="button"
+                  className="transport-lyrics-inline-action"
+                  onClick={() => window.electronAPI.lyricsPopout.sendCommand({ type: 'fetchOnlineLyrics' })}
+                  disabled={snapshot.isLoading}
+                  title="Search and load synchronized lyrics from online providers"
+                >
+                  {snapshot.isLoading ? 'Searching...' : '🔍 Search Online'}
+                </button>
+              )}
               {snapshot.lyricsResult?.status === 'hit' && (
                 <>
                   <button

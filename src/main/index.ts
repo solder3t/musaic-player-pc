@@ -18,7 +18,13 @@ import type {
 } from '../types/listeningStats'
 import { collectIamfStreamStats } from '../shared/iamf/obuWalker'
 import { mp4HasIamfTrack, readMp4DurationSeconds } from '../shared/iamf/mp4'
-import { romanizeLyrics, translateLyrics } from '../shared/ai/aiRomanizer'
+import {
+  romanizeLyrics,
+  translateLyrics,
+  romanizeSyncedLyrics,
+  translateSyncedLyrics,
+  type SyncedLyricsLineInput
+} from '../shared/ai/aiRomanizer'
 import { generateEqFromPrompt } from '../shared/ai/aiEqAssistant'
 import {
   deepScanFlacIntegrityTrack,
@@ -222,6 +228,8 @@ import {
   LRCLIB_OFFICIAL_BASE_URL,
   parseLrclibBaseUrl,
   type LyricsFormat,
+  type LyricsLine,
+  type LyricsPayload,
   type LyricsTrackQuery
 } from '../types/lyrics'
 import type {
@@ -936,9 +944,35 @@ function parseEnvFile(content: string): Record<string, string> {
 }
 
 function loadMainProcessEnvLocal(): void {
+  // First check build-metadata.json which is packaged inside app.asar during builds
+  const metadataCandidates = [
+    join(__dirname, '..', 'build-metadata.json'),
+    join(__dirname, '../build-metadata.json'),
+    join(process.cwd(), 'out', 'build-metadata.json'),
+    join(app?.getAppPath ? app.getAppPath() : process.cwd(), 'out', 'build-metadata.json'),
+    join(app?.getAppPath ? app.getAppPath() : process.cwd(), 'build-metadata.json')
+  ]
+
+  for (const metaPath of metadataCandidates) {
+    if (!existsSync(metaPath)) continue
+    try {
+      const parsed = JSON.parse(readFileSync(metaPath, 'utf8'))
+      if (typeof parsed?.lastFmApiKey === 'string' && parsed.lastFmApiKey.trim() && !process.env.LASTFM_API_KEY) {
+        process.env.LASTFM_API_KEY = parsed.lastFmApiKey.trim()
+      }
+      if (typeof parsed?.lastFmSharedSecret === 'string' && parsed.lastFmSharedSecret.trim() && !process.env.LASTFM_SHARED_SECRET) {
+        process.env.LASTFM_SHARED_SECRET = parsed.lastFmSharedSecret.trim()
+      }
+    } catch {
+      // Ignore error
+    }
+  }
+
   const candidates = [
     join(process.cwd(), '.env.local'),
-    join(__dirname, '../../.env.local')
+    join(process.cwd(), '.env'),
+    join(__dirname, '../../.env.local'),
+    join(__dirname, '../../.env')
   ]
 
   for (const envPath of candidates) {
@@ -951,7 +985,6 @@ function loadMainProcessEnvLocal(): void {
           process.env[key] = value
         }
       }
-      return
     } catch (error) {
       console.warn(`Failed to parse env file at ${envPath}:`, error)
     }
@@ -2789,6 +2822,8 @@ async function applyLastFmConfig(config: LastFmServiceConfig): Promise<ReturnTyp
   const normalized: LastFmServiceConfig = {
     enabled: config.enabled,
     activeProfileId: config.activeProfileId,
+    customApiKey: typeof config.customApiKey === 'string' ? config.customApiKey.trim() || null : (config.customApiKey === null ? null : (lastFmConfig.customApiKey ?? null)),
+    customSharedSecret: typeof config.customSharedSecret === 'string' ? config.customSharedSecret.trim() || null : (config.customSharedSecret === null ? null : (lastFmConfig.customSharedSecret ?? null)),
     profiles: config.profiles.map((profile) => ({
       ...profile,
       protocol: normalizeLastFmScrobbleProtocol(profile.protocol),
@@ -2856,12 +2891,17 @@ function normalizeLyricsTrackQuery(rawQuery: unknown): LyricsTrackQuery | null {
   if (typeof record.title !== 'string') return null
   if (typeof record.artist !== 'string') return null
 
+  const preferSource = record.preferSource === 'embedded' || record.preferSource === 'online' || record.preferSource === 'auto'
+    ? record.preferSource
+    : undefined
+
   return {
     path: record.path,
     title: record.title,
     artist: record.artist,
     album: typeof record.album === 'string' ? record.album : undefined,
-    durationSeconds: typeof record.durationSeconds === 'number' ? record.durationSeconds : undefined
+    durationSeconds: typeof record.durationSeconds === 'number' ? record.durationSeconds : undefined,
+    preferSource
   }
 }
 
@@ -5569,14 +5609,82 @@ ipcMain.handle('diagnostics:revealCurrentLog', async () => {
   return memoryDiagnosticsService?.revealCurrentLog() ?? false
 })
 
-ipcMain.handle('ai:romanizeLyrics', async (_event, text: string, options: any) => {
-  const result = await romanizeLyrics(text, options)
+ipcMain.handle('ai:romanizeLyrics', async (_event, input: string | { text?: string; syncedLines?: SyncedLyricsLineInput[]; format?: string }, options: any) => {
+  let lines: SyncedLyricsLineInput[] = []
+  let rawText = ''
+  let format: LyricsFormat = 'lrc'
+
+  if (typeof input === 'object' && input !== null) {
+    rawText = input.text ?? ''
+    format = (input.format as LyricsFormat) || 'lrc'
+    if (Array.isArray(input.syncedLines) && input.syncedLines.length > 0) {
+      lines = input.syncedLines
+    }
+  } else if (typeof input === 'string') {
+    rawText = input
+  }
+
+  if (lines.length === 0 && rawText && /\[\d{2}:\d{2}[\.:]\d{2,3}\]/.test(rawText)) {
+    const parsed = parseLyricsText(rawText, 'ai-romanized', format)
+    if (parsed && parsed.syncedLines.length > 0) {
+      lines = parsed.syncedLines as unknown as SyncedLyricsLineInput[]
+    }
+  }
+
+  if (lines.length > 0) {
+    const result = await romanizeSyncedLyrics(lines, options)
+    const payload: LyricsPayload = {
+      source: 'ai-romanized',
+      provider: null,
+      format: (format === 'xlrc' ? 'lrc' : format) || 'lrc',
+      plainLyrics: result.plainLyrics,
+      syncedLyrics: result.syncedLyrics,
+      syncedLines: result.syncedLines as LyricsLine[]
+    }
+    return { ...result, payload }
+  }
+
+  const result = await romanizeLyrics(rawText, options)
   const payload = parseLyricsText(result.text, 'ai-romanized')
   return { ...result, payload }
 })
 
-ipcMain.handle('ai:translateLyrics', async (_event, text: string, options: any, targetLang?: string) => {
-  const result = await translateLyrics(text, options, targetLang)
+ipcMain.handle('ai:translateLyrics', async (_event, input: string | { text?: string; syncedLines?: SyncedLyricsLineInput[]; format?: string }, options: any, targetLang?: string) => {
+  let lines: SyncedLyricsLineInput[] = []
+  let rawText = ''
+  let format: LyricsFormat = 'lrc'
+
+  if (typeof input === 'object' && input !== null) {
+    rawText = input.text ?? ''
+    format = (input.format as LyricsFormat) || 'lrc'
+    if (Array.isArray(input.syncedLines) && input.syncedLines.length > 0) {
+      lines = input.syncedLines
+    }
+  } else if (typeof input === 'string') {
+    rawText = input
+  }
+
+  if (lines.length === 0 && rawText && /\[\d{2}:\d{2}[\.:]\d{2,3}\]/.test(rawText)) {
+    const parsed = parseLyricsText(rawText, 'ai-translated', format)
+    if (parsed && parsed.syncedLines.length > 0) {
+      lines = parsed.syncedLines as unknown as SyncedLyricsLineInput[]
+    }
+  }
+
+  if (lines.length > 0) {
+    const result = await translateSyncedLyrics(lines, options, targetLang)
+    const payload: LyricsPayload = {
+      source: 'ai-translated',
+      provider: null,
+      format: (format === 'xlrc' ? 'lrc' : format) || 'lrc',
+      plainLyrics: result.plainLyrics,
+      syncedLyrics: result.syncedLyrics,
+      syncedLines: result.syncedLines as LyricsLine[]
+    }
+    return { ...result, payload }
+  }
+
+  const result = await translateLyrics(rawText, options, targetLang)
   const payload = parseLyricsText(result.text, 'ai-translated')
   return { ...result, payload }
 })
@@ -5771,7 +5879,7 @@ ipcMain.handle('lyrics:setLrclibBaseUrl', async (_event, rawBaseUrl: unknown) =>
   })
 })
 
-ipcMain.handle('lyrics:getForTrack', async (_event, rawQuery: unknown) => {
+ipcMain.handle('lyrics:getForTrack', async (_event, rawQuery: unknown, rawOptions?: unknown) => {
   const query = normalizeLyricsTrackQuery(rawQuery)
   if (!query) {
     return {
@@ -5779,10 +5887,13 @@ ipcMain.handle('lyrics:getForTrack', async (_event, rawQuery: unknown) => {
       reason: 'embedded-missing' as const
     }
   }
-  return lyricsService.getForTrack(query)
+  const opts = (typeof rawOptions === 'object' && rawOptions !== null)
+    ? (rawOptions as { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' })
+    : {}
+  return lyricsService.getForTrack(query, opts)
 })
 
-ipcMain.handle('lyrics:refreshForTrack', async (_event, rawQuery: unknown) => {
+ipcMain.handle('lyrics:refreshForTrack', async (_event, rawQuery: unknown, rawOptions?: unknown) => {
   const query = normalizeLyricsTrackQuery(rawQuery)
   if (!query) {
     return {
@@ -5790,7 +5901,10 @@ ipcMain.handle('lyrics:refreshForTrack', async (_event, rawQuery: unknown) => {
       reason: 'embedded-missing' as const
     }
   }
-  return lyricsService.getForTrack(query, { forceRefresh: true })
+  const opts = (typeof rawOptions === 'object' && rawOptions !== null)
+    ? (rawOptions as { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' })
+    : {}
+  return lyricsService.getForTrack(query, { ...opts, forceRefresh: true })
 })
 
 ipcMain.handle('lyrics:getTrackOverride', (_event, rawTrackPath: unknown) => {

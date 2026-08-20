@@ -32,7 +32,7 @@ import {
   type ReplayGainMode
 } from '../../stores/audioSettingsStore'
 import { useVisualizerSettingsStore } from '../../stores/visualizerSettingsStore'
-import { useAiSettingsStore } from '../../stores/aiSettingsStore'
+import { useAiSettingsStore, DEFAULT_MODELS, PROVIDER_MODEL_PRESETS } from '../../stores/aiSettingsStore'
 import {
   DISCORD_PAUSE_CLEAR_MINUTE_PRESETS,
   useDiscordSettingsStore,
@@ -425,8 +425,14 @@ export default function SettingsView() {
     setPauseClearMinutes: setDiscordPauseClearMinutes,
   } = useDiscordSettingsStore()
 
-  const { settings: aiSettings, setProvider: setAiProvider, setApiKey: setAiApiKey } = useAiSettingsStore()
-  const { provider, apiKey } = aiSettings
+  const {
+    settings: aiSettings,
+    setProvider: setAiProvider,
+    setApiKey: setAiApiKey,
+    setModel: setAiModel,
+    setServerUrl: setAiServerUrl
+  } = useAiSettingsStore()
+  const { provider, apiKey, model, serverUrl } = aiSettings
 
   const {
     status: localApiStatus,
@@ -486,6 +492,7 @@ export default function SettingsView() {
   const setLyricsTranslationsEnabled = useLyricsDisplaySettingsStore((state) => state.setTranslationsEnabled)
   const setLyricsTranslationLanguagePriority = useLyricsDisplaySettingsStore((state) => state.setTranslationLanguagePriority)
   const setLyricsVoiceLabelsEnabled = useLyricsDisplaySettingsStore((state) => state.setVoiceLabelsEnabled)
+  const setLyricsPreferOnlineSyncedLyrics = useLyricsDisplaySettingsStore((state) => state.setPreferOnlineSyncedLyrics)
   const {
     autoCheckEnabled,
     checkState: updateCheckState,
@@ -2173,7 +2180,7 @@ export default function SettingsView() {
               <div className="settings-integration-card">
                 <div className="settings-integration-card-head">
                   <h4>AI Configuration</h4>
-                  <p>Configure your preferred API provider for AI Equalizer generation.</p>
+                  <p>Configure your preferred API provider for AI Equalizer generation and Lyrics Romanization.</p>
                 </div>
                 <div className="settings-grid">
                   <div className="settings-field">
@@ -2192,6 +2199,18 @@ export default function SettingsView() {
                       <option value="ollama">Ollama (Local)</option>
                     </select>
                   </div>
+                  {provider === 'ollama' && (
+                    <div className="settings-field">
+                      <label className="settings-field-label">Server URL</label>
+                      <input
+                        type="text"
+                        className="settings-input"
+                        placeholder="http://localhost:11434"
+                        value={serverUrl}
+                        onChange={(e) => setAiServerUrl(e.target.value)}
+                      />
+                    </div>
+                  )}
                   {provider !== 'none' && provider !== 'ollama' && (
                     <div className="settings-field">
                       <label className="settings-field-label">API Key</label>
@@ -2202,6 +2221,24 @@ export default function SettingsView() {
                         value={apiKey}
                         onChange={(e) => setAiApiKey(e.target.value)}
                       />
+                    </div>
+                  )}
+                  {provider !== 'none' && (
+                    <div className="settings-field">
+                      <label className="settings-field-label">Model</label>
+                      <input
+                        type="text"
+                        className="settings-input"
+                        placeholder={DEFAULT_MODELS[provider] || 'e.g. gemini-3.6-flash'}
+                        value={model}
+                        onChange={(e) => setAiModel(e.target.value)}
+                        list={`ai-model-presets-${provider}`}
+                      />
+                      <datalist id={`ai-model-presets-${provider}`}>
+                        {((PROVIDER_MODEL_PRESETS[provider] || []) as string[]).map((preset: string) => (
+                          <option key={preset} value={preset} />
+                        ))}
+                      </datalist>
                     </div>
                   )}
                 </div>
@@ -2339,9 +2376,53 @@ export default function SettingsView() {
                   {lastFmAuthHint && <p className="settings-note settings-note-success">{lastFmAuthHint}</p>}
                   {lastFmResolvedError && <p className="settings-note settings-note-error">{lastFmResolvedError}</p>}
                   {!lastFmHasApiCredentials && (
-                    <p className="settings-note settings-note-error">
-                      Last.fm API credentials are missing in this build. Please provide custom credentials below.
-                    </p>
+                    <div style={{ background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', padding: '12px', marginTop: '4px' }}>
+                      <p className="settings-note settings-note-error" style={{ margin: 0, marginBottom: '8px' }}>
+                        Last.fm API credentials are missing in this build. Provide your custom API credentials below to connect:
+                      </p>
+                      <div className="settings-grid">
+                        <label className="settings-field">
+                          <span className="settings-field-label">Custom Last.fm API Key</span>
+                          <input
+                            className="settings-input"
+                            type="text"
+                            placeholder="Enter Last.fm API Key"
+                            value={lastFmCustomApiKeyInput}
+                            onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
+                            onBlur={() => {
+                              const nextKey = lastFmCustomApiKeyInput.trim() || null
+                              const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                              if (
+                                nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                                nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                              ) {
+                                void setLastFmCustomCredentials(nextKey, nextSecret)
+                              }
+                            }}
+                          />
+                        </label>
+                        <label className="settings-field">
+                          <span className="settings-field-label">Custom Last.fm Shared Secret</span>
+                          <input
+                            className="settings-input"
+                            type="password"
+                            placeholder="Enter Last.fm Shared Secret"
+                            value={lastFmCustomSharedSecretInput}
+                            onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
+                            onBlur={() => {
+                              const nextKey = lastFmCustomApiKeyInput.trim() || null
+                              const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                              if (
+                                nextKey !== (lastFmStatus?.customApiKey ?? null) ||
+                                nextSecret !== (lastFmStatus?.customSharedSecret ?? null)
+                              ) {
+                                void setLastFmCustomCredentials(nextKey, nextSecret)
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
                   )}
 
                   {/* Advanced / Custom Endpoints */}
@@ -2506,6 +2587,15 @@ export default function SettingsView() {
                       onClick={() => void setLyricsEnabled(!lyricsEnabled)}
                     >
                       {lyricsEnabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                  </div>
+                  <div className="settings-field settings-field-inline">
+                    <span className="settings-field-label">Prefer Online Synced</span>
+                    <button
+                      className={`settings-toggle ${lyricsDisplaySettings.preferOnlineSyncedLyrics ? 'active' : ''}`}
+                      onClick={() => setLyricsPreferOnlineSyncedLyrics(!lyricsDisplaySettings.preferOnlineSyncedLyrics)}
+                    >
+                      {lyricsDisplaySettings.preferOnlineSyncedLyrics ? 'Enabled' : 'Disabled'}
                     </button>
                   </div>
                   <label className="settings-field">
@@ -3496,6 +3586,34 @@ export default function SettingsView() {
                     Scrobbles after 50% or 4 minutes (whichever comes first)
                   </div>
                 </div>
+              ) : !lastFmHasApiCredentials ? (
+                <div style={{ padding: '8px 0', fontSize: '0.85rem', color: 'var(--color-text-secondary, #94a3b8)', textAlign: 'left' }}>
+                  <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                    Last.fm credentials are not configured in this build. Provide your API Key and Shared Secret below to authorize:
+                  </div>
+                  <div className="settings-grid" style={{ gap: '10px' }}>
+                    <label className="settings-field">
+                      <span className="settings-field-label">API Key</span>
+                      <input
+                        className="settings-input"
+                        type="text"
+                        placeholder="Enter Last.fm API Key"
+                        value={lastFmCustomApiKeyInput}
+                        onChange={(e) => setLastFmCustomApiKeyInput(e.target.value)}
+                      />
+                    </label>
+                    <label className="settings-field">
+                      <span className="settings-field-label">Shared Secret</span>
+                      <input
+                        className="settings-input"
+                        type="password"
+                        placeholder="Enter Last.fm Shared Secret"
+                        value={lastFmCustomSharedSecretInput}
+                        onChange={(e) => setLastFmCustomSharedSecretInput(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                </div>
               ) : (
                 <div style={{ padding: '8px 0', fontSize: '0.85rem', color: 'var(--color-text-secondary, #94a3b8)' }}>
                   {lastFmAuthPending || lastFmIsAuthorizing
@@ -3527,7 +3645,12 @@ export default function SettingsView() {
               ) : (
                 <button
                   className="settings-btn settings-btn-primary"
-                  onClick={() => {
+                  onClick={async () => {
+                    const nextKey = lastFmCustomApiKeyInput.trim() || null
+                    const nextSecret = lastFmCustomSharedSecretInput.trim() || null
+                    if (nextKey && nextSecret) {
+                      await setLastFmCustomCredentials(nextKey, nextSecret)
+                    }
                     void beginLastFmAuth(LASTFM_OFFICIAL_PROFILE_ID)
                   }}
                   disabled={lastFmIsAuthorizing}

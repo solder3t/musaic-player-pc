@@ -224,3 +224,117 @@ test('refreshForTrack surfaces explicit transient LRCLIB errors', async () => {
   assert.deepEqual(state.currentResult, transientResult)
   assert.equal(state.errorMessage, transientResult.status === 'transient_error' ? transientResult.message : '')
 })
+
+test('toggleRomanized preserves syncedLines and format on synced tracks', async () => {
+  const syncedPayload = {
+    source: 'ai-romanized' as const,
+    provider: null,
+    format: 'lrc' as const,
+    plainLyrics: 'Watashi wa aishiteru',
+    syncedLyrics: '[00:15.00]Watashi wa aishiteru',
+    syncedLines: [{ timestampMs: 15000, text: 'Watashi wa aishiteru' }]
+  }
+
+  installLyricsApiMock()
+  const globalWithWindow = globalThis as unknown as {
+    window: {
+      electronAPI: {
+        lyrics: LyricsApiMock
+        ai: {
+          romanizeLyrics: (input: any, settings: any) => Promise<any>
+          translateLyrics: (input: any, settings: any, lang?: string) => Promise<any>
+        }
+      }
+    }
+  }
+  globalWithWindow.window.electronAPI.ai = {
+    romanizeLyrics: async (_input, _settings) => ({
+      text: '[00:15.00]Watashi wa aishiteru',
+      tokens: 10,
+      fromCache: false,
+      payload: syncedPayload
+    }),
+    translateLyrics: async () => ({})
+  }
+
+  resetLyricsStore()
+  const path = '/music/japanese-track.flac'
+  const originalResult: LyricsLookupResult = {
+    status: 'hit',
+    cached: false,
+    lyrics: {
+      source: 'embedded',
+      provider: null,
+      format: 'lrc',
+      plainLyrics: 'わたしは愛してる',
+      syncedLyrics: '[00:15.00]わたしは愛してる',
+      syncedLines: [{ timestampMs: 15000, text: 'わたしは愛してる' }]
+    }
+  }
+
+  useLyricsStore.setState({
+    resultByTrackPath: { [path]: originalResult },
+    currentTrackPath: path,
+    currentResult: originalResult
+  })
+
+  await useLyricsStore.getState().toggleRomanized()
+  const state = useLyricsStore.getState()
+
+  assert.equal(state.isRomanized, true)
+  assert.equal(state.currentResult?.status, 'hit')
+  if (state.currentResult?.status === 'hit') {
+    assert.equal(state.currentResult.lyrics.source, 'ai-romanized')
+    assert.equal(state.currentResult.lyrics.format, 'lrc')
+    assert.equal(state.currentResult.lyrics.syncedLines.length, 1)
+    assert.equal(state.currentResult.lyrics.syncedLines[0].timestampMs, 15000)
+    assert.equal(state.currentResult.lyrics.syncedLines[0].text, 'Watashi wa aishiteru')
+  }
+})
+
+test('selectLyricsSource swaps between online synced and embedded plain lyrics', () => {
+  resetLyricsStore()
+  const path = '/music/dual-source.flac'
+  const embeddedLyrics = {
+    source: 'embedded' as const,
+    provider: null,
+    format: 'plain' as const,
+    plainLyrics: 'Embedded plain lyrics',
+    syncedLyrics: null,
+    syncedLines: []
+  }
+  const onlineLyrics = {
+    source: 'lrclib' as const,
+    provider: 'lrclib' as const,
+    format: 'lrc' as const,
+    plainLyrics: 'Online synced lyrics',
+    syncedLyrics: '[00:05.00]Online synced lyrics',
+    syncedLines: [{ timestampMs: 5000, text: 'Online synced lyrics' }]
+  }
+
+  const initialResult: LyricsLookupResult = {
+    status: 'hit',
+    cached: false,
+    lyrics: onlineLyrics,
+    availableSources: ['online', 'embedded'],
+    embeddedAlternative: embeddedLyrics
+  }
+
+  useLyricsStore.setState({
+    resultByTrackPath: { [path]: initialResult },
+    currentTrackPath: path,
+    currentResult: initialResult
+  })
+
+  // Switch to embedded
+  useLyricsStore.getState().selectLyricsSource('embedded')
+  let state = useLyricsStore.getState()
+  assert.equal(state.currentResult?.status === 'hit' ? state.currentResult.lyrics.source : '', 'embedded')
+  assert.equal(state.currentResult?.status === 'hit' ? state.currentResult.onlineAlternative?.source : '', 'lrclib')
+
+  // Switch back to online
+  useLyricsStore.getState().selectLyricsSource('online')
+  state = useLyricsStore.getState()
+  assert.equal(state.currentResult?.status === 'hit' ? state.currentResult.lyrics.source : '', 'lrclib')
+  assert.equal(state.currentResult?.status === 'hit' ? state.currentResult.embeddedAlternative?.source : '', 'embedded')
+})

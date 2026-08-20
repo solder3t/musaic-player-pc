@@ -144,6 +144,13 @@ function FullscreenLyricsFocusBand({
   const lyricsIsLoading = useLyricsStore((s) => s.isLoading)
   const lyricsStoreError = useLyricsStore((s) => s.errorMessage)
   const loadLyricsForTrack = useLyricsStore((s) => s.loadForTrack)
+  const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
+  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
+  const isRomanized = useLyricsStore((s) => s.isRomanized)
+  const isTranslated = useLyricsStore((s) => s.isTranslated)
+  const aiProcessing = useLyricsStore((s) => s.aiProcessing)
+  const toggleRomanized = useLyricsStore((s) => s.toggleRomanized)
+  const toggleTranslated = useLyricsStore((s) => s.toggleTranslated)
   const lyricsDisplaySettings = useLyricsDisplaySettingsStore((s) => s.settings)
   const lastLyricsRequestKeyRef = useRef<string | null>(null)
   const hideLyricsContentTimeoutRef = useRef<number | null>(null)
@@ -214,7 +221,7 @@ function FullscreenLyricsFocusBand({
     hasSyncedLyrics,
     activeSyncedLineIndex,
     focusedSyncedLineIndex: syncedLyricsTiming.focusLineIndex,
-    contentKey: currentTrack?.path ?? null,
+    contentKey: `${currentTrack?.path ?? ''}:${isRomanized ? 'rom' : ''}:${isTranslated ? 'trans' : ''}:${activeLyricsResult?.status === 'hit' ? activeLyricsResult.lyrics.source : ''}`,
     expandedActiveAnchorRatio: 0.43
   })
 
@@ -379,17 +386,72 @@ function FullscreenLyricsFocusBand({
     >
       {shouldRenderLyricsContent && (
         <>
-          <span className="fullscreen-lyrics-focus-meta">{metaChipText}</span>
+          <div className="fullscreen-lyrics-toolbar">
+            <span className="fullscreen-lyrics-focus-meta">{metaChipText}</span>
+            <div className="fullscreen-lyrics-actions">
+              {followPaused && hasSyncedLyrics && (
+                <button
+                  type="button"
+                  className="fullscreen-lyrics-action-btn"
+                  onClick={handleRecenter}
+                >
+                  Recenter
+                </button>
+              )}
+              {activeLyricsResult?.status === 'hit' && (activeLyricsResult.embeddedAlternative || activeLyricsResult.onlineAlternative) && (
+                <button
+                  type="button"
+                  className="fullscreen-lyrics-action-btn"
+                  onClick={() => {
+                    if (activeLyricsResult.lyrics.source === 'embedded') {
+                      selectLyricsSource('online')
+                    } else {
+                      selectLyricsSource('embedded')
+                    }
+                  }}
+                  title={activeLyricsResult.lyrics.source === 'embedded' ? 'Switch to Online Synced Lyrics' : 'Switch to Embedded Lyrics'}
+                >
+                  🔄 {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
+                </button>
+              )}
+              {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+                <button
+                  type="button"
+                  className="fullscreen-lyrics-action-btn"
+                  onClick={() => {
+                    if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                  }}
+                  disabled={lyricsIsLoading}
+                  title="Search and load synchronized lyrics from online providers"
+                >
+                  {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
+                </button>
+              )}
+              {activeLyricsResult?.status === 'hit' && (
+                <>
+                  <button
+                    type="button"
+                    className={`fullscreen-lyrics-action-btn ${isRomanized ? 'active' : ''}`}
+                    onClick={() => void toggleRomanized()}
+                    disabled={aiProcessing || isTranslated}
+                    title="Romanize Lyrics with AI"
+                  >
+                    {aiProcessing && !isTranslated ? '...' : 'Aa'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`fullscreen-lyrics-action-btn ${isTranslated ? 'active' : ''}`}
+                    onClick={() => void toggleTranslated()}
+                    disabled={aiProcessing || isRomanized}
+                    title="Translate Lyrics with AI"
+                  >
+                    {aiProcessing && !isRomanized ? '...' : 'A文'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
           {renderBody()}
-          {followPaused && hasSyncedLyrics && (
-            <button
-              type="button"
-              className="fullscreen-lyrics-recenter"
-              onClick={handleRecenter}
-            >
-              Recenter
-            </button>
-          )}
         </>
       )}
     </section>

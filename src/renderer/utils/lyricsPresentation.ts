@@ -61,6 +61,9 @@ export function getLyricsSourceLabel(source: LyricsSource, format?: LyricsFormat
   if (source === 'xlrc') return 'XLRC File'
   if (source === 'lrc') return 'LRC File'
   if (source === 'xlrcdb') return 'XLRCDB'
+  if (source === 'ai-romanized') return 'Romanized'
+  if (source === 'ai-translated') return 'Translated'
+  if (source === 'online') return 'Online'
   return 'LRCLIB'
 }
 
