@@ -3,7 +3,7 @@ import {
   normalizeLyricsText,
   parseLrcSyncedLines
 } from './lyricsParsing'
-import type { LyricsPayload, LyricsTrackQuery } from '../../types/lyrics'
+import type { LyricsPayload, LyricsTrackQuery, OnlineLyricsCandidate } from '../../types/lyrics'
 import {
   LRCLIB_OFFICIAL_BASE_URL,
   normalizeLrclibBaseUrl
@@ -356,6 +356,65 @@ async function lookupLrclibBySearch(
   return { status: 'not_found' }
 }
 
+function extractSampleLyrics(plainLyrics: string | null, syncedLyrics: string | null): string {
+  const source = plainLyrics || (syncedLyrics ? syncedLyrics.replace(/\[\d+:\d+(?:\.\d+)?\]/g, '') : '')
+  if (!source) return ''
+  return source
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('[ti:') && !line.startsWith('[ar:') && !line.startsWith('[al:'))
+    .slice(0, 4)
+    .join('\n')
+}
+
+export async function searchLrclibCandidates(
+  query: LyricsTrackQuery,
+  config: LrclibClientConfig
+): Promise<OnlineLyricsCandidate[]> {
+  const searchTerm = [query.title, query.artist, query.album ?? '']
+    .map((value) => normalizeLrclibMetadataText(value))
+    .filter((value): value is string => Boolean(value))
+    .join(' ')
+  if (!searchTerm) return []
+
+  const params = new URLSearchParams({ q: searchTerm })
+  const response = await fetchLrclibJson<unknown[]>(buildLrclibApiUrl(config, 'search', params), config)
+  if (response.kind !== 'ok' || !Array.isArray(response.payload)) return []
+
+  const candidates: OnlineLyricsCandidate[] = []
+  for (const item of response.payload) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue
+    const entry = item as Record<string, unknown>
+    const id = typeof entry.id === 'number' || typeof entry.id === 'string' ? String(entry.id) : Math.random().toString(36).slice(2)
+    const title = normalizeLrclibMetadataText(entry.trackName || entry.name)
+    const artist = normalizeLrclibMetadataText(entry.artistName)
+    const album = normalizeLrclibMetadataText(entry.albumName)
+    const duration = typeof entry.duration === 'number' ? Math.round(entry.duration * 1000) : null
+    const plain = typeof entry.plainLyrics === 'string' && entry.plainLyrics.trim() ? entry.plainLyrics.trim() : null
+    const synced = typeof entry.syncedLyrics === 'string' && entry.syncedLyrics.trim() ? entry.syncedLyrics.trim() : null
+    const isSynced = Boolean(synced && /\[\d{1,2}:\d{2}/.test(synced))
+
+    if (!plain && !synced) continue
+
+    candidates.push({
+      id: `lrclib-${id}`,
+      provider: 'lrclib',
+      providerLabel: 'LRCLIB',
+      title,
+      artist,
+      album,
+      durationMs: duration,
+      isSynced,
+      format: isSynced ? 'lrc' : 'plain',
+      sampleLyrics: extractSampleLyrics(plain, synced),
+      plainLyrics: plain,
+      syncedLyrics: synced
+    })
+  }
+
+  return candidates
+}
+
 async function lookupLrclibRaw(
   query: LyricsTrackQuery,
   config: LrclibClientConfig
@@ -389,6 +448,11 @@ export class LrclibLookupCoordinator {
     this.cooldownUntil = 0
     this.configRevision += 1
     this.inFlightLookups.clear()
+  }
+
+  async searchCandidates(query: LyricsTrackQuery): Promise<OnlineLyricsCandidate[]> {
+    if (this.isCoolingDown()) return []
+    return searchLrclibCandidates(query, this.config)
   }
 
   async lookup(

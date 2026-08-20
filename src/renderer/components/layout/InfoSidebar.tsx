@@ -43,7 +43,7 @@ export default function InfoSidebar() {
   const loadLyricsForTrack = useLyricsStore((s) => s.loadForTrack)
   const refreshLyricsForTrack = useLyricsStore((s) => s.refreshForTrack)
   const selectLyricsSource = useLyricsStore((s) => s.selectLyricsSource)
-  const fetchOnlineLyricsForTrack = useLyricsStore((s) => s.fetchOnlineLyricsForTrack)
+  const openSearchModal = useLyricsStore((s) => s.openSearchModal)
   const isRomanized = useLyricsStore((s) => s.isRomanized)
   const isTranslated = useLyricsStore((s) => s.isTranslated)
   const aiProcessing = useLyricsStore((s) => s.aiProcessing)
@@ -266,17 +266,17 @@ export default function InfoSidebar() {
                 🔄 {activeLyricsResult.lyrics.source === 'embedded' ? 'Online Synced' : 'Embedded'}
               </button>
             )}
-            {Boolean(currentTrack) && (!activeLyricsResult || activeLyricsResult.status !== 'hit' || activeLyricsResult.lyrics.source === 'embedded' || !hasSyncedLyrics) && (
+            {Boolean(currentTrack) && (
               <button
                 type="button"
                 className="info-lyrics-refresh-btn"
                 onClick={() => {
-                  if (lyricsQuery) void fetchOnlineLyricsForTrack(lyricsQuery)
+                  if (lyricsQuery) void openSearchModal(lyricsQuery)
                 }}
                 disabled={lyricsIsLoading}
-                title="Search and load synchronized lyrics from online providers"
+                title="Search and select lyrics across all online providers"
               >
-                {lyricsIsLoading ? 'Searching...' : '🔍 Search Online'}
+                🔍 Search Online
               </button>
             )}
             {Boolean(currentTrack) && (
