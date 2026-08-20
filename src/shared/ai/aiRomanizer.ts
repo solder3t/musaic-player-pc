@@ -1,4 +1,21 @@
-import { sendAiPrompt, AiRequestOptions } from './aiClient';
+import { sendAiPrompt, type AiRequestOptions } from './aiClient.ts';
+
+export interface SyncedLyricsLineInput {
+  timestampMs: number;
+  text: string;
+  kind?: 'silence' | 'lyric';
+  voice?: string | null;
+  [key: string]: unknown;
+}
+
+export interface SyncedConversionResult {
+  text: string;
+  syncedLyrics: string;
+  plainLyrics: string;
+  syncedLines: SyncedLyricsLineInput[];
+  tokens: number;
+  fromCache: boolean;
+}
 
 const ROMANIZE_SYSTEM_PROMPT = `You are an expert lyrics romanization tool for audiophiles. Convert each line of lyrics from its original non-Latin script (Japanese, Chinese, Korean, Cyrillic, Hindi, Urdu, Arabic, Bengali, Tamil, Telugu, etc.) into readable Latin/Roman script (romanization/Pinyin/Romaji/Romaja).
 
@@ -9,6 +26,15 @@ Rules:
 4. Do NOT add translations, explanations, or any extra conversational text.
 5. Return ONLY the romanized lyrics text, nothing else.`;
 
+const ROMANIZE_LINES_SYSTEM_PROMPT = `You are an expert lyrics romanization tool for audiophiles. You will receive a numbered list of lyric lines from non-Latin scripts (Japanese, Chinese, Korean, Cyrillic, Hindi, Urdu, Arabic, etc.).
+Convert each line into readable Latin/Roman script (Pinyin/Romaji/Romaja/transliteration).
+
+Rules:
+1. Return EXACTLY the same number of lines with identical numbering: "1. <romanized line>", "2. <romanized line>", etc.
+2. Lines already in Latin script or instrumental indicators must remain unchanged.
+3. Do NOT add translations, explanations, notes, or headers.
+4. Return ONLY the numbered romanized lines.`;
+
 const TRANSLATE_SYSTEM_PROMPT = (targetLang: string) => `You are an expert music lyrics translator. Translate each line of lyrics into ${targetLang} while keeping the poetic flow, rhythm, and emotional nuance intact.
 
 Rules:
@@ -17,9 +43,32 @@ Rules:
 3. Do NOT add notes, explanations, or any extra conversational text.
 4. Return ONLY the translated lyrics text, nothing else.`;
 
+const TRANSLATE_LINES_SYSTEM_PROMPT = (targetLang: string) => `You are an expert music lyrics translator. You will receive a numbered list of lyric lines. Translate each line into ${targetLang} while preserving the emotional tone and poetic rhythm.
+
+Rules:
+1. Return EXACTLY the same number of lines with identical numbering: "1. <translated line>", "2. <translated line>", etc.
+2. Do NOT add notes, explanations, or conversational text.
+3. Return ONLY the numbered translated lines.`;
+
 const CACHE_LIMIT = 50;
 const romanizeCache = new Map<string, string>();
 const translateCache = new Map<string, string>();
+
+/**
+ * Formats milliseconds as a standard LRC timestamp string: [mm:ss.xx]
+ */
+export function formatLrcTimestamp(timestampMs: number): string {
+  const safeMs = Math.max(0, Math.floor(timestampMs));
+  const totalSeconds = Math.floor(safeMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const hundredths = Math.floor((safeMs % 1000) / 10);
+
+  const mm = minutes.toString().padStart(2, '0');
+  const ss = seconds.toString().padStart(2, '0');
+  const xx = hundredths.toString().padStart(2, '0');
+  return `[${mm}:${ss}.${xx}]`;
+}
 
 /**
  * Checks if text contains non-Latin characters (CJK, Cyrillic, Arabic, Devanagari, etc.)
@@ -53,6 +102,242 @@ export function offlineFallbackRomanize(text: string): string {
 function cleanMarkdown(text: string): string {
   let cleaned = text.replace(/^```[a-z]*\n?/mi, '').replace(/\n?```$/m, '');
   return cleaned.trim();
+}
+
+/**
+ * Parses numbered lines formatted like "1. text" or "1: text" or falls back to line-by-line.
+ */
+export function parseNumberedLinesResponse(rawResponse: string, expectedCount: number): string[] {
+  const cleaned = cleanMarkdown(rawResponse);
+  const lines = cleaned.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const numberedMap = new Map<number, string>();
+
+  for (const line of lines) {
+    const match = line.match(/^(\d+)[\.\:\-\)]\s*(.*)$/);
+    if (match) {
+      const idx = parseInt(match[1], 10) - 1;
+      if (idx >= 0 && idx < expectedCount + 20) {
+        numberedMap.set(idx, match[2].trim());
+      }
+    }
+  }
+
+  // If we matched numbered items
+  if (numberedMap.size > 0) {
+    const result: string[] = [];
+    for (let i = 0; i < expectedCount; i++) {
+      result.push(numberedMap.get(i) ?? '');
+    }
+    return result;
+  }
+
+  // Otherwise direct line slice
+  const result: string[] = [];
+  for (let i = 0; i < expectedCount; i++) {
+    const line = lines[i] ?? '';
+    const stripped = line.replace(/^\d+[\.\:\-\)]\s*/, '').trim();
+    result.push(stripped || line);
+  }
+  return result;
+}
+
+/**
+ * Reconstructs synced lyrics payload from an array of synced lines with new text.
+ */
+export function reconstructSyncedLyrics(
+  syncedLines: SyncedLyricsLineInput[],
+  convertedTexts: string[]
+): { syncedLines: SyncedLyricsLineInput[]; syncedLyrics: string; plainLyrics: string } {
+  const reconstructedLines: SyncedLyricsLineInput[] = syncedLines.map((line, idx) => {
+    const rawConverted = convertedTexts[idx];
+    const newText = (typeof rawConverted === 'string' && rawConverted.trim().length > 0)
+      ? rawConverted.trim()
+      : (line.text || '');
+
+    return {
+      timestampMs: line.timestampMs,
+      text: newText,
+      kind: newText ? ('lyric' as const) : (line.kind ?? 'silence'),
+      voice: line.voice ?? null
+    };
+  });
+
+  const lrcLines: string[] = [];
+  const plainLines: string[] = [];
+
+  for (const line of reconstructedLines) {
+    if (line.kind === 'silence' || !line.text) continue;
+    const tag = formatLrcTimestamp(line.timestampMs);
+    lrcLines.push(`${tag}${line.text}`);
+    plainLines.push(line.text);
+  }
+
+  return {
+    syncedLines: reconstructedLines,
+    syncedLyrics: lrcLines.join('\n'),
+    plainLyrics: plainLines.join('\n')
+  };
+}
+
+/**
+ * Romanizes structured synced lyrics lines, perfectly preserving timestampMs and sync cues.
+ */
+export async function romanizeSyncedLyrics(
+  syncedLines: SyncedLyricsLineInput[],
+  options: AiRequestOptions
+): Promise<SyncedConversionResult> {
+  if (!syncedLines || syncedLines.length === 0) {
+    return { text: '', syncedLyrics: '', plainLyrics: '', syncedLines: [], tokens: 0, fromCache: false };
+  }
+
+  const lineTexts = syncedLines.map((l) => (l.kind === 'silence' ? '' : (l.text || '')));
+  const fullText = lineTexts.filter(Boolean).join('\n');
+
+  if (!containsNonLatinScripts(fullText)) {
+    const reconstructed = reconstructSyncedLyrics(syncedLines, lineTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: false
+    };
+  }
+
+  const cacheKey = `${options.provider}:synced_rom_${syncedLines.length}_${fullText.slice(0, 80)}`;
+  if (romanizeCache.has(cacheKey)) {
+    const cachedTexts = JSON.parse(romanizeCache.get(cacheKey)!);
+    const reconstructed = reconstructSyncedLyrics(syncedLines, cachedTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: true
+    };
+  }
+
+  if (options.provider === 'none' || (!options.apiKey && options.provider !== 'ollama')) {
+    const fallbackTexts = lineTexts.map((t) => offlineFallbackRomanize(t));
+    const reconstructed = reconstructSyncedLyrics(syncedLines, fallbackTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: false
+    };
+  }
+
+  try {
+    const promptInput = lineTexts
+      .map((text, idx) => `${idx + 1}. ${text}`)
+      .join('\n');
+
+    const res = await sendAiPrompt(
+      ROMANIZE_LINES_SYSTEM_PROMPT,
+      `Numbered lyrics to romanize:\n${promptInput}`,
+      options
+    );
+
+    const convertedTexts = parseNumberedLinesResponse(res.text, lineTexts.length);
+    const reconstructed = reconstructSyncedLyrics(syncedLines, convertedTexts);
+
+    if (romanizeCache.size >= CACHE_LIMIT) {
+      const firstKey = romanizeCache.keys().next().value;
+      if (firstKey) romanizeCache.delete(firstKey);
+    }
+    romanizeCache.set(cacheKey, JSON.stringify(convertedTexts));
+
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: res.tokens || 0,
+      fromCache: false
+    };
+  } catch (err) {
+    console.warn('[AiRomanizer] Synced romanization failed, falling back to offline transliteration:', err);
+    const fallbackTexts = lineTexts.map((t) => offlineFallbackRomanize(t));
+    const reconstructed = reconstructSyncedLyrics(syncedLines, fallbackTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: false
+    };
+  }
+}
+
+/**
+ * Translates structured synced lyrics lines, perfectly preserving timestampMs and sync cues.
+ */
+export async function translateSyncedLyrics(
+  syncedLines: SyncedLyricsLineInput[],
+  options: AiRequestOptions,
+  targetLang: string = 'English'
+): Promise<SyncedConversionResult> {
+  if (!syncedLines || syncedLines.length === 0) {
+    return { text: '', syncedLyrics: '', plainLyrics: '', syncedLines: [], tokens: 0, fromCache: false };
+  }
+
+  const lineTexts = syncedLines.map((l) => (l.kind === 'silence' ? '' : (l.text || '')));
+  const fullText = lineTexts.filter(Boolean).join('\n');
+
+  if (!fullText || options.provider === 'none') {
+    const reconstructed = reconstructSyncedLyrics(syncedLines, lineTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: false
+    };
+  }
+
+  const cacheKey = `${options.provider}:${targetLang}:synced_trans_${syncedLines.length}_${fullText.slice(0, 80)}`;
+  if (translateCache.has(cacheKey)) {
+    const cachedTexts = JSON.parse(translateCache.get(cacheKey)!);
+    const reconstructed = reconstructSyncedLyrics(syncedLines, cachedTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: true
+    };
+  }
+
+  try {
+    const promptInput = lineTexts
+      .map((text, idx) => `${idx + 1}. ${text}`)
+      .join('\n');
+
+    const res = await sendAiPrompt(
+      TRANSLATE_LINES_SYSTEM_PROMPT(targetLang),
+      `Numbered lyrics to translate into ${targetLang}:\n${promptInput}`,
+      options
+    );
+
+    const convertedTexts = parseNumberedLinesResponse(res.text, lineTexts.length);
+    const reconstructed = reconstructSyncedLyrics(syncedLines, convertedTexts);
+
+    if (translateCache.size >= CACHE_LIMIT) {
+      const firstKey = translateCache.keys().next().value;
+      if (firstKey) translateCache.delete(firstKey);
+    }
+    translateCache.set(cacheKey, JSON.stringify(convertedTexts));
+
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: res.tokens || 0,
+      fromCache: false
+    };
+  } catch (err) {
+    console.warn('[AiRomanizer] Synced translation failed:', err);
+    const reconstructed = reconstructSyncedLyrics(syncedLines, lineTexts);
+    return {
+      text: reconstructed.syncedLyrics,
+      ...reconstructed,
+      tokens: 0,
+      fromCache: false
+    };
+  }
 }
 
 /**
@@ -101,7 +386,7 @@ export async function romanizeLyrics(
     console.warn('[AiRomanizer] AI romanization failed, using fallback:', err);
     const fallback = offlineFallbackRomanize(text);
     if (fallback === text) {
-      throw err; // throw error back to renderer so it doesn't silently fail
+      throw err;
     }
     return { text: fallback, tokens: 0, fromCache: false };
   }
