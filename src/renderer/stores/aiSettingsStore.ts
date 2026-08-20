@@ -108,9 +108,10 @@ export const useAiSettingsStore = create<AiSettingsStore>((set) => {
       const prevProvider = state.settings.provider;
       const prevDefault = DEFAULT_MODELS[prevProvider] || '';
       const newDefault = DEFAULT_MODELS[provider] || '';
+      const prevPresets = PROVIDER_MODEL_PRESETS[prevProvider] || [];
 
-      // If the model was either empty or the default of the previous provider, switch to the new provider's default
-      const model = (!state.settings.model || state.settings.model === prevDefault || DEPRECATED_MODELS[state.settings.model])
+      // If the model was empty, was a preset of the old provider, or is deprecated, switch to the new provider's default
+      const model = (!state.settings.model || state.settings.model === prevDefault || prevPresets.includes(state.settings.model) || DEPRECATED_MODELS[state.settings.model])
         ? newDefault
         : state.settings.model;
 

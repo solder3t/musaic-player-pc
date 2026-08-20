@@ -2226,19 +2226,42 @@ export default function SettingsView() {
                   {provider !== 'none' && (
                     <div className="settings-field">
                       <label className="settings-field-label">Model</label>
-                      <input
-                        type="text"
-                        className="settings-input"
-                        placeholder={DEFAULT_MODELS[provider] || 'e.g. gemini-3.6-flash'}
-                        value={model}
-                        onChange={(e) => setAiModel(e.target.value)}
-                        list={`ai-model-presets-${provider}`}
-                      />
-                      <datalist id={`ai-model-presets-${provider}`}>
+                      <select
+                        className="settings-select"
+                        value={
+                          (PROVIDER_MODEL_PRESETS[provider] || []).includes(model)
+                            ? model
+                            : (model ? '__custom__' : (DEFAULT_MODELS[provider] || ''))
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value
+                          if (val === '__custom__') {
+                            if ((PROVIDER_MODEL_PRESETS[provider] || []).includes(model)) {
+                              setAiModel('')
+                            }
+                          } else {
+                            setAiModel(val)
+                          }
+                        }}
+                      >
                         {((PROVIDER_MODEL_PRESETS[provider] || []) as string[]).map((preset: string) => (
-                          <option key={preset} value={preset} />
+                          <option key={preset} value={preset}>
+                            {preset}{preset === DEFAULT_MODELS[provider] ? ' (Default)' : ''}
+                          </option>
                         ))}
-                      </datalist>
+                        <option value="__custom__">Custom Model...</option>
+                      </select>
+                      {(!((PROVIDER_MODEL_PRESETS[provider] || []).includes(model)) || !model) && (
+                        <div style={{ marginTop: '8px' }}>
+                          <input
+                            type="text"
+                            className="settings-input"
+                            placeholder={DEFAULT_MODELS[provider] ? `e.g. ${DEFAULT_MODELS[provider]}` : 'Enter custom model name'}
+                            value={model}
+                            onChange={(e) => setAiModel(e.target.value)}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

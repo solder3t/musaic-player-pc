@@ -21,8 +21,10 @@ describe('aiClient model configuration and deprecation handling', () => {
   it('maps deprecated models to their current equivalents', () => {
     assert.equal(DEPRECATED_MODELS['gemini-2.0-flash'], 'gemini-3.6-flash');
     assert.equal(DEPRECATED_MODELS['gemini-2.0-flash-exp'], 'gemini-3.6-flash');
+    assert.equal(DEPRECATED_MODELS['gemini-2.5-flash'], 'gemini-3.6-flash');
+    assert.equal(DEPRECATED_MODELS['gemini-2.5-pro'], 'gemini-3.6-flash');
     assert.equal(DEPRECATED_MODELS['gemini-1.5-flash'], 'gemini-3.6-flash');
-    assert.equal(DEPRECATED_MODELS['gemini-1.5-pro'], 'gemini-2.5-pro');
+    assert.equal(DEPRECATED_MODELS['gemini-1.5-pro'], 'gemini-3.6-flash');
     assert.equal(DEPRECATED_MODELS['gpt-3.5-turbo'], 'gpt-4o-mini');
     assert.equal(DEPRECATED_MODELS['gpt-4-turbo'], 'gpt-4o');
     assert.equal(DEPRECATED_MODELS['claude-3-haiku-20240307'], 'claude-3-5-haiku-latest');
@@ -34,7 +36,7 @@ describe('aiClient model configuration and deprecation handling', () => {
     assert.equal(getModelForProvider('gemini', 'gemini-2.0-flash'), 'gemini-3.6-flash');
     assert.equal(getModelForProvider('gemini', undefined), 'gemini-3.6-flash');
     assert.equal(getModelForProvider('gemini', ''), 'gemini-3.6-flash');
-    assert.equal(getModelForProvider('gemini', 'gemini-2.5-pro'), 'gemini-2.5-pro');
+    assert.equal(getModelForProvider('gemini', 'gemini-2.5-pro'), 'gemini-3.6-flash');
 
     assert.equal(getModelForProvider('openai', 'gpt-3.5-turbo'), 'gpt-4o-mini');
     assert.equal(getModelForProvider('claude', 'claude-3-haiku-20240307'), 'claude-3-5-haiku-latest');
