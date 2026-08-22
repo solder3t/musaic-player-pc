@@ -23,6 +23,7 @@ interface GenreRecord {
 
 export interface GenreGridViewportAPI {
   get element(): HTMLDivElement | null
+  scrollToIndex: (index: number, align?: 'start' | 'center' | 'end' | 'smart') => void
 }
 
 interface GenreGridProps {
@@ -127,11 +128,34 @@ export default function GenreGrid({
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const gridApiRef = useRef<GridImperativeAPI | null>(null)
 
+  // Cells carry gap/2 padding on every side; the scroller adds
+  // (padding - gap/2) so outer edges land at the CSS-grid padding. Prefer the
+  // mounted scroller's clientWidth because it excludes any classic vertical
+  // scrollbar; then remove the scroller padding to get the cell content width.
+  const horizontalInset = resolveGridHorizontalInset(padding, gap)
+  const fallbackGridContentWidth = resolveVirtualGridContentWidth(viewportSize.width, horizontalInset)
+  const availableGridContentWidth = gridContentWidth > 0 ? gridContentWidth : fallbackGridContentWidth
+  const gridLayout = useMemo(() => resolveArtistGridLayout({
+    containerWidth: availableGridContentWidth,
+    itemCount: genres.length,
+    minColumnWidth,
+    gap
+  }), [availableGridContentWidth, gap, genres.length, minColumnWidth])
+
   useImperativeHandle(viewportRef, () => ({
     get element() {
       return gridApiRef.current?.element ?? null
+    },
+    scrollToIndex: (index: number, align: 'start' | 'center' | 'end' | 'smart' = 'start') => {
+      const colCount = Math.max(1, gridLayout.columnCount)
+      const rowIndex = Math.floor(index / colCount)
+      gridApiRef.current?.scrollToRow({
+        index: rowIndex,
+        align: align === 'smart' ? 'auto' : align,
+        behavior: 'auto'
+      })
     }
-  }), [])
+  }), [gridLayout.columnCount])
 
   useLayoutEffect(() => {
     const element = bodyRef.current
@@ -173,19 +197,6 @@ export default function GenreGrid({
     }
   }, [])
 
-  // Cells carry gap/2 padding on every side; the scroller adds
-  // (padding - gap/2) so outer edges land at the CSS-grid padding. Prefer the
-  // mounted scroller's clientWidth because it excludes any classic vertical
-  // scrollbar; then remove the scroller padding to get the cell content width.
-  const horizontalInset = resolveGridHorizontalInset(padding, gap)
-  const fallbackGridContentWidth = resolveVirtualGridContentWidth(viewportSize.width, horizontalInset)
-  const availableGridContentWidth = gridContentWidth > 0 ? gridContentWidth : fallbackGridContentWidth
-  const gridLayout = useMemo(() => resolveArtistGridLayout({
-    containerWidth: availableGridContentWidth,
-    itemCount: genres.length,
-    minColumnWidth,
-    gap
-  }), [availableGridContentWidth, gap, genres.length, minColumnWidth])
 
   const handleGridResize = useCallback(() => {
     const element = gridApiRef.current?.element
