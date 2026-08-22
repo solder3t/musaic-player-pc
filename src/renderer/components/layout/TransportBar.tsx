@@ -174,7 +174,13 @@ export default function TransportBar() {
     const overflows = inner.scrollWidth > outer.clientWidth
     setTitleOverflows(overflows)
     if (overflows) {
-      outer.style.setProperty('--marquee-offset', `${outer.clientWidth - inner.scrollWidth}px`)
+      const offset = outer.clientWidth - inner.scrollWidth
+      outer.style.setProperty('--marquee-offset', `${offset}px`)
+      const scrollDuration = Math.max(3, Math.min(8, Math.abs(offset) / 55 + 1.6))
+      outer.style.setProperty('--marquee-duration', `${scrollDuration.toFixed(2)}s`)
+    } else {
+      outer.style.removeProperty('--marquee-offset')
+      outer.style.removeProperty('--marquee-duration')
     }
   }, [])
 
