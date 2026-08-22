@@ -55,12 +55,11 @@
 - **Shareable Snapshots**: Generate polished image snapshots of your listening summaries to share with friends.
 - **Full Last.fm Integration**: Real-time scrobbling, Now Playing updates, and two-way track love/favorite sync.
 
-### 🌌 Music Mood Nebula & Smart Library
-- **2D/3D Mood Nebula**: Interactive visual galaxy mapping your entire music collection across Valence (positivity) and Energy/Excitement coordinates.
-- **Cluster Playlists**: Click any star cluster in the Nebula to generate instant mood-tailored playlists.
+### 📚 Smart Library & Streaming
 - **Dynamic Smart Playlists**: Live rule-based filtering by genre, rating, year, last played, BPM, play count, and file properties.
 - **Subsonic / Navidrome / Airsonic**: Connect and stream remote music servers with automatic offline caching and bidirectional playlist sync.
-- **Advanced Metadata & Tag Editor**: Multi-tag editing, collaborative artist split recognition, album art embedding, and case-folding directory sync.
+- **Advanced Metadata & Tag Editor**: Multi-tag editing, collaborative artist split recognition, embedded album art management, and case-folding directory sync.
+- **Instant Search & Album Grouping**: Lightning-fast SQLite search across tracks, artists, albums, and genres with canonical collaborator parsing.
 
 ### 🎧 Listen Together & Mobile Remote (Powered by Parallax)
 - **Sub-Millisecond Multi-Room Sync**: Stream synchronized audio across multiple PCs, laptops, and Raspberry Pi devices on your LAN.
@@ -71,7 +70,7 @@
 - **Dynamic Themes**:
   - **AMOLED True Black**: Deep contrast optimized for OLED displays.
   - **Glassmorphism Frosted Glass**: Modern translucent acrylic aesthetic with real-time backdrop blur.
-  - **Neon Nebula Glow**: Vibrant ambient gradients synced to your listening mood.
+  - **Neon Glow**: Vibrant ambient gradients synced to your listening experience.
   - **Material You**: Dynamic color palette extracted live from the active album artwork.
 - **Floating Mini-Player**: Compact, distraction-free floating widget with pinned controls and album art.
 - **Native OS Integration**: Desktop media notifications, taskbar controls, and media keys via **MPRIS** on Linux, **SMTC** on Windows, and **Now Playing** on macOS.
@@ -91,7 +90,10 @@ chmod +x musaic-player-*.AppImage
 # Debian / Ubuntu (.deb)
 sudo dpkg -i musaic-player_*_amd64.deb
 
-# Fedora / RHEL / openSUSE (.rpm)
+# Fedora / RHEL / AlmaLinux (.rpm via dnf)
+sudo dnf install ./musaic-player-*.x86_64.rpm
+
+# openSUSE / RPM-based systems (.rpm)
 sudo rpm -i musaic-player-*.x86_64.rpm
 ```
 
