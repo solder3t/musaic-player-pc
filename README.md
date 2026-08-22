@@ -88,23 +88,18 @@ Download the latest `.AppImage`, `.deb`, `.rpm`, or `.tar.gz` from the [Releases
 chmod +x musaic-player-*.AppImage
 ./musaic-player-*.AppImage
 
-# Debian / Ubuntu
+# Debian / Ubuntu (.deb)
 sudo dpkg -i musaic-player_*_amd64.deb
 
-# Arch Linux (AUR)
-yay -S musaic-player-bin
+# Fedora / RHEL / openSUSE (.rpm)
+sudo rpm -i musaic-player-*.x86_64.rpm
 ```
 
 ### Windows
 Download the Windows installer (`.exe`) or portable archive from the [Releases](https://github.com/solder3t/musaic-player-pc/releases) page.
 
 ### macOS
-Download the `.dmg` package from the [Releases](https://github.com/solder3t/musaic-player-pc/releases) page.
-
-```bash
-# macOS Homebrew (Cask)
-brew install --cask solder3t/tap/musaic-player
-```
+Download the disk image (`.dmg`) from the [Releases](https://github.com/solder3t/musaic-player-pc/releases) page and drag Musaic to your Applications folder.
 
 ---
 
