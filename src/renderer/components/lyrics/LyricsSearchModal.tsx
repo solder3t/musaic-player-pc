@@ -523,7 +523,6 @@ export default function LyricsSearchModal() {
             padding: '12px 24px',
             borderTop: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
             flexShrink: 0
           }}
@@ -531,13 +530,6 @@ export default function LyricsSearchModal() {
           <div style={{ fontSize: '0.82em', opacity: 0.6 }}>
             Applying selected lyrics will update the active track and save it to your local cache.
           </div>
-          <button
-            type="button"
-            className="settings-button subtle"
-            onClick={close}
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
