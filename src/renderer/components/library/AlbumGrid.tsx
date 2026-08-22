@@ -25,6 +25,7 @@ interface AlbumRecord {
 
 export interface AlbumGridViewportAPI {
   get element(): HTMLDivElement | null
+  scrollToIndex: (index: number, align?: 'start' | 'center' | 'end' | 'smart') => void
 }
 
 interface AlbumGridProps {
@@ -106,18 +107,32 @@ function AlbumGridCellRenderer({
           onAlbumContextMenu(album, event.clientX, event.clientY)
         }}
       >
-        {album.is_new && (
-          <span className="library-latest-sync-pill album-card-sync-pill" title="Added in latest library sync">
-            NEW
-          </span>
-        )}
-        <div className="album-artwork">
-          <AlbumArtwork hash={album.artwork_hash} alt={album.album} variant="card" />
+        <div className="album-card-artwork">
+          {album.artwork_hash ? (
+            <AlbumArtwork
+              hash={album.artwork_hash}
+              alt={`${album.album} artwork`}
+              variant="card"
+            />
+          ) : (
+            <div className="album-card-placeholder" aria-hidden="true">
+              <span className="album-card-placeholder-icon">♫</span>
+            </div>
+          )}
+          {album.is_new && (
+            <span className="album-card-new-badge" aria-label="Newly added album">NEW</span>
+          )}
         </div>
-        <div className="album-info">
-          <div className="album-title">{highlightSearchMatch(album.album, searchQuery)}</div>
-          <div className="album-artist">{highlightSearchMatch(album.artist, searchQuery)}</div>
-          <div className="album-meta">{formatTrackCount(album.track_count)}{album.year ? ` • ${album.year}` : ''}</div>
+        <div className="album-card-meta">
+          <span className="album-card-title" title={album.album}>
+            {highlightSearchMatch(album.album, searchQuery)}
+          </span>
+          <span className="album-card-artist" title={album.artist}>
+            {highlightSearchMatch(album.artist, searchQuery)}
+          </span>
+          <span className="album-card-subtext">
+            {album.year ? `${album.year} · ` : ''}{formatTrackCount(album.track_count)}
+          </span>
         </div>
       </div>
     </div>
@@ -144,11 +159,34 @@ export default function AlbumGrid({
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const gridApiRef = useRef<GridImperativeAPI | null>(null)
 
+  // Cells carry gap/2 padding on every side; the scroller adds
+  // (padding - gap/2) so outer edges land at the CSS-grid padding. Prefer the
+  // mounted scroller's clientWidth because it excludes any classic vertical
+  // scrollbar; then remove the scroller padding to get the cell content width.
+  const horizontalInset = resolveGridHorizontalInset(padding, gap)
+  const fallbackGridContentWidth = resolveVirtualGridContentWidth(viewportSize.width, horizontalInset)
+  const availableGridContentWidth = gridContentWidth > 0 ? gridContentWidth : fallbackGridContentWidth
+  const gridLayout = useMemo(() => resolveArtistGridLayout({
+    containerWidth: availableGridContentWidth,
+    itemCount: albums.length,
+    minColumnWidth,
+    gap
+  }), [albums.length, availableGridContentWidth, gap, minColumnWidth])
+
   useImperativeHandle(viewportRef, () => ({
     get element() {
       return gridApiRef.current?.element ?? null
+    },
+    scrollToIndex: (index: number, align: 'start' | 'center' | 'end' | 'smart' = 'start') => {
+      const colCount = Math.max(1, gridLayout.columnCount)
+      const rowIndex = Math.floor(index / colCount)
+      gridApiRef.current?.scrollToRow({
+        index: rowIndex,
+        align: align === 'smart' ? 'auto' : align,
+        behavior: 'auto'
+      })
     }
-  }), [])
+  }), [gridLayout.columnCount])
 
   useLayoutEffect(() => {
     const element = bodyRef.current
@@ -190,19 +228,6 @@ export default function AlbumGrid({
     }
   }, [])
 
-  // Cells carry gap/2 padding on every side; the scroller adds
-  // (padding - gap/2) so outer edges land at the CSS-grid padding. Prefer the
-  // mounted scroller's clientWidth because it excludes any classic vertical
-  // scrollbar; then remove the scroller padding to get the cell content width.
-  const horizontalInset = resolveGridHorizontalInset(padding, gap)
-  const fallbackGridContentWidth = resolveVirtualGridContentWidth(viewportSize.width, horizontalInset)
-  const availableGridContentWidth = gridContentWidth > 0 ? gridContentWidth : fallbackGridContentWidth
-  const gridLayout = useMemo(() => resolveArtistGridLayout({
-    containerWidth: availableGridContentWidth,
-    itemCount: albums.length,
-    minColumnWidth,
-    gap
-  }), [albums.length, availableGridContentWidth, gap, minColumnWidth])
 
   const handleGridResize = useCallback(() => {
     const element = gridApiRef.current?.element

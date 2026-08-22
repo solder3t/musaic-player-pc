@@ -1,4 +1,4 @@
-import { CSSProperties, memo, ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { CSSProperties, memo, ReactElement, Ref, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { List, RowComponentProps, type ListImperativeAPI } from 'react-window'
 import { usePlayerStore, type PlaybackSourceContext } from '../../stores/playerStore'
 import { useLibraryStore } from '../../stores/libraryStore'
@@ -79,6 +79,11 @@ interface DbTrack {
 export type TrackListSortKey = 'title' | 'artist' | 'album' | 'genre' | 'duration' | 'bpm' | 'musical_key' | 'added' | 'rating' | 'play_count'
 export type TrackNumberMode = 'album' | 'context' | 'none'
 
+export interface TrackListViewportAPI {
+  get element(): HTMLDivElement | null
+  scrollToIndex: (index: number, align?: 'start' | 'center' | 'end' | 'smart') => void
+}
+
 export interface TrackListSortState {
   key: TrackListSortKey
   direction: 'asc' | 'desc'
@@ -110,6 +115,7 @@ interface TrackListProps {
   enableDefaultOrderReset?: boolean
   onDefaultOrderReset?: () => void
   searchQuery?: string
+  viewportRef?: Ref<TrackListViewportAPI>
 }
 
 interface TrackListRowSharedProps {
@@ -814,7 +820,8 @@ export default function TrackList({
   onSortColumnToggle,
   enableDefaultOrderReset = false,
   onDefaultOrderReset,
-  searchQuery = ''
+  searchQuery = '',
+  viewportRef
 }: TrackListProps) {
   const currentTrack = usePlayerStore((state) => state.currentTrack)
   const playbackState = usePlayerStore((state) => state.playbackState)
@@ -885,6 +892,19 @@ export default function TrackList({
   const playlistPopupTriggerRef = useRef<HTMLButtonElement | null>(null)
   const playlistMembershipRequestIdRef = useRef(0)
   const consumedJumpRequestIdRef = useRef<number | null>(null)
+
+  useImperativeHandle(viewportRef, () => ({
+    get element() {
+      return listRef.current?.element ?? null
+    },
+    scrollToIndex: (index: number, align: 'start' | 'center' | 'end' | 'smart' = 'start') => {
+      listRef.current?.scrollToRow({
+        index,
+        align: align === 'smart' ? 'auto' : align,
+        behavior: 'auto'
+      })
+    }
+  }), [])
 
   const virtualRows = useMemo(
     () => buildTrackListRows(tracks, showDiscHeaders),

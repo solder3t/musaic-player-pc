@@ -52,6 +52,7 @@ interface HomeAlbum {
   year: number | null
   artwork_hash: string | null
   track_count: number
+  is_new?: boolean
 }
 
 interface HomeArtist {
@@ -801,6 +802,7 @@ export default function HomeView() {
   const setActiveView = useUIStore((s) => s.setActiveView)
   const openCollectionQueueMenu = useUIStore((s) => s.openCollectionQueueMenu)
 
+  const trackByPath = useLibraryStore((s) => s.trackByPath)
   const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
   const recentlyPlayed = useMemo(
     () => resolveTrackPaths(recentlyPlayedPaths) as HomeTrack[],
@@ -822,11 +824,13 @@ export default function HomeView() {
   const skyCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const starCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const recentRowRef = useRef<HTMLDivElement | null>(null)
+  const recentlyAddedRowRef = useRef<HTMLDivElement | null>(null)
   const playlistRowRef = useRef<HTMLDivElement | null>(null)
   const hasLibraryContent = totalTrackCount > 0 || albums.length > 0 || artists.length > 0
   const recentLimits = useMemo(() => getHomeRecentLimits(viewportWidth), [viewportWidth])
 
   useHorizontalWheelScroll(recentRowRef)
+  useHorizontalWheelScroll(recentlyAddedRowRef)
   useHorizontalWheelScroll(playlistRowRef)
 
   useEffect(() => {
@@ -1089,6 +1093,34 @@ export default function HomeView() {
     return uniqueAlbums
   }, [recentlyPlayed, albumByIdentityKey, albumByKey, recentLimits])
 
+  const recentlyAddedAlbums = useMemo(() => {
+    const latestAddedByAlbumKey = new Map<string, number>()
+    for (const track of trackByPath.values()) {
+      const key = track.album_identity_key || buildAlbumIdentityKeyFromTrack(track)
+      const currentLatest = latestAddedByAlbumKey.get(key) ?? 0
+      const trackAdded = typeof track.file_created_at === 'number' && track.file_created_at > 0
+        ? track.file_created_at
+        : track.added_at
+      if (trackAdded > currentLatest) {
+        latestAddedByAlbumKey.set(key, trackAdded)
+      }
+    }
+
+    const albumsWithDate = albums.map((album) => ({
+      ...album,
+      addedAt: latestAddedByAlbumKey.get(album.identity_key) ?? 0
+    }))
+
+    albumsWithDate.sort((a, b) => {
+      if (a.is_new && !b.is_new) return -1
+      if (!a.is_new && b.is_new) return 1
+      if (b.addedAt !== a.addedAt) return b.addedAt - a.addedAt
+      return a.album.localeCompare(b.album)
+    })
+
+    return albumsWithDate.slice(0, 16)
+  }, [albums, trackByPath, trackCacheVersion])
+
   const homePlaylists = useMemo(
     () => buildPlaylistDisplaySections(playlists, {
       trackCount: favoriteTracks.length,
@@ -1257,6 +1289,67 @@ export default function HomeView() {
             </div>
           ) : (
             <div className="home-empty-strip">No recent tracks yet. Start playing music!</div>
+          )}
+        </section>
+
+        <section className="home-section" data-controller-group="home-recently-added" data-controller-axis="horizontal">
+          <div className="home-section-header">
+            <h2>RECENTLY ADDED</h2>
+            <div className="home-section-actions">
+              <button className="home-section-link-btn" onClick={handleOpenAlbumsLibrary}>
+                Open Library
+              </button>
+            </div>
+          </div>
+          {recentlyAddedAlbums.length > 0 ? (
+            <div className="home-recent-row home-recently-added-row" ref={recentlyAddedRowRef}>
+              {recentlyAddedAlbums.map((album) => (
+                <article
+                  key={`recently-added:${album.identity_key}`}
+                  className="home-album-card home-recently-added-card"
+                  onClick={() => handleOpenAlbum(album)}
+                  data-controller-focusable="true"
+                  data-controller-context="true"
+                  data-controller-key={`home-recently-added-album:${album.identity_key}`}
+                  tabIndex={-1}
+                  role="button"
+                  aria-label={`Open ${album.album} by ${album.artist}`}
+                  onContextMenu={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    openCollectionQueueMenu({
+                      target: {
+                        kind: 'album',
+                        album: album.album,
+                        artist: album.artist,
+                        identityKey: album.identity_key
+                      },
+                      x: event.clientX,
+                      y: event.clientY
+                    })
+                  }}
+                >
+                  <div className="home-album-artwork">
+                    {album.artwork_hash ? (
+                      <AlbumArtwork hash={album.artwork_hash} alt={album.album} variant="card" />
+                    ) : (
+                      <span>&#9835;</span>
+                    )}
+                    {album.is_new && (
+                      <span className="album-card-new-badge" aria-label="Newly added album">NEW</span>
+                    )}
+                  </div>
+                  <div className="home-album-title">{album.album}</div>
+                  <div className="home-album-artist">{album.artist}</div>
+                  <div className="home-album-meta">
+                    {album.track_count > 0 ? `${album.track_count} tracks` : ''}
+                    {album.year ? ` · ${album.year}` : ''}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="home-empty-strip">No recently added albums. Scan your folders to import music!</div>
           )}
         </section>
 

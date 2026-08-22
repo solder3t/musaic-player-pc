@@ -23,7 +23,7 @@ import {
   formatLibraryYearKey,
   type LibraryYearGroup
 } from '../../utils/libraryYears'
-import TrackList, { type TrackListSortKey } from '../library/TrackList'
+import TrackList, { type TrackListSortKey, type TrackListViewportAPI } from '../library/TrackList'
 import AlbumArtwork from '../library/AlbumArtwork'
 import QueueSplitButton from '../queue/QueueSplitButton'
 import AlbumGrid, { type AlbumGridViewportAPI } from '../library/AlbumGrid'
@@ -31,6 +31,7 @@ import ArtistList, { type ArtistListViewportAPI } from '../library/ArtistList'
 import FolderTreeView from '../library/FolderTreeView'
 import GenreGrid, { type GenreGridViewportAPI } from '../library/GenreGrid'
 import YearGrid, { type YearGridViewportAPI } from '../library/YearGrid'
+import AlphabetScroller, { ALPHABET_CHARACTERS, getLetterBucket } from '../library/AlphabetScroller'
 
 type SortDirection = 'asc' | 'desc'
 type ArtistAlbumRailMode = 'albums' | 'singles' | 'featured'
@@ -272,6 +273,7 @@ export default function LibraryView() {
   const genreGridScrollRef = useRef(0)
   const yearViewportRef = useRef<YearGridViewportAPI | null>(null)
   const yearGridScrollRef = useRef(0)
+  const trackViewportRef = useRef<TrackListViewportAPI | null>(null)
   const artistImageControlRef = useRef<HTMLDivElement | null>(null)
   const artistAlbumRailRef = useRef<HTMLDivElement | null>(null)
   const pendingScrollRef = useRef<'albums' | 'artists' | 'genres' | 'years' | 'year-albums' | null>(null)
@@ -1035,6 +1037,112 @@ export default function LibraryView() {
     ?? selectedYearGroup?.artwork_hash
     ?? null
 
+  const { albumAlphabetLetters, albumLetterIndexMap } = useMemo(() => {
+    const letterMap = new Map<string, number>()
+    const available = new Set<string>()
+    filteredAlbums.forEach((album, index) => {
+      const letter = getLetterBucket(albumSortMode === 'artist' ? album.artist : album.album)
+      if (!letterMap.has(letter)) {
+        letterMap.set(letter, index)
+        available.add(letter)
+      }
+    })
+    return { albumAlphabetLetters: available, albumLetterIndexMap: letterMap }
+  }, [filteredAlbums, albumSortMode])
+
+  const { artistAlphabetLetters, artistLetterIndexMap } = useMemo(() => {
+    const letterMap = new Map<string, number>()
+    const available = new Set<string>()
+    filteredArtists.forEach((artist, index) => {
+      const letter = getLetterBucket(artist.artist)
+      if (!letterMap.has(letter)) {
+        letterMap.set(letter, index)
+        available.add(letter)
+      }
+    })
+    return { artistAlphabetLetters: available, artistLetterIndexMap: letterMap }
+  }, [filteredArtists])
+
+  const { genreAlphabetLetters, genreLetterIndexMap } = useMemo(() => {
+    const letterMap = new Map<string, number>()
+    const available = new Set<string>()
+    filteredGenres.forEach((genre, index) => {
+      const letter = getLetterBucket(genre.genre)
+      if (!letterMap.has(letter)) {
+        letterMap.set(letter, index)
+        available.add(letter)
+      }
+    })
+    return { genreAlphabetLetters: available, genreLetterIndexMap: letterMap }
+  }, [filteredGenres])
+
+  const { trackAlphabetLetters, trackLetterIndexMap } = useMemo(() => {
+    const letterMap = new Map<string, number>()
+    const available = new Set<string>()
+    displayTracks.forEach((track, index) => {
+      const sortKey = sortState?.key
+      const text = sortKey === 'artist' ? track.artist : sortKey === 'album' ? track.album : track.title
+      const letter = getLetterBucket(text)
+      if (!letterMap.has(letter)) {
+        letterMap.set(letter, index)
+        available.add(letter)
+      }
+    })
+    return { trackAlphabetLetters: available, trackLetterIndexMap: letterMap }
+  }, [displayTracks, sortState?.key])
+
+  const currentAvailableLetters = useMemo(() => {
+    if (isAlbumRootView) return albumAlphabetLetters
+    if (isArtistRootView) return artistAlphabetLetters
+    if (viewMode === 'genres' && !inDetailView) return genreAlphabetLetters
+    if (viewMode === 'tracks' && !inDetailView) return trackAlphabetLetters
+    return new Set<string>()
+  }, [isAlbumRootView, albumAlphabetLetters, isArtistRootView, artistAlphabetLetters, viewMode, inDetailView, genreAlphabetLetters, trackAlphabetLetters])
+
+  const showAlphabetScroller = !inDetailView && !selectedArtist && !selectedAlbum && !selectedGenre && selectedYear === null && currentAvailableLetters.size > 1 && (isAlbumRootView || isArtistRootView || viewMode === 'tracks' || viewMode === 'genres')
+
+  const handleAlphabetLetterSelect = useCallback((targetLetter: string) => {
+    let activeMap: Map<string, number> | null = null
+    let scrollFn: ((index: number) => void) | null = null
+
+    if (isAlbumRootView) {
+      activeMap = albumLetterIndexMap
+      scrollFn = (index) => albumViewportRef.current?.scrollToIndex(index, 'start')
+    } else if (isArtistRootView) {
+      activeMap = artistLetterIndexMap
+      scrollFn = (index) => artistViewportRef.current?.scrollToIndex(index, 'start')
+    } else if (viewMode === 'tracks' && !inDetailView) {
+      activeMap = trackLetterIndexMap
+      scrollFn = (index) => trackViewportRef.current?.scrollToIndex(index, 'start')
+    } else if (viewMode === 'genres' && !inDetailView) {
+      activeMap = genreLetterIndexMap
+      scrollFn = (index) => genreViewportRef.current?.scrollToIndex(index, 'start')
+    }
+
+    if (!activeMap || !scrollFn) return
+
+    if (activeMap.has(targetLetter)) {
+      scrollFn(activeMap.get(targetLetter)!)
+      return
+    }
+
+    const targetPos = ALPHABET_CHARACTERS.indexOf(targetLetter as (typeof ALPHABET_CHARACTERS)[number])
+    if (targetPos === -1) return
+
+    for (let i = targetPos + 1; i < ALPHABET_CHARACTERS.length; i++) {
+      const nextLetter = ALPHABET_CHARACTERS[i]
+      if (activeMap.has(nextLetter)) {
+        scrollFn(activeMap.get(nextLetter)!)
+        return
+      }
+    }
+  }, [
+    isAlbumRootView, albumLetterIndexMap,
+    isArtistRootView, artistLetterIndexMap,
+    viewMode, inDetailView, trackLetterIndexMap,
+    genreLetterIndexMap
+  ])
+
   const trimmedQueryForMessage = searchQuery.trim()
   const searchPlaceholder = selectedYear !== null
     ? 'Search albums...'
@@ -1564,6 +1672,7 @@ export default function LibraryView() {
         jumpToTrackRequest={libraryTrackRevealRequest}
         onJumpToTrackRequestConsumed={clearLibraryTrackRevealRequest}
         searchQuery={trimmedSearchQuery}
+        viewportRef={trackViewportRef}
       />
     )
   }
@@ -2063,6 +2172,12 @@ export default function LibraryView() {
 
       <div className="library-content" onScrollCapture={handleLibraryContentScrollCapture}>
         {renderContent()}
+        {showAlphabetScroller && (
+          <AlphabetScroller
+            availableLetters={currentAvailableLetters}
+            onSelectLetter={handleAlphabetLetterSelect}
+          />
+        )}
       </div>
     </div>
   )

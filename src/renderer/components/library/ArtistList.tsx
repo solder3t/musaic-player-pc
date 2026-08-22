@@ -22,6 +22,7 @@ export type ArtistListViewMode = 'list' | 'grid'
 
 export interface ArtistListViewportAPI {
   get element(): HTMLDivElement | null
+  scrollToIndex: (index: number, align?: 'start' | 'center' | 'end' | 'smart') => void
 }
 
 interface ArtistListProps {
@@ -213,13 +214,38 @@ export default function ArtistList({
   const listApiRef = useRef<ListImperativeAPI | null>(null)
   const gridApiRef = useRef<GridImperativeAPI | null>(null)
 
+  const availableGridContentWidth = gridContentWidth > 0 ? gridContentWidth : viewportSize.width
+  const gridLayout = useMemo(() => resolveArtistGridLayout({
+    containerWidth: availableGridContentWidth,
+    itemCount: artists.length,
+    minColumnWidth: artistGridMinColumnWidth,
+    gap: artistGridGap
+  }), [artistGridGap, artistGridMinColumnWidth, artists.length, availableGridContentWidth])
+
   useImperativeHandle(viewportRef, () => ({
     get element() {
       return viewMode === 'grid'
         ? gridApiRef.current?.element ?? null
         : listApiRef.current?.element ?? null
+    },
+    scrollToIndex: (index: number, align: 'start' | 'center' | 'end' | 'smart' = 'start') => {
+      if (viewMode === 'grid') {
+        const colCount = Math.max(1, gridLayout.columnCount)
+        const rowIndex = Math.floor(index / colCount)
+        gridApiRef.current?.scrollToRow({
+          index: rowIndex,
+          align: align === 'smart' ? 'auto' : align,
+          behavior: 'auto'
+        })
+      } else {
+        listApiRef.current?.scrollToRow({
+          index,
+          align: align === 'smart' ? 'auto' : align,
+          behavior: 'auto'
+        })
+      }
     }
-  }), [viewMode])
+  }), [viewMode, gridLayout.columnCount])
 
   useLayoutEffect(() => {
     const element = listBodyRef.current
@@ -269,13 +295,6 @@ export default function ArtistList({
     searchQuery
   }), [artists, onSelectArtist, searchQuery])
 
-  const availableGridContentWidth = gridContentWidth > 0 ? gridContentWidth : viewportSize.width
-  const gridLayout = useMemo(() => resolveArtistGridLayout({
-    containerWidth: availableGridContentWidth,
-    itemCount: artists.length,
-    minColumnWidth: artistGridMinColumnWidth,
-    gap: artistGridGap
-  }), [artistGridGap, artistGridMinColumnWidth, artists.length, availableGridContentWidth])
 
   const handleGridResize = useCallback(() => {
     const element = gridApiRef.current?.element
