@@ -284,6 +284,23 @@ html[data-window-mode='mini'] body::after {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.56);
 }
 
+.mini-player-title-inner {
+  display: inline-block;
+}
+
+.mini-player-title.marquee-active {
+  text-overflow: clip;
+}
+
+.mini-player-title.marquee-active .mini-player-title-inner {
+  animation: marquee-scroll 8s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  0%, 15%   { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--marquee-offset)); }
+}
+
 .mini-player-title {
   color: rgba(255, 255, 255, 0.96);
   font-size: clamp(13px, 2.8vw, 19px);

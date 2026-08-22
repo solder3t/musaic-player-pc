@@ -2290,7 +2290,7 @@ html.app-view-transition-up::view-transition-new(app-main-view) {
 }
 
 .fullscreen-title.marquee-active .fullscreen-title-inner {
-  animation: marquee-scroll 16s linear infinite;
+  animation: marquee-scroll 8s linear infinite;
 }
 
 .fullscreen-artist {
