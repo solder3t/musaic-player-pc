@@ -119,7 +119,7 @@ export default function MiniPlayerApp() {
     if (overflows) {
       const offset = outer.clientWidth - inner.scrollWidth
       outer.style.setProperty('--marquee-offset', `${offset}px`)
-      const scrollDuration = Math.max(3, Math.min(8, Math.abs(offset) / 55 + 1.6))
+      const scrollDuration = Math.max(6, Math.min(18, Math.abs(offset) / 24 + 3.2))
       outer.style.setProperty('--marquee-duration', `${scrollDuration.toFixed(2)}s`)
     } else {
       outer.style.removeProperty('--marquee-offset')
