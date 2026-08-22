@@ -686,7 +686,12 @@ async function getAllLibraryTracksPaged(): Promise<DbTrack[]> {
 // Expose APIs to renderer
 contextBridge.exposeInMainWorld('electronAPI', {
   app: {
-    getSystemAccentColor: () => ipcRenderer.invoke('app:getSystemAccentColor')
+    getSystemAccentColor: () => ipcRenderer.invoke('app:getSystemAccentColor'),
+    onSystemAccentColorChanged: (callback: (colorHex: string) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, colorHex: string) => callback(colorHex)
+      ipcRenderer.on('app:systemAccentColorChanged', handler)
+      return () => ipcRenderer.removeListener('app:systemAccentColorChanged', handler)
+    }
   },
   ai: {
     generateEqProfile: (prompt: string, settings: any, customOptions: any) => 
@@ -798,6 +803,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
   getAppBuildInfo: (): Promise<AppBuildInfo> => ipcRenderer.invoke('app:getBuildInfo'),
   getSystemAccentColor: (): Promise<string> => ipcRenderer.invoke('app:getSystemAccentColor'),
+  onSystemAccentColorChanged: (callback: (colorHex: string) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, colorHex: string) => callback(colorHex)
+    ipcRenderer.on('app:systemAccentColorChanged', handler)
+    return () => ipcRenderer.removeListener('app:systemAccentColorChanged', handler)
+  },
   getAppPerformanceStats: () => ipcRenderer.invoke('app:getPerformanceStats'),
   getMainProcessMemoryStats: (): Promise<MainProcessMemoryStats> => ipcRenderer.invoke('app:getMainProcessMemoryStats'),
   getRendererMemoryStats: async (): Promise<RendererMemoryStats> => {
@@ -1600,6 +1610,7 @@ declare global {
     electronAPI: {
       app: {
         getSystemAccentColor: () => Promise<string>
+        onSystemAccentColorChanged?: (callback: (colorHex: string) => void) => () => void
       }
       ai: {
         generateEqProfile: (prompt: string, ...args: any[]) => Promise<any>
@@ -1660,6 +1671,7 @@ declare global {
       getAppVersion: () => Promise<string>
       getAppBuildInfo: () => Promise<AppBuildInfo>
       getSystemAccentColor: () => Promise<string>
+      onSystemAccentColorChanged?: (callback: (colorHex: string) => void) => () => void
       getAppPerformanceStats: () => Promise<AppPerformanceStats>
       getMainProcessMemoryStats: () => Promise<MainProcessMemoryStats>
       getRendererMemoryStats: () => Promise<RendererMemoryStats>

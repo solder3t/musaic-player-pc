@@ -5493,12 +5493,45 @@ ipcMain.handle('app:getSystemAccentColor', () => {
         // Fallback to next method
       }
     }
-    return systemPreferences.getAccentColor() || ''
+
+    if (systemPreferences && typeof systemPreferences.getAccentColor === 'function') {
+      const raw = systemPreferences.getAccentColor() || ''
+      if (raw) {
+        const cleaned = raw.startsWith('#') ? raw.slice(1) : raw
+        if (cleaned.length >= 6) {
+          return `#${cleaned.slice(0, 6)}`
+        }
+        if (cleaned.length === 3) {
+          const [r, g, b] = cleaned.split('')
+          return `#${r}${r}${g}${g}${b}${b}`
+        }
+        return `#${cleaned}`
+      }
+    }
+    return ''
   } catch (error) {
     console.warn('Failed to get system accent color:', error)
     return ''
   }
 })
+
+if (systemPreferences && typeof systemPreferences.on === 'function') {
+  try {
+    systemPreferences.on('accent-color-changed', (_event, newColor) => {
+      try {
+        const cleaned = (newColor || '').startsWith('#') ? newColor.slice(1) : newColor
+        const hex = cleaned.length >= 6 ? `#${cleaned.slice(0, 6)}` : (cleaned ? `#${cleaned}` : '')
+        if (hex && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('app:systemAccentColorChanged', hex)
+        }
+      } catch {
+        // ignore
+      }
+    })
+  } catch {
+    // ignore on platforms where event is unsupported
+  }
+}
 
 ipcMain.handle('app:getPerformanceStats', async (event) => {
   const metrics = app.getAppMetrics()

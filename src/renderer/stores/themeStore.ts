@@ -284,7 +284,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   materialyou: {
     id: 'materialyou',
     label: 'Material You',
-    description: 'Dynamically themed using your system accent color (GNOME/KDE)',
+    description: 'Dynamically themed using your system accent color (Windows / GNOME / KDE)',
     tokens: {
       bgPrimary: '#111613',
       bgSecondary: '#19221d',
@@ -325,14 +325,20 @@ export const THEME_PRESET_LIST: ThemePresetDefinition[] = Object.values(THEME_PR
 export const DEFAULT_THEME_ACCENT = THEME_PRESETS.default.accent
 
 function normalizeHexColor(value: string): string | null {
+  if (!value) return null
   const trimmed = value.trim()
-  const shortMatch = /^#([0-9a-fA-F]{3})$/.exec(trimmed)
+  const shortMatch = /^#?([0-9a-fA-F]{3})$/.exec(trimmed)
   if (shortMatch) {
     const [r, g, b] = shortMatch[1].split('')
     return `#${r}${r}${g}${g}${b}${b}`.toLowerCase()
   }
 
-  const fullMatch = /^#([0-9a-fA-F]{6})$/.exec(trimmed)
+  const eightMatch = /^#?([0-9a-fA-F]{8})$/.exec(trimmed)
+  if (eightMatch) {
+    return `#${eightMatch[1].slice(0, 6).toLowerCase()}`
+  }
+
+  const fullMatch = /^#?([0-9a-fA-F]{6})$/.exec(trimmed)
   if (!fullMatch) return null
   return `#${fullMatch[1].toLowerCase()}`
 }
@@ -621,8 +627,7 @@ interface ThemeMutation {
  */
 function applyMaterialYouAccent(rawColorHex: string): boolean {
   if (!rawColorHex) return false
-  const hex = rawColorHex.startsWith('#') ? rawColorHex : `#${rawColorHex}`
-  const normalized = normalizeHexColor(hex)
+  const normalized = normalizeHexColor(rawColorHex)
   if (!normalized) return false
 
   const mTheme = themeFromSourceColor(argbFromHex(normalized))
@@ -897,14 +902,23 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
       // Re-fetch system accent each time Material You is activated so the
       // theme immediately reflects the current system color.
       if (presetId === 'materialyou') {
-        void window.electronAPI.app.getSystemAccentColor().then((colorHex: string) => {
-          if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
-            // Re-apply to push the updated palette tokens to the document
-            get().setPreset('materialyou')
-          }
-        }).catch((e: unknown) => {
-          console.warn('Material You: failed to read system accent color:', e)
-        })
+        const fetchAccent = window.electronAPI?.app?.getSystemAccentColor ?? window.electronAPI?.getSystemAccentColor
+        if (typeof fetchAccent === 'function') {
+          void fetchAccent().then((colorHex: string) => {
+            if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
+              const currentState = get()
+              applyAndSet({
+                presetId: 'materialyou',
+                customAccent: currentState.customAccent,
+                accentSource: currentState.accentSource,
+                coverArtAccentMethod: currentState.coverArtAccentMethod,
+                coverArtAccent: currentState.coverArtAccent,
+              }, false)
+            }
+          }).catch((e: unknown) => {
+            console.warn('Material You: failed to read system accent color:', e)
+          })
+        }
       }
     },
     setCustomAccent: (accentHex) => {
@@ -996,13 +1010,43 @@ export const useThemeStore = create<ThemeSettingsState>((set, get) => {
         }, false)
       }
 
-      void window.electronAPI.app.getSystemAccentColor().then((colorHex: string) => {
-        if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
-          get().setPreset('materialyou')
+      const fetchAccent = window.electronAPI?.app?.getSystemAccentColor ?? window.electronAPI?.getSystemAccentColor
+      if (typeof fetchAccent === 'function') {
+        void fetchAccent().then((colorHex: string) => {
+          if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
+            const currentState = get()
+            applyAndSet({
+              presetId: 'materialyou',
+              customAccent: currentState.customAccent,
+              accentSource: currentState.accentSource,
+              coverArtAccentMethod: currentState.coverArtAccentMethod,
+              coverArtAccent: currentState.coverArtAccent,
+            }, false)
+          }
+        }).catch((e: unknown) => {
+          console.warn('Material You: failed to fetch system accent color at startup:', e)
+        })
+      }
+
+      const listenAccent = window.electronAPI?.app?.onSystemAccentColorChanged ?? window.electronAPI?.onSystemAccentColorChanged
+      if (typeof listenAccent === 'function') {
+        try {
+          listenAccent((colorHex: string) => {
+            if (applyMaterialYouAccent(colorHex) && get().presetId === 'materialyou') {
+              const currentState = get()
+              applyAndSet({
+                presetId: 'materialyou',
+                customAccent: currentState.customAccent,
+                accentSource: currentState.accentSource,
+                coverArtAccentMethod: currentState.coverArtAccentMethod,
+                coverArtAccent: currentState.coverArtAccent,
+              }, false)
+            }
+          })
+        } catch (e) {
+          console.warn('Failed to listen for system accent color changes:', e)
         }
-      }).catch((e: unknown) => {
-        console.warn('Material You: failed to fetch system accent color at startup:', e)
-      })
+      }
 
       try {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
