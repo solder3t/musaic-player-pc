@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import type {
   MiniPlayerLayoutMode,
   MiniPlayerSnapshot,
@@ -92,6 +92,9 @@ function GripIcon() {
 
 export default function MiniPlayerApp() {
   const rootRef = useRef<HTMLDivElement>(null)
+  const titleOuterRef = useRef<HTMLDivElement>(null)
+  const titleInnerRef = useRef<HTMLSpanElement>(null)
+  const [titleOverflows, setTitleOverflows] = useState(false)
   const [snapshot, setSnapshot] = useState<MiniPlayerSnapshot>(EMPTY_SNAPSHOT)
   const [windowState, setWindowState] = useState<MiniPlayerWindowState>(EMPTY_WINDOW_STATE)
   const [isScrubbing, setIsScrubbing] = useState(false)
@@ -106,6 +109,31 @@ export default function MiniPlayerApp() {
   const backdropCrossfadeTimeoutRef = useRef<number | null>(null)
   const pendingSeekFallbackTimeoutRef = useRef<number | null>(null)
   const activeBackdropRef = useRef<string | null>(null)
+
+  const checkTitleOverflow = useCallback(() => {
+    const outer = titleOuterRef.current
+    const inner = titleInnerRef.current
+    if (!outer || !inner) return
+    const overflows = inner.scrollWidth > outer.clientWidth
+    setTitleOverflows(overflows)
+    if (overflows) {
+      outer.style.setProperty('--marquee-offset', `${outer.clientWidth - inner.scrollWidth}px`)
+    } else {
+      outer.style.removeProperty('--marquee-offset')
+    }
+  }, [])
+
+  useEffect(() => {
+    checkTitleOverflow()
+  }, [snapshot.currentTrack?.title, checkTitleOverflow])
+
+  useEffect(() => {
+    const outer = titleOuterRef.current
+    if (!outer) return
+    const ro = new ResizeObserver(checkTitleOverflow)
+    ro.observe(outer)
+    return () => ro.disconnect()
+  }, [checkTitleOverflow])
 
   useEffect(() => {
     let isMounted = true
@@ -402,7 +430,14 @@ export default function MiniPlayerApp() {
 
           <div className="mini-player-main">
             <div className="mini-player-meta">
-              <div className="mini-player-title">{track?.title ?? 'No track playing'}</div>
+              <div
+                ref={titleOuterRef}
+                className={`mini-player-title${titleOverflows ? ' marquee-active' : ''}`}
+              >
+                <span ref={titleInnerRef} className="mini-player-title-inner">
+                  {track?.title ?? 'No track playing'}
+                </span>
+              </div>
               {trackContext && <div className="mini-player-secondary-line">{trackContext}</div>}
             </div>
 
