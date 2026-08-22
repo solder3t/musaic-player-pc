@@ -129,9 +129,9 @@ interface HomeRecentLimits {
 
 const HOME_RECENT_MEDIUM_BREAKPOINT_PX = 1200
 const HOME_RECENT_LARGE_BREAKPOINT_PX = 1440
-const HOME_RECENT_LIMITS_SMALL: HomeRecentLimits = { track: 8, artist: 6, album: 6 }
-const HOME_RECENT_LIMITS_MEDIUM: HomeRecentLimits = { track: 10, artist: 8, album: 8 }
-const HOME_RECENT_LIMITS_LARGE: HomeRecentLimits = { track: 12, artist: 10, album: 10 }
+const HOME_RECENT_LIMITS_SMALL: HomeRecentLimits = { track: 12, artist: 12, album: 12 }
+const HOME_RECENT_LIMITS_MEDIUM: HomeRecentLimits = { track: 16, artist: 16, album: 16 }
+const HOME_RECENT_LIMITS_LARGE: HomeRecentLimits = { track: 20, artist: 20, album: 20 }
 const GREETING_ROTATION_MS = 30 * 60 * 1000
 const SKY_PIXEL_SCALE = 4
 const STAR_GRID_SIZE = 6
@@ -828,12 +828,16 @@ export default function HomeView() {
   const starCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const recentRowRef = useRef<HTMLDivElement | null>(null)
   const recentlyAddedRowRef = useRef<HTMLDivElement | null>(null)
+  const recentArtistRowRef = useRef<HTMLDivElement | null>(null)
+  const recentAlbumRowRef = useRef<HTMLDivElement | null>(null)
   const playlistRowRef = useRef<HTMLDivElement | null>(null)
   const hasLibraryContent = totalTrackCount > 0 || albums.length > 0 || artists.length > 0
   const recentLimits = useMemo(() => getHomeRecentLimits(viewportWidth), [viewportWidth])
 
   useHorizontalWheelScroll(recentRowRef)
   useHorizontalWheelScroll(recentlyAddedRowRef)
+  useHorizontalWheelScroll(recentArtistRowRef)
+  useHorizontalWheelScroll(recentAlbumRowRef)
   useHorizontalWheelScroll(playlistRowRef)
 
   useEffect(() => {
@@ -1337,7 +1341,7 @@ export default function HomeView() {
           )}
         </section>
 
-        <section className="home-section" data-controller-group="home-recent-artists" data-controller-axis="grid">
+        <section className="home-section" data-controller-group="home-recent-artists" data-controller-axis="horizontal">
           <div className="home-section-header">
             <h2>RECENT ARTISTS</h2>
             <div className="home-section-actions">
@@ -1347,11 +1351,11 @@ export default function HomeView() {
             </div>
           </div>
           {recentArtists.length > 0 ? (
-            <div className="home-artist-grid">
+            <div className="home-recent-row home-artist-row" ref={recentArtistRowRef}>
               {recentArtists.map((artist) => (
                 <div
                   key={artist.artist}
-                  className="home-artist-chip"
+                  className="home-artist-chip home-artist-rail-chip"
                   onClick={() => handleOpenArtist(artist.artist)}
                   data-controller-focusable="true"
                   data-controller-key={`home-artist:${artist.artist}`}
@@ -1371,7 +1375,7 @@ export default function HomeView() {
                       artistInitial(artist.artist)
                     )}
                   </div>
-                  <div className="home-artist-name">{artist.artist}</div>
+                  <div className="home-artist-name" title={artist.artist}>{artist.artist}</div>
                   <div className="home-artist-count">
                     {artist.track_count > 0 ? `${artist.track_count} tracks` : 'Recent play'}
                   </div>
@@ -1383,7 +1387,7 @@ export default function HomeView() {
           )}
         </section>
 
-        <section className="home-section" data-controller-group="home-recent-albums" data-controller-axis="grid">
+        <section className="home-section" data-controller-group="home-recent-albums" data-controller-axis="horizontal">
           <div className="home-section-header">
             <h2>RECENT ALBUMS</h2>
             <div className="home-section-actions">
@@ -1393,11 +1397,11 @@ export default function HomeView() {
             </div>
           </div>
           {recentAlbums.length > 0 ? (
-            <div className="home-album-grid">
+            <div className="home-recent-row home-album-row" ref={recentAlbumRowRef}>
               {recentAlbums.map((album) => (
                 <article
                   key={album.identity_key}
-                  className="home-album-card"
+                  className="home-album-card home-album-rail-card"
                   onClick={() => handleOpenAlbum(album)}
                   data-controller-focusable="true"
                   data-controller-context="true"
@@ -1427,11 +1431,11 @@ export default function HomeView() {
                       <span>&#9835;</span>
                     )}
                   </div>
-                  <div className="home-album-title">{album.album}</div>
-                  <div className="home-album-artist">{album.artist}</div>
+                  <div className="home-album-title" title={album.album}>{album.album}</div>
+                  <div className="home-album-artist" title={album.artist}>{album.artist}</div>
                   <div className="home-album-meta">
                     {album.track_count > 0 ? `${album.track_count} tracks` : 'Recent play'}
-                    {album.year ? ` \u00b7 ${album.year}` : ''}
+                    {album.year ? ` · ${album.year}` : ''}
                   </div>
                 </article>
               ))}
