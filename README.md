@@ -71,7 +71,8 @@
   - **AMOLED True Black**: Deep contrast optimized for OLED displays.
   - **Glassmorphism Frosted Glass**: Modern translucent acrylic aesthetic with real-time backdrop blur.
   - **Neon Glow**: Vibrant ambient gradients synced to your listening experience.
-  - **Material You**: Dynamic color palette extracted live from the active album artwork.
+  - **Material You**: Dynamically themed using your system accent color.
+  - **Cover Art Dynamic**: Dynamic color palette extracted live from the active album artwork.
 - **Floating Mini-Player**: Compact, distraction-free floating widget with pinned controls and album art.
 - **Native OS Integration**: Desktop media notifications, taskbar controls, and media keys via **MPRIS** on Linux, **SMTC** on Windows, and **Now Playing** on macOS.
 

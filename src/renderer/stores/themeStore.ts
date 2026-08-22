@@ -284,7 +284,7 @@ const THEME_PRESETS: Record<ThemePresetId, ThemePresetDefinition> = {
   materialyou: {
     id: 'materialyou',
     label: 'Material You',
-    description: 'Dynamically themed using your system accent color (Windows / GNOME / KDE)',
+    description: 'Dynamically themed using your system accent color',
     tokens: {
       bgPrimary: '#111613',
       bgSecondary: '#19221d',
