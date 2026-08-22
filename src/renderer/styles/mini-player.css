@@ -297,8 +297,8 @@ html[data-window-mode='mini'] body::after {
 }
 
 @keyframes marquee-scroll {
-  0%, 12%   { transform: translateX(0); }
-  88%, 100% { transform: translateX(var(--marquee-offset)); }
+  0%, 15%   { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--marquee-offset)); }
 }
 
 .mini-player-title {
