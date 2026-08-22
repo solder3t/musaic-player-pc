@@ -2290,7 +2290,7 @@ html.app-view-transition-up::view-transition-new(app-main-view) {
 }
 
 .fullscreen-title.marquee-active .fullscreen-title-inner {
-  animation: marquee-scroll 8s linear infinite;
+  animation: marquee-scroll var(--marquee-duration, 5s) linear infinite;
 }
 
 .fullscreen-artist {
@@ -4901,12 +4901,12 @@ body:has(.fullscreen-overlay) .controller-hints {
 }
 
 .now-playing-title.marquee-active .now-playing-title-inner {
-  animation: marquee-scroll 8s linear infinite;
+  animation: marquee-scroll var(--marquee-duration, 5s) linear infinite;
 }
 
 @keyframes marquee-scroll {
-  0%, 15%   { transform: translateX(0); }
-  85%, 100% { transform: translateX(var(--marquee-offset)); }
+  0%, 12%   { transform: translateX(0); }
+  88%, 100% { transform: translateX(var(--marquee-offset)); }
 }
 
 .now-playing-artist {
