@@ -43,6 +43,9 @@ interface HomeTrack {
   codec_profile?: string | null
   is_atmos_joc?: number | null
   is_iamf?: number | null
+  added_at?: number
+  file_created_at?: number | null
+  is_new?: boolean
 }
 
 interface HomeAlbum {
@@ -1093,33 +1096,20 @@ export default function HomeView() {
     return uniqueAlbums
   }, [recentlyPlayed, albumByIdentityKey, albumByKey, recentLimits])
 
-  const recentlyAddedAlbums = useMemo(() => {
-    const latestAddedByAlbumKey = new Map<string, number>()
-    for (const track of trackByPath.values()) {
-      const key = track.album_identity_key || buildAlbumIdentityKeyFromTrack(track)
-      const currentLatest = latestAddedByAlbumKey.get(key) ?? 0
-      const trackAdded = typeof track.file_created_at === 'number' && track.file_created_at > 0
-        ? track.file_created_at
-        : track.added_at
-      if (trackAdded > currentLatest) {
-        latestAddedByAlbumKey.set(key, trackAdded)
-      }
-    }
+  const recentlyAddedTracks = useMemo(() => {
+    const allTracks = Array.from(trackByPath.values()) as unknown as HomeTrack[]
 
-    const albumsWithDate = albums.map((album) => ({
-      ...album,
-      addedAt: latestAddedByAlbumKey.get(album.identity_key) ?? 0
-    }))
-
-    albumsWithDate.sort((a, b) => {
+    allTracks.sort((a, b) => {
       if (a.is_new && !b.is_new) return -1
       if (!a.is_new && b.is_new) return 1
-      if (b.addedAt !== a.addedAt) return b.addedAt - a.addedAt
-      return a.album.localeCompare(b.album)
+      const aTime = typeof a.file_created_at === 'number' && a.file_created_at > 0 ? a.file_created_at : (a.added_at ?? 0)
+      const bTime = typeof b.file_created_at === 'number' && b.file_created_at > 0 ? b.file_created_at : (b.added_at ?? 0)
+      if (bTime !== aTime) return bTime - aTime
+      return a.title.localeCompare(b.title)
     })
 
-    return albumsWithDate.slice(0, 16)
-  }, [albums, trackByPath, trackCacheVersion])
+    return allTracks.slice(0, 24)
+  }, [trackByPath, trackCacheVersion])
 
   const homePlaylists = useMemo(
     () => buildPlaylistDisplaySections(playlists, {
@@ -1137,6 +1127,12 @@ export default function HomeView() {
   const handlePlayRecentList = async (_track: HomeTrack, index: number) => {
     await startPlaybackContextByPaths(recentTracks.map((recentTrack) => recentTrack.path), index, {
       contextLabel: 'Recently Played'
+    })
+  }
+
+  const handlePlayRecentlyAddedList = async (_track: HomeTrack, index: number) => {
+    await startPlaybackContextByPaths(recentlyAddedTracks.map((recentTrack) => recentTrack.path), index, {
+      contextLabel: 'Recently Added'
     })
   }
 
@@ -1194,6 +1190,11 @@ export default function HomeView() {
 
   const handleOpenAlbumsLibrary = () => {
     setLibraryViewMode('albums')
+    setActiveView('library')
+  }
+
+  const handleOpenTracksLibrary = () => {
+    setLibraryViewMode('tracks')
     setActiveView('library')
   }
 
@@ -1296,60 +1297,43 @@ export default function HomeView() {
           <div className="home-section-header">
             <h2>RECENTLY ADDED</h2>
             <div className="home-section-actions">
-              <button className="home-section-link-btn" onClick={handleOpenAlbumsLibrary}>
+              <button className="home-section-link-btn" onClick={handleOpenTracksLibrary}>
                 Open Library
               </button>
             </div>
           </div>
-          {recentlyAddedAlbums.length > 0 ? (
+          {recentlyAddedTracks.length > 0 ? (
             <div className="home-recent-row home-recently-added-row" ref={recentlyAddedRowRef}>
-              {recentlyAddedAlbums.map((album) => (
+              {recentlyAddedTracks.map((track, index) => (
                 <article
-                  key={`recently-added:${album.identity_key}`}
-                  className="home-album-card home-recently-added-card"
-                  onClick={() => handleOpenAlbum(album)}
+                  key={`recently-added:${track.path}`}
+                  className={`home-track-card ${currentTrackPath === track.path ? 'active' : ''}`}
+                  onClick={() => handlePlayRecentlyAddedList(track, index)}
                   data-controller-focusable="true"
-                  data-controller-context="true"
-                  data-controller-key={`home-recently-added-album:${album.identity_key}`}
+                  data-controller-key={`home-recently-added-track:${track.path}`}
                   tabIndex={-1}
                   role="button"
-                  aria-label={`Open ${album.album} by ${album.artist}`}
-                  onContextMenu={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    openCollectionQueueMenu({
-                      target: {
-                        kind: 'album',
-                        album: album.album,
-                        artist: album.artist,
-                        identityKey: album.identity_key
-                      },
-                      x: event.clientX,
-                      y: event.clientY
-                    })
-                  }}
+                  aria-label={`Play ${track.title} by ${track.artist}`}
                 >
-                  <div className="home-album-artwork">
-                    {album.artwork_hash ? (
-                      <AlbumArtwork hash={album.artwork_hash} alt={album.album} variant="card" />
+                  <div className="home-track-artwork">
+                    {track.artwork_hash ? (
+                      <AlbumArtwork hash={track.artwork_hash} alt={track.album} variant="card" />
                     ) : (
                       <span>&#9835;</span>
                     )}
-                    {album.is_new && (
-                      <span className="album-card-new-badge" aria-label="Newly added album">NEW</span>
+                    {track.is_new && (
+                      <span className="album-card-new-badge" aria-label="Newly added track">NEW</span>
                     )}
                   </div>
-                  <div className="home-album-title">{album.album}</div>
-                  <div className="home-album-artist">{album.artist}</div>
-                  <div className="home-album-meta">
-                    {album.track_count > 0 ? `${album.track_count} tracks` : ''}
-                    {album.year ? ` · ${album.year}` : ''}
+                  <div className="home-track-meta">
+                    <div className="home-track-title" title={track.title}>{track.title}</div>
+                    <div className="home-track-artist" title={track.artist}>{track.artist}</div>
                   </div>
                 </article>
               ))}
             </div>
           ) : (
-            <div className="home-empty-strip">No recently added albums. Scan your folders to import music!</div>
+            <div className="home-empty-strip">No recently added tracks yet. Scan your folders to import music!</div>
           )}
         </section>
 
