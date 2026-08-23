@@ -261,6 +261,7 @@ export default function LibraryView() {
   const [isArtistImageMenuOpen, setIsArtistImageMenuOpen] = useState(false)
   const artistImageMenuPresence = usePresence(isArtistImageMenuOpen)
   const [isDetailHeaderCollapsed, setIsDetailHeaderCollapsed] = useState(false)
+  const [activeAlphabetLetter, setActiveAlphabetLetter] = useState<string | null>(null)
   const previousInDetailViewRef = useRef(false)
   const collectionPlayPendingRef = useRef(false)
   const albumViewportRef = useRef<AlbumGridViewportAPI | null>(null)
@@ -1102,6 +1103,7 @@ export default function LibraryView() {
   const showAlphabetScroller = !inDetailView && !selectedArtist && !selectedAlbum && !selectedGenre && selectedYear === null && currentAvailableLetters.size > 1 && (isAlbumRootView || isArtistRootView || viewMode === 'tracks' || viewMode === 'genres')
 
   const handleAlphabetLetterSelect = useCallback((targetLetter: string) => {
+    setActiveAlphabetLetter(targetLetter)
     let activeMap: Map<string, number> | null = null
     let scrollFn: ((index: number) => void) | null = null
 
@@ -2175,6 +2177,7 @@ export default function LibraryView() {
         {showAlphabetScroller && (
           <AlphabetScroller
             availableLetters={currentAvailableLetters}
+            activeLetter={activeAlphabetLetter}
             onSelectLetter={handleAlphabetLetterSelect}
           />
         )}
