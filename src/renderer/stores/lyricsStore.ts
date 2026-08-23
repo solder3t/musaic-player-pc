@@ -139,20 +139,41 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
     result: LyricsLookupResult
   ): LyricsLookupResult => {
     if (requestId !== activeRequestId) return result
-    set((state) => ({
-      resultByTrackPath: isProviderUnavailableResult(result) && state.resultByTrackPath[trackPath]?.status === 'hit'
-        ? touchLyricsResultCacheEntry(state.resultByTrackPath, trackPath, trackPath)
-        : putLyricsResultInCache(state.resultByTrackPath, trackPath, result, trackPath),
-      currentTrackPath: trackPath,
-      currentResult: isProviderUnavailableResult(result) && state.resultByTrackPath[trackPath]?.status === 'hit'
+    set((state) => {
+      const isSameTrack = state.currentTrackPath === trackPath
+      const keepRomanized = isSameTrack && state.isRomanized && Boolean(aiLyricsCache.get(trackPath)?.romanized)
+      const keepTranslated = isSameTrack && state.isTranslated
+      const activeTranslated = keepTranslated && state.currentResult?.status === 'hit' ? state.currentResult.lyrics : null
+      const baseResult = isProviderUnavailableResult(result) && state.resultByTrackPath[trackPath]?.status === 'hit'
         ? state.resultByTrackPath[trackPath]
-        : result,
-      isLoading: false,
-      isRomanized: false,
-      isTranslated: false,
-      aiProcessing: false,
-      errorMessage: result.status === 'transient_error' ? result.message : ''
-    }))
+        : result
+
+      let currentResult = baseResult
+      if (keepRomanized && baseResult.status === 'hit' && aiLyricsCache.get(trackPath)?.romanized) {
+        currentResult = {
+          ...baseResult,
+          lyrics: aiLyricsCache.get(trackPath)!.romanized!
+        }
+      } else if (keepTranslated && baseResult.status === 'hit' && activeTranslated) {
+        currentResult = {
+          ...baseResult,
+          lyrics: activeTranslated
+        }
+      }
+
+      return {
+        resultByTrackPath: isProviderUnavailableResult(result) && state.resultByTrackPath[trackPath]?.status === 'hit'
+          ? touchLyricsResultCacheEntry(state.resultByTrackPath, trackPath, trackPath)
+          : putLyricsResultInCache(state.resultByTrackPath, trackPath, result, trackPath),
+        currentTrackPath: trackPath,
+        currentResult,
+        isLoading: false,
+        isRomanized: keepRomanized,
+        isTranslated: keepTranslated,
+        aiProcessing: false,
+        errorMessage: result.status === 'transient_error' ? result.message : ''
+      }
+    })
 
     const { settings } = useAiSettingsStore.getState()
     if (settings.autoRomanize && result.status === 'hit') {
@@ -238,15 +259,28 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
         return null
       }
 
+      const state = get()
+      if (
+        state.currentTrackPath === trackPath &&
+        (state.currentResult || state.resultByTrackPath[trackPath]) &&
+        !state.isLoading
+      ) {
+        return state.currentResult ?? state.resultByTrackPath[trackPath] ?? null
+      }
+
+      const isSameTrack = state.currentTrackPath === trackPath
+      const keepRomanized = isSameTrack && state.isRomanized
+      const keepTranslated = isSameTrack && state.isTranslated
+
       const requestId = activeRequestId + 1
       activeRequestId = requestId
-      set((state) => ({
-        resultByTrackPath: touchLyricsResultCacheEntry(state.resultByTrackPath, trackPath, trackPath),
+      set((s) => ({
+        resultByTrackPath: touchLyricsResultCacheEntry(s.resultByTrackPath, trackPath, trackPath),
         currentTrackPath: trackPath,
-        currentResult: state.resultByTrackPath[trackPath] ?? null,
+        currentResult: s.currentResult ?? s.resultByTrackPath[trackPath] ?? null,
         isLoading: true,
-        isRomanized: false,
-        isTranslated: false,
+        isRomanized: keepRomanized,
+        isTranslated: keepTranslated,
         aiProcessing: false,
         errorMessage: ''
       }))

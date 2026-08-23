@@ -292,6 +292,15 @@ test('toggleRomanized preserves syncedLines and format on synced tracks', async 
     assert.equal(state.currentResult.lyrics.syncedLines[0].timestampMs, 15000)
     assert.equal(state.currentResult.lyrics.syncedLines[0].text, 'Watashi wa aishiteru')
   }
+
+  // When loadForTrack is called again for the same track (e.g. entering FullscreenMode), romanize should stay on
+  await useLyricsStore.getState().loadForTrack(makeQuery(path))
+  const stateAfterReload = useLyricsStore.getState()
+  assert.equal(stateAfterReload.isRomanized, true)
+  assert.equal(stateAfterReload.currentResult?.status, 'hit')
+  if (stateAfterReload.currentResult?.status === 'hit') {
+    assert.equal(stateAfterReload.currentResult.lyrics.source, 'ai-romanized')
+  }
 })
 
 test('selectLyricsSource swaps between online synced and embedded plain lyrics', () => {
