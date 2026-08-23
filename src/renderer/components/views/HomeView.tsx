@@ -12,6 +12,8 @@ import { buildPlaylistDisplaySections } from '../../utils/playlistSystem'
 import AlbumArtwork from '../library/AlbumArtwork'
 import CreatePlaylistModal from '../playlists/CreatePlaylistModal'
 import PlaylistCover from '../playlists/PlaylistCover'
+import { useThemeStore } from '../../stores/themeStore'
+import { parseColorToRgb } from '../../utils/color'
 import type { DynamicPlaylistRulesV1 } from '../../../shared/playlists/dynamicPlaylist'
 
 interface HomeTrack {
@@ -579,8 +581,14 @@ function lerpColor(
   ]
 }
 
-function getAdaptivePalette(date: Date): BucketPalette {
+function getAdaptivePalette(date: Date, accentHex?: string | null): BucketPalette {
   const hour = date.getHours() + date.getMinutes() / 60
+  const accentRgbObj = accentHex ? parseColorToRgb(accentHex) : null
+  const accentTuple: [number, number, number] | null = accentRgbObj
+    ? [accentRgbObj.r, accentRgbObj.g, accentRgbObj.b]
+    : null
+
+  let basePalette: BucketPalette | null = null
 
   for (let i = 0; i < SKY_COLOR_KEYFRAMES.length - 1; i++) {
     const current = SKY_COLOR_KEYFRAMES[i]
@@ -592,20 +600,47 @@ function getAdaptivePalette(date: Date): BucketPalette {
     const rawT = segmentLength <= 0 ? 0 : (hour - current.hour) / segmentLength
     const t = smoothStep(Math.max(0, Math.min(rawT, 1)))
 
-    return {
+    basePalette = {
       top: lerpColor(current.top, next.top, t),
       mid: lerpColor(current.mid, next.mid, t),
       bottom: lerpColor(current.bottom, next.bottom, t),
       starOpacity: lerp(current.stars, next.stars, t) * STAR_OPACITY_SCALE
     }
+    break
   }
 
-  const fallback = SKY_COLOR_KEYFRAMES[0]
+  if (!basePalette) {
+    const fallback = SKY_COLOR_KEYFRAMES[0]
+    basePalette = {
+      top: fallback.top,
+      mid: fallback.mid,
+      bottom: fallback.bottom,
+      starOpacity: fallback.stars * STAR_OPACITY_SCALE
+    }
+  }
+
+  if (!accentTuple) {
+    return basePalette
+  }
+
+  // Atmospheric theme blend: harmonize sky top & mid with the user's active theme accent
+  const blendedTop: [number, number, number] = [
+    Math.round(lerp(basePalette.top[0], accentTuple[0], 0.48)),
+    Math.round(lerp(basePalette.top[1], accentTuple[1], 0.48)),
+    Math.round(lerp(basePalette.top[2], accentTuple[2], 0.48))
+  ]
+
+  const blendedMid: [number, number, number] = [
+    Math.round(lerp(basePalette.mid[0], Math.round(accentTuple[0] * 0.35), 0.42)),
+    Math.round(lerp(basePalette.mid[1], Math.round(accentTuple[1] * 0.35), 0.42)),
+    Math.round(lerp(basePalette.mid[2], Math.round(accentTuple[2] * 0.35), 0.42))
+  ]
+
   return {
-    top: fallback.top,
-    mid: fallback.mid,
-    bottom: fallback.bottom,
-    starOpacity: fallback.stars * STAR_OPACITY_SCALE
+    top: blendedTop,
+    mid: blendedMid,
+    bottom: basePalette.bottom,
+    starOpacity: basePalette.starOpacity
   }
 }
 
@@ -804,6 +839,7 @@ export default function HomeView() {
   const homeGreetingTextMode = useUIStore((s) => s.homeGreetingTextMode)
   const setActiveView = useUIStore((s) => s.setActiveView)
   const openCollectionQueueMenu = useUIStore((s) => s.openCollectionQueueMenu)
+  const themeAccent = useThemeStore((s) => s.resolvedTokens.accent)
 
   const trackByPath = useLibraryStore((s) => s.trackByPath)
   const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
@@ -915,7 +951,7 @@ export default function HomeView() {
     let rafId: number | null = null
     let lastSkyMinute = -1
     let isActive = true
-    let currentPalette = getAdaptivePalette(new Date())
+    let currentPalette = getAdaptivePalette(new Date(), themeAccent)
 
     const applyCardTint = (palette: BucketPalette) => {
       card.style.setProperty(
@@ -942,7 +978,7 @@ export default function HomeView() {
     }
 
     const syncPaletteFromNow = (now: Date) => {
-      currentPalette = getAdaptivePalette(now)
+      currentPalette = getAdaptivePalette(now, themeAccent)
       drawPixelSky(skyCanvas, skyContext, width, height, currentPalette)
       applyCardTint(currentPalette)
       lastSkyMinute = getMinuteStamp(now)
@@ -1005,7 +1041,7 @@ export default function HomeView() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       resizeObserver.disconnect()
     }
-  }, [hasLibraryContent])
+  }, [hasLibraryContent, themeAccent])
 
   const artistByKey = useMemo(() => {
     const map = new Map<string, HomeArtist>()
@@ -1202,6 +1238,23 @@ export default function HomeView() {
     setActiveView('library')
   }
 
+  const handleShuffleLibrary = async () => {
+    const allPaths = Array.from(trackByPath.keys())
+    if (allPaths.length === 0) return
+    await startPlaybackContextByPaths(allPaths, 0, {
+      contextLabel: 'Library Shuffle',
+      startShuffled: true
+    })
+  }
+
+  const handlePlayFavorites = async () => {
+    if (favoriteTrackPaths.length === 0) return
+    await startPlaybackContextByPaths(favoriteTrackPaths, 0, {
+      contextLabel: 'Favorites',
+      startShuffled: true
+    })
+  }
+
   if (!hasLibraryContent) {
     return (
       <div className="home-view">
@@ -1239,25 +1292,67 @@ export default function HomeView() {
                   {homeGreetingTextMode === 'clock' ? clockGreeting.subline : greeting.subline}
                 </p>
               )}
+              <div className="home-greeting-actions">
+                <button
+                  type="button"
+                  className="home-greeting-action-btn home-greeting-action-btn-primary"
+                  onClick={() => void handleShuffleLibrary()}
+                  disabled={totalTrackCount === 0}
+                  title="Shuffle and play entire library"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M16 3h5v5" /><path d="M4 20 21 3" /><path d="M21 16v5h-5" /><path d="M15 15 21 21" /><path d="M4 4 9 9" />
+                  </svg>
+                  <span>Shuffle All</span>
+                </button>
+                {favoriteTracks.length > 0 && (
+                  <button
+                    type="button"
+                    className="home-greeting-action-btn"
+                    onClick={() => void handlePlayFavorites()}
+                    title={`Play ${favoriteTracks.length} favorite tracks`}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    <span>Favorites ({favoriteTracks.length})</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
           <div className="home-greeting-stats">
-            <div className="home-greeting-stat home-greeting-stat-duration">
+            <div className="home-greeting-stat home-greeting-stat-duration" title={`Total library listening time: ${formatExactDuration(totalTrackDuration)}`}>
               <span className="home-greeting-stat-label">Total Time</span>
               <span className="home-greeting-stat-value">{formatExactDuration(totalTrackDuration)}</span>
             </div>
-            <div className="home-greeting-stat">
+            <button
+              type="button"
+              className="home-greeting-stat"
+              onClick={handleOpenTracksLibrary}
+              title="Open Tracks in Library"
+            >
               <span className="home-greeting-stat-label">Tracks</span>
               <span className="home-greeting-stat-value">{totalTrackCount}</span>
-            </div>
-            <div className="home-greeting-stat">
+            </button>
+            <button
+              type="button"
+              className="home-greeting-stat"
+              onClick={handleOpenAlbumsLibrary}
+              title="Open Albums in Library"
+            >
               <span className="home-greeting-stat-label">Albums</span>
               <span className="home-greeting-stat-value">{albums.length}</span>
-            </div>
-            <div className="home-greeting-stat">
+            </button>
+            <button
+              type="button"
+              className="home-greeting-stat"
+              onClick={handleOpenArtistsLibrary}
+              title="Open Artists in Library"
+            >
               <span className="home-greeting-stat-label">Artists</span>
               <span className="home-greeting-stat-value">{artists.length}</span>
-            </div>
+            </button>
           </div>
         </section>
 

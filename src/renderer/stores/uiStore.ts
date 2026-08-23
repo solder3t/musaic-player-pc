@@ -510,6 +510,7 @@ interface UIStore {
   hideAnalyzerRack: () => void
   toggleAnalyzerRack: () => void
   setFullscreen: (fs: boolean) => void
+  toggleFullscreen: () => void
   setOpenZoneDisplayOnLaunch: (enabled: boolean) => void
   setParallaxExperimentEnabled: (enabled: boolean) => void
   setParallaxSetupComplete: (complete: boolean) => void
@@ -707,6 +708,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }
   }),
   setFullscreen: (fs) => set({ isFullscreen: fs }),
+  toggleFullscreen: () => set((s) => ({ isFullscreen: !s.isFullscreen })),
   setOpenZoneDisplayOnLaunch: (enabled) => {
     persistOpenZoneDisplayOnLaunchPreference(enabled)
     set({ openZoneDisplayOnLaunch: enabled })

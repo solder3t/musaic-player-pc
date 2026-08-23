@@ -73,6 +73,7 @@ type LyricsApiMock = {
   setLrclibBaseUrl: (baseUrl: string) => Promise<LyricsStatus>
   getForTrack: (query: LyricsTrackQuery) => Promise<LyricsLookupResult>
   refreshForTrack: (query: LyricsTrackQuery) => Promise<LyricsLookupResult>
+  selectSource: (trackPath: string, source: 'embedded' | 'online') => Promise<LyricsLookupResult | null>
   resetToDefaults: () => Promise<LyricsStatus>
   onStatus: () => () => void
 }
@@ -84,6 +85,7 @@ function installLyricsApiMock(overrides: Partial<LyricsApiMock> = {}): void {
     setLrclibBaseUrl: async (baseUrl: string) => ({ ...makeStatus(), lrclibBaseUrl: baseUrl }),
     getForTrack: async (query: LyricsTrackQuery) => makeResult(query.path),
     refreshForTrack: async (query: LyricsTrackQuery) => makeResult(query.path),
+    selectSource: async () => null,
     resetToDefaults: async () => makeStatus(),
     onStatus: () => () => {},
     ...overrides
@@ -289,6 +291,15 @@ test('toggleRomanized preserves syncedLines and format on synced tracks', async 
     assert.equal(state.currentResult.lyrics.syncedLines.length, 1)
     assert.equal(state.currentResult.lyrics.syncedLines[0].timestampMs, 15000)
     assert.equal(state.currentResult.lyrics.syncedLines[0].text, 'Watashi wa aishiteru')
+  }
+
+  // When loadForTrack is called again for the same track (e.g. entering FullscreenMode), romanize should stay on
+  await useLyricsStore.getState().loadForTrack(makeQuery(path))
+  const stateAfterReload = useLyricsStore.getState()
+  assert.equal(stateAfterReload.isRomanized, true)
+  assert.equal(stateAfterReload.currentResult?.status, 'hit')
+  if (stateAfterReload.currentResult?.status === 'hit') {
+    assert.equal(stateAfterReload.currentResult.lyrics.source, 'ai-romanized')
   }
 })
 

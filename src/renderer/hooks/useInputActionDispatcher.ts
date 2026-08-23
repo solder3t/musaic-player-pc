@@ -65,6 +65,9 @@ export function useInputActionDispatcher(): InputActionDispatcher {
       case 'ui-scale-reset':
         ui.resetUIScalePercent()
         return
+      case 'fullscreen-toggle':
+        ui.toggleFullscreen()
+        return
       case 'playback-toggle':
         void player.togglePlay()
         return

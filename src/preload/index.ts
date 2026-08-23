@@ -1153,6 +1153,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('lyrics:searchAllProviders', query),
     applyCandidate: (trackPath: string, candidate: OnlineLyricsCandidate): Promise<LyricsLookupResult> =>
       ipcRenderer.invoke('lyrics:applyCandidate', trackPath, candidate),
+    selectSource: (trackPath: string, source: 'embedded' | 'online'): Promise<LyricsLookupResult | null> =>
+      ipcRenderer.invoke('lyrics:selectSource', trackPath, source),
     getTrackOverride: (trackPath: string): Promise<LyricsTrackOverride> =>
       ipcRenderer.invoke('lyrics:getTrackOverride', trackPath),
     importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat): Promise<LyricsManualImportResult> =>
@@ -1832,6 +1834,7 @@ declare global {
         refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
         searchAllProviders: (query: LyricsTrackQuery) => Promise<OnlineLyricsCandidate[]>
         applyCandidate: (trackPath: string, candidate: OnlineLyricsCandidate) => Promise<LyricsLookupResult>
+        selectSource: (trackPath: string, source: 'embedded' | 'online') => Promise<LyricsLookupResult | null>
         getTrackOverride: (trackPath: string) => Promise<LyricsTrackOverride>
         importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat) => Promise<LyricsManualImportResult>
         clearManualLyrics: (trackPaths: string[]) => Promise<LyricsManualClearResult>

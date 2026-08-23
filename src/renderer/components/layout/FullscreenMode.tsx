@@ -713,7 +713,7 @@ export default function FullscreenMode() {
     if (overflows) {
       const offset = outer.clientWidth - inner.scrollWidth
       outer.style.setProperty('--marquee-offset', `${offset}px`)
-      const scrollDuration = Math.max(2.8, Math.min(8, Math.abs(offset) / 72 + 1.3))
+      const scrollDuration = Math.max(3.2, Math.min(9, Math.abs(offset) / 58 + 1.6))
       outer.style.setProperty('--marquee-duration', `${scrollDuration.toFixed(2)}s`)
       return
     }

@@ -482,6 +482,9 @@ declare global {
                 setLrclibBaseUrl: (baseUrl: string) => Promise<LyricsStatus>
                 getForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
                 refreshForTrack: (query: LyricsTrackQuery, options?: { forceRefresh?: boolean; preferSource?: 'auto' | 'embedded' | 'online' }) => Promise<LyricsLookupResult>
+                searchAllProviders: (query: LyricsTrackQuery) => Promise<OnlineLyricsCandidate[]>
+                applyCandidate: (trackPath: string, candidate: OnlineLyricsCandidate) => Promise<LyricsLookupResult>
+                selectSource: (trackPath: string, source: 'embedded' | 'online') => Promise<LyricsLookupResult | null>
                 getTrackOverride: (trackPath: string) => Promise<LyricsTrackOverride>
                 importManualLyrics: (trackPaths: string[], lyricsText: string, format?: LyricsFormat) => Promise<LyricsManualImportResult>
                 clearManualLyrics: (trackPaths: string[]) => Promise<LyricsManualClearResult>

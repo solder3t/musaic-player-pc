@@ -655,21 +655,22 @@ function applyMaterialYouAccent(rawColorHex: string): boolean {
     THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(255, 255, 255, 0.5)'
     THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(95)) + 'e6'
   } else {
-    THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(10))
-    THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(15))
-    THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(22))
-    THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(25))
-    THEME_PRESETS.materialyou.tokens.controlBg = hexFromArgb(palettes.primary.tone(30))
-    THEME_PRESETS.materialyou.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(25))
-    THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(95))
-    THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(80))
-    THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(60))
-    THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(10))
-    THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(16))
-    THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(25))
+    THEME_PRESETS.materialyou.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(6))
+    THEME_PRESETS.materialyou.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(10))
+    THEME_PRESETS.materialyou.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(14))
+    THEME_PRESETS.materialyou.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(12))
+    THEME_PRESETS.materialyou.tokens.controlBg = 'rgba(0, 0, 0, 0.28)'
+    THEME_PRESETS.materialyou.tokens.controlBgSoft = 'rgba(0, 0, 0, 0.16)'
+    THEME_PRESETS.materialyou.tokens.controlBgStrong = 'rgba(0, 0, 0, 0.42)'
+    THEME_PRESETS.materialyou.tokens.textPrimary = hexFromArgb(palettes.primary.tone(96))
+    THEME_PRESETS.materialyou.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(82))
+    THEME_PRESETS.materialyou.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(65))
+    THEME_PRESETS.materialyou.tokens.stageBg = hexFromArgb(palettes.primary.tone(6))
+    THEME_PRESETS.materialyou.tokens.stageSurface = hexFromArgb(palettes.primary.tone(12))
+    THEME_PRESETS.materialyou.tokens.stageBorder = hexFromArgb(palettes.primary.tone(20))
     THEME_PRESETS.materialyou.tokens.scrimSoft = 'rgba(0, 0, 0, 0.2)'
     THEME_PRESETS.materialyou.tokens.scrimStrong = 'rgba(0, 0, 0, 0.5)'
-    THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(15)) + 'e6'
+    THEME_PRESETS.materialyou.tokens.glassBg = hexFromArgb(palettes.primary.tone(10)) + 'e6'
   }
   return true
 }
@@ -708,21 +709,22 @@ function applyCoverArtThemePalette(rawColorHex: string | null): boolean {
     THEME_PRESETS.coverart.tokens.scrimStrong = 'rgba(255, 255, 255, 0.5)'
     THEME_PRESETS.coverart.tokens.glassBg = hexFromArgb(palettes.primary.tone(95)) + 'e6'
   } else {
-    THEME_PRESETS.coverart.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(8))
-    THEME_PRESETS.coverart.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(13))
-    THEME_PRESETS.coverart.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(18))
-    THEME_PRESETS.coverart.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(20))
-    THEME_PRESETS.coverart.tokens.controlBg = hexFromArgb(palettes.primary.tone(25))
-    THEME_PRESETS.coverart.tokens.controlBgSoft = hexFromArgb(palettes.primary.tone(20))
+    THEME_PRESETS.coverart.tokens.bgPrimary = hexFromArgb(palettes.primary.tone(6))
+    THEME_PRESETS.coverart.tokens.bgSecondary = hexFromArgb(palettes.primary.tone(10))
+    THEME_PRESETS.coverart.tokens.bgTertiary = hexFromArgb(palettes.secondary.tone(14))
+    THEME_PRESETS.coverart.tokens.surfaceOverlay = hexFromArgb(palettes.secondary.tone(12))
+    THEME_PRESETS.coverart.tokens.controlBg = 'rgba(0, 0, 0, 0.28)'
+    THEME_PRESETS.coverart.tokens.controlBgSoft = 'rgba(0, 0, 0, 0.16)'
+    THEME_PRESETS.coverart.tokens.controlBgStrong = 'rgba(0, 0, 0, 0.42)'
     THEME_PRESETS.coverart.tokens.textPrimary = hexFromArgb(palettes.primary.tone(96))
     THEME_PRESETS.coverart.tokens.textSecondary = hexFromArgb(palettes.secondary.tone(82))
     THEME_PRESETS.coverart.tokens.textTertiary = hexFromArgb(palettes.secondary.tone(65))
-    THEME_PRESETS.coverart.tokens.stageBg = hexFromArgb(palettes.primary.tone(8))
-    THEME_PRESETS.coverart.tokens.stageSurface = hexFromArgb(palettes.primary.tone(14))
-    THEME_PRESETS.coverart.tokens.stageBorder = hexFromArgb(palettes.primary.tone(22))
+    THEME_PRESETS.coverart.tokens.stageBg = hexFromArgb(palettes.primary.tone(6))
+    THEME_PRESETS.coverart.tokens.stageSurface = hexFromArgb(palettes.primary.tone(12))
+    THEME_PRESETS.coverart.tokens.stageBorder = hexFromArgb(palettes.primary.tone(20))
     THEME_PRESETS.coverart.tokens.scrimSoft = 'rgba(0, 0, 0, 0.25)'
     THEME_PRESETS.coverart.tokens.scrimStrong = 'rgba(0, 0, 0, 0.55)'
-    THEME_PRESETS.coverart.tokens.glassBg = hexFromArgb(palettes.primary.tone(13)) + 'e6'
+    THEME_PRESETS.coverart.tokens.glassBg = hexFromArgb(palettes.primary.tone(10)) + 'e6'
   }
   return true
 }

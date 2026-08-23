@@ -4101,24 +4101,40 @@ function hasManualLyricsOverride(entry: {
   )
 }
 
-export function getLyricsCache(trackPath: string, metadataSignature: string): LyricsCacheEntry | null {
+export function getLyricsCache(trackPath: string, metadataSignature?: string): LyricsCacheEntry | null {
   if (!db) return null
 
-  const row = db.get<Record<string, unknown>>(`
-    SELECT
-      track_path,
-      metadata_signature,
-      status,
-      source,
-      provider,
-      plain_lyrics,
-      synced_lyrics,
-      synced_lines_json,
-      updated_at
-    FROM lyrics_cache
-    WHERE track_path = ? AND metadata_signature = ?
-    LIMIT 1
-  `, [trackPath, metadataSignature])
+  const row = metadataSignature
+    ? db.get<Record<string, unknown>>(`
+        SELECT
+          track_path,
+          metadata_signature,
+          status,
+          source,
+          provider,
+          plain_lyrics,
+          synced_lyrics,
+          synced_lines_json,
+          updated_at
+        FROM lyrics_cache
+        WHERE track_path = ? AND (metadata_signature = ? OR metadata_signature LIKE 'manual-selected-%')
+        LIMIT 1
+      `, [trackPath, metadataSignature])
+    : db.get<Record<string, unknown>>(`
+        SELECT
+          track_path,
+          metadata_signature,
+          status,
+          source,
+          provider,
+          plain_lyrics,
+          synced_lyrics,
+          synced_lines_json,
+          updated_at
+        FROM lyrics_cache
+        WHERE track_path = ?
+        LIMIT 1
+      `, [trackPath])
   if (!row) return null
 
   const normalizedPath = toText(row.track_path)

@@ -53,8 +53,9 @@ export interface LyricsServiceLibraryApi {
   upsertLyricsTrackManual: (trackPaths: string[], input: library.LyricsTrackManualInput) => Promise<number>
   clearLyricsTrackManual: (trackPaths: string[]) => Promise<number>
   setLyricsTrackSyncOffset: (trackPaths: string[], offsetMs: number) => Promise<number>
-  getLyricsCache: (trackPath: string, metadataSignature: string) => library.LyricsCacheEntry | null
+  getLyricsCache: (trackPath: string, metadataSignature?: string) => library.LyricsCacheEntry | null
   upsertLyricsCache: (entry: library.LyricsCacheUpsertInput) => Promise<void>
+  getTrackByPath?: (trackPath: string) => library.DbTrack | null
 }
 
 type LyricsOnlineLookupResult = LrclibLookupResult | XlrcdbLookupResult
@@ -607,7 +608,22 @@ export class LyricsService {
 
     const trackOverride = this.libraryApi.getLyricsTrackOverride(normalizedPath)
     const trackOffsetMs = trackOverride?.syncOffsetMs ?? 0
-    const metadataSignature = `manual-selected-${candidate.id}-${Date.now()}`
+    const track = this.libraryApi.getTrackByPath?.(normalizedPath)
+    const metadataSignature = track
+      ? createMetadataSignature({
+          path: normalizedPath,
+          title: track.title,
+          artist: track.artist,
+          album: track.album ?? undefined,
+          durationSeconds: track.duration
+        })
+      : createMetadataSignature({
+          path: normalizedPath,
+          title: candidate.title || '',
+          artist: candidate.artist || '',
+          album: candidate.album || undefined,
+          durationSeconds: candidate.durationMs ? Math.round(candidate.durationMs / 1000) : undefined
+        })
 
     await this.libraryApi.upsertLyricsCache({
       trackPath: normalizedPath,
@@ -620,11 +636,86 @@ export class LyricsService {
       syncedLines: payload.syncedLines
     })
 
+    const embedded = await this.embeddedResolver(normalizedPath)
+
     return {
       status: 'hit',
       lyrics: applyTrackOffsetToPayload(payload, trackOffsetMs),
       cached: false,
-      availableSources: ['online']
+      availableSources: embedded ? ['online', 'embedded'] : ['online'],
+      embeddedAlternative: embedded ? applyTrackOffsetToPayload(embedded, trackOffsetMs) : null
+    }
+  }
+
+  async selectSource(
+    trackPath: string,
+    source: 'embedded' | 'online'
+  ): Promise<LyricsLookupResult | null> {
+    const normalizedPath = normalizeText(trackPath)
+    if (!normalizedPath) return null
+
+    const trackOverride = this.libraryApi.getLyricsTrackOverride(normalizedPath)
+    const trackOffsetMs = trackOverride?.syncOffsetMs ?? 0
+    const track = this.libraryApi.getTrackByPath?.(normalizedPath)
+    const metadataSignature = track
+      ? createMetadataSignature({
+          path: normalizedPath,
+          title: track.title,
+          artist: track.artist,
+          album: track.album ?? undefined,
+          durationSeconds: track.duration
+        })
+      : null
+
+    const embedded = await this.embeddedResolver(normalizedPath)
+
+    if (source === 'embedded') {
+      if (!embedded) return null
+      if (metadataSignature) {
+        await this.libraryApi.upsertLyricsCache({
+          trackPath: normalizedPath,
+          metadataSignature,
+          status: 'hit',
+          source: 'embedded',
+          provider: embedded.provider,
+          plainLyrics: embedded.plainLyrics,
+          syncedLyrics: embedded.syncedLyrics,
+          syncedLines: embedded.syncedLines
+        })
+      }
+      return {
+        status: 'hit',
+        lyrics: applyTrackOffsetToPayload(embedded, trackOffsetMs),
+        cached: false,
+        availableSources: ['embedded']
+      }
+    } else {
+      // source === 'online'
+      if (!this.enabled) return null
+      const cached = metadataSignature ? this.libraryApi.getLyricsCache(normalizedPath, metadataSignature) : null
+      if (cached && cached.status === 'hit' && cached.source !== 'embedded') {
+        const cachedResult = this.createLookupResultFromCache(cached, trackOffsetMs)
+        if (cachedResult && cachedResult.status === 'hit') {
+          return {
+            ...cachedResult,
+            availableSources: embedded ? ['online', 'embedded'] : (cachedResult.availableSources || ['online']),
+            embeddedAlternative: embedded ? applyTrackOffsetToPayload(embedded, trackOffsetMs) : null
+          }
+        }
+      }
+      if (track) {
+        return this.getForTrack(
+          {
+            path: normalizedPath,
+            title: track.title,
+            artist: track.artist,
+            album: track.album ?? undefined,
+            durationSeconds: track.duration
+          },
+          { preferSource: 'online', forceRefresh: true }
+        )
+      }
+      return null
     }
   }
 
@@ -714,6 +805,26 @@ export class LyricsService {
       }
     }
 
+    if (!options.forceRefresh) {
+      const cached = this.libraryApi.getLyricsCache(path, metadataSignature)
+      if (cached) {
+        if (cached.source === 'lrclib' && this.enabled) {
+          lrclibCached = cached
+        } else if (cached.source !== 'embedded' && cached.status === 'hit') {
+          const cachedResult = this.createLookupResultFromCache(cached, trackOffsetMs)
+          if (cachedResult && cachedResult.status === 'hit') {
+            const embedded = await this.embeddedResolver(path)
+            this.setLastError(null)
+            return {
+              ...cachedResult,
+              availableSources: embedded ? ['online', 'embedded'] : (cachedResult.availableSources || ['online']),
+              embeddedAlternative: embedded ? applyTrackOffsetToPayload(embedded, trackOffsetMs) : null
+            }
+          }
+        }
+      }
+    }
+
     const embedded = await this.embeddedResolver(path)
     if (embedded) {
       const isEmbeddedSynced = embedded.syncedLines.length > 0
@@ -775,18 +886,6 @@ export class LyricsService {
         lyrics: applyTrackOffsetToPayload(embedded, trackOffsetMs),
         cached: false,
         availableSources: ['embedded']
-      }
-    }
-
-    if (!options.forceRefresh) {
-      const cached = this.libraryApi.getLyricsCache(path, metadataSignature)
-      if (cached) {
-        if (cached.source === 'lrclib' && this.enabled) {
-          lrclibCached = cached
-        } else if (cached.source !== 'embedded') {
-          const cachedResult = this.createLookupResultFromCache(cached, trackOffsetMs)
-          if (cachedResult) return cachedResult
-        }
       }
     }
 
