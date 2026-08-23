@@ -331,3 +331,47 @@ test('LyricsService obeys preferSource: embedded even when unsynced', async () =
     assert.equal(result.lyrics.plainLyrics, 'Embedded plain lyrics')
   }
 })
+
+test('LyricsService remembers and prioritizes selected online lyrics even when track has embedded lyrics', async () => {
+  const embeddedSyncedPayload: LyricsPayload = {
+    source: 'embedded',
+    provider: null,
+    format: 'lrc',
+    plainLyrics: 'Embedded synced lyrics',
+    syncedLyrics: '[00:05.00]Embedded synced lyrics',
+    syncedLines: [{ timestampMs: 5000, text: 'Embedded synced lyrics' }]
+  }
+
+  const cachedOnlineEntry: LyricsCacheEntry = {
+    trackPath: '/music/track.flac',
+    metadataSignature: 'signature',
+    status: 'hit',
+    source: 'online',
+    provider: 'lrclib',
+    format: 'lrc',
+    plainLyrics: 'Selected online lyrics',
+    syncedLyrics: '[00:05.00]Selected online lyrics',
+    syncedLines: [{ timestampMs: 5000, text: 'Selected online lyrics' }],
+    updatedAt: 1_000
+  }
+
+  const service = new LyricsService({
+    enabled: true,
+    appVersion: '0.6.1-beta',
+    libraryApi: createLibraryApi({ cache: cachedOnlineEntry }),
+    sidecarLookup: async () => null,
+    embeddedResolver: async () => embeddedSyncedPayload,
+    xlrcdbProvider: createProvider([]),
+    lrclibProvider: createProvider([])
+  })
+
+  const result = await service.getForTrack(makeQuery())
+  assert.equal(result.status, 'hit')
+  if (result.status === 'hit') {
+    assert.equal(result.lyrics.source, 'online')
+    assert.equal(result.lyrics.plainLyrics, 'Selected online lyrics')
+    assert.deepEqual(result.availableSources, ['online', 'embedded'])
+    assert.ok(result.embeddedAlternative)
+    assert.equal(result.embeddedAlternative?.plainLyrics, 'Embedded synced lyrics')
+  }
+})

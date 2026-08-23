@@ -308,7 +308,8 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
     selectLyricsSource: (targetSource: 'embedded' | 'online') => {
       const state = get()
       const currentResult = state.currentResult
-      if (!currentResult || currentResult.status !== 'hit' || !state.currentTrackPath) return
+      const currentTrackPath = state.currentTrackPath
+      if (!currentResult || currentResult.status !== 'hit' || !currentTrackPath) return
 
       const currentLyrics = currentResult.lyrics
       if (targetSource === 'embedded' && currentLyrics.source !== 'embedded' && currentResult.embeddedAlternative) {
@@ -323,6 +324,7 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           isRomanized: false,
           isTranslated: false
         }))
+        void window.electronAPI.lyrics.selectSource(currentTrackPath, 'embedded').catch(() => {})
       } else if (targetSource === 'online' && currentLyrics.source === 'embedded' && currentResult.onlineAlternative) {
         const nextResult: LyricsLookupResult = {
           ...currentResult,
@@ -335,6 +337,7 @@ export const useLyricsStore = create<LyricsStore>((set, get) => {
           isRomanized: false,
           isTranslated: false
         }))
+        void window.electronAPI.lyrics.selectSource(currentTrackPath, 'online').catch(() => {})
       }
     },
 

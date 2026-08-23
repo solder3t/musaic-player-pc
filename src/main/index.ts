@@ -1336,8 +1336,9 @@ const lyricsService = new LyricsService({
     upsertLyricsTrackManual: (paths: string[], input: library.LyricsTrackManualInput) => library.upsertLyricsTrackManual(paths, input),
     clearLyricsTrackManual: (paths: string[]) => library.clearLyricsTrackManual(paths),
     setLyricsTrackSyncOffset: (paths: string[], offset: number) => library.setLyricsTrackSyncOffset(paths, offset),
-    getLyricsCache: (path: string, sig: string) => library.getLyricsCache(path, sig),
-    upsertLyricsCache: (entry: library.LyricsCacheUpsertInput) => library.upsertLyricsCache(entry)
+    getLyricsCache: (path: string, sig?: string) => library.getLyricsCache(path, sig),
+    upsertLyricsCache: (entry: library.LyricsCacheUpsertInput) => library.upsertLyricsCache(entry),
+    getTrackByPath: (path: string) => library.getTrackByPath(path)
   },
   onStatusChange: () => {
     broadcastLyricsStatus()
@@ -5972,6 +5973,13 @@ ipcMain.handle('lyrics:applyCandidate', async (_event, rawTrackPath: unknown, ra
     return { status: 'not_found' as const, reason: 'embedded-missing' as const }
   }
   return lyricsService.applyCandidate(trackPath, rawCandidate as any)
+})
+
+ipcMain.handle('lyrics:selectSource', async (_event, rawTrackPath: unknown, rawSource: unknown) => {
+  const trackPath = typeof rawTrackPath === 'string' ? rawTrackPath.trim() : ''
+  const source = rawSource === 'embedded' || rawSource === 'online' ? rawSource : null
+  if (!trackPath || !source) return null
+  return lyricsService.selectSource(trackPath, source)
 })
 
 ipcMain.handle('lyrics:getTrackOverride', (_event, rawTrackPath: unknown) => {
