@@ -4044,22 +4044,23 @@ body:has(.fullscreen-overlay) .controller-hints {
   flex-direction: column;
   gap: 12px;
   padding: 12px 18px 16px;
-  border: 1px solid rgba(var(--tint), 0.12);
+  border: 1px solid var(--glass-border);
   border-radius: 14px;
   background:
-    radial-gradient(80% 60% at 50% 0%, rgba(var(--accent-rgb), 0.08) 0%, transparent 80%),
-    rgba(10, 12, 16, 0.88);
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.08) 0%, transparent 65%),
+    var(--surface-overlay);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow:
     0 18px 44px var(--shadow-soft),
+    0 0 20px rgba(var(--accent-rgb), 0.1),
     inset 0 1px 0 rgba(var(--tint), 0.1);
 }
 
 html[data-theme-tone="light"] .transport-lyrics-shelf-content {
   background:
-    radial-gradient(80% 60% at 50% 0%, rgba(var(--accent-rgb), 0.08) 0%, transparent 80%),
-    rgba(246, 247, 249, 0.94);
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.06) 0%, transparent 65%),
+    var(--surface-overlay);
 }
 
 .transport-lyrics-shelf-header {
@@ -4072,9 +4073,10 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
 .transport-lyrics-shelf-label {
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(var(--tint), 0.72);
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -4083,8 +4085,8 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
   flex: 1;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.04em;
-  color: rgba(var(--tint), 0.52);
+  letter-spacing: 0.05em;
+  color: rgba(var(--tint), 0.65);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4117,17 +4119,17 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
 .transport-lyrics-inline-action:hover:not(:disabled),
 .transport-lyrics-recenter-btn:hover {
   color: var(--text-strong);
-  border-color: rgba(var(--tint), 0.28);
-  background: rgba(var(--tint), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.12);
   transform: translateY(-1px);
 }
 
 .transport-lyrics-inline-action.is-active,
 .transport-lyrics-recenter-btn {
   color: var(--accent);
-  border-color: rgba(var(--accent-rgb), 0.5);
-  background: rgba(var(--accent-rgb), 0.14);
-  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  background: rgba(var(--accent-rgb), 0.16);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.25);
 }
 
 .transport-lyrics-inline-action:disabled {
@@ -4145,8 +4147,8 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
 }
 
 .transport-lyrics-recenter-btn {
-  color: var(--accent-text);
-  border-color: rgba(var(--accent-rgb), 0.4);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.5);
   background: rgba(var(--accent-rgb), 0.15);
 }
 
@@ -4174,7 +4176,7 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
 
 .transport-lyrics-shelf-chevron:hover {
   color: var(--text-strong);
-  border-color: rgba(var(--accent-rgb), 0.48);
+  border-color: rgba(var(--accent-rgb), 0.5);
   background: rgba(var(--accent-rgb), 0.16);
 }
 
@@ -4216,7 +4218,7 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
 }
 
 .transport-lyrics-focus-line.is-near {
-  color: rgba(var(--tint), 0.72);
+  color: rgba(var(--tint), 0.82);
   opacity: 0.86;
   filter: blur(0.16px);
   transform: scale(0.996);
@@ -4236,7 +4238,9 @@ html[data-theme-tone="light"] .transport-lyrics-shelf-content {
   transform: scale(1);
   font-size: 17px;
   font-weight: 650;
-  text-shadow: 0 1px 14px rgba(var(--tint), 0.14);
+  text-shadow:
+    0 2px 14px rgba(0, 0, 0, 0.52),
+    0 0 20px rgba(var(--accent-rgb), 0.32);
 }
 
 .transport-lyrics-focus-line.is-gap {
