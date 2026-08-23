@@ -17,7 +17,8 @@ export const INPUT_ACTION_ID_VALUES = [
   'repeat',
   'focus-search-field',
   'navigate-back',
-  'navigate-forward'
+  'navigate-forward',
+  'fullscreen-toggle'
 ] as const
 
 export type InputActionId = (typeof INPUT_ACTION_ID_VALUES)[number]

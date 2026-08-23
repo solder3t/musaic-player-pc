@@ -78,6 +78,13 @@ export const INPUT_ACTION_DEFINITIONS: readonly InputActionDefinition[] = [
     defaultBindings: [keyboard('0', ['primary'])]
   },
   {
+    id: 'fullscreen-toggle',
+    group: 'app',
+    action: 'Toggle Fullscreen',
+    description: 'Toggle fullscreen Now Playing view.',
+    defaultBindings: [keyboard('f'), keyboard('f11')]
+  },
+  {
     id: 'playback-toggle',
     group: 'playback',
     action: 'Play / Pause',
