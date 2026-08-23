@@ -375,3 +375,37 @@ test('LyricsService remembers and prioritizes selected online lyrics even when t
     assert.equal(result.embeddedAlternative?.plainLyrics, 'Embedded synced lyrics')
   }
 })
+
+test('LyricsService remembers applied online lyrics when track has no embedded lyrics at all', async () => {
+  const cachedOnlineEntry: LyricsCacheEntry = {
+    trackPath: '/music/track.flac',
+    metadataSignature: 'signature',
+    status: 'hit',
+    source: 'online',
+    provider: 'netease',
+    format: 'lrc',
+    plainLyrics: 'Online lyrics for track without embedded tags',
+    syncedLyrics: '[00:05.00]Online lyrics for track without embedded tags',
+    syncedLines: [{ timestampMs: 5000, text: 'Online lyrics for track without embedded tags' }],
+    updatedAt: 1_000
+  }
+
+  const service = new LyricsService({
+    enabled: true,
+    appVersion: '0.6.1-beta',
+    libraryApi: createLibraryApi({ cache: cachedOnlineEntry }),
+    sidecarLookup: async () => null,
+    embeddedResolver: async () => null,
+    xlrcdbProvider: createProvider([]),
+    lrclibProvider: createProvider([])
+  })
+
+  const result = await service.getForTrack(makeQuery())
+  assert.equal(result.status, 'hit')
+  if (result.status === 'hit') {
+    assert.equal(result.lyrics.source, 'online')
+    assert.equal(result.lyrics.plainLyrics, 'Online lyrics for track without embedded tags')
+    assert.deepEqual(result.availableSources, ['online'])
+    assert.equal(result.embeddedAlternative, null)
+  }
+})
