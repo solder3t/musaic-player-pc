@@ -1,6 +1,6 @@
 {
   "name": "musaic-player",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Beautiful offline music player with lyrics, Listen Together, AI romanization & Last.fm",
   "main": "./out/main/index.js",
   "scripts": {
