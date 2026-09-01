@@ -10,6 +10,11 @@ on:
         description: 'Version label for the build (e.g. v0.5.0, alpha-1, beta-2)'
         required: false
         default: ''
+      release_notes:
+        description: 'Custom Release Notes / Changelog (Optional Markdown)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -113,6 +118,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Determine release tag and name
         id: release_info
@@ -127,6 +134,8 @@ jobs:
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "name=Musaic Player $TAG" >> $GITHUB_OUTPUT
+          VERSION_NAME=${TAG#v}
+          echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "Publishing release for tag: $TAG"
 
       - name: Download all build artifacts
@@ -138,14 +147,72 @@ jobs:
       - name: Display downloaded artifacts
         run: ls -lh dist-release
 
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION_NAME="${{ steps.release_info.outputs.version }}"
+          
+          # 1. Check if user provided manual release notes via workflow dispatch input
+          MANUAL_NOTES="${{ inputs.release_notes }}"
+          if [ -n "$MANUAL_NOTES" ]; then
+            echo "Using release notes provided via workflow input."
+            {
+              echo "body<<EOF"
+              echo "$MANUAL_NOTES"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 2. Check if CHANGELOG.md has an entry for this version
+          if [ -f "CHANGELOG.md" ]; then
+            EXTRACTED=$(sed -n "/## \[$VERSION_NAME\]/,/## \[/p" CHANGELOG.md | sed '$d' | sed '1d' | sed '/^[[:space:]]*$/d')
+            if [ -z "$EXTRACTED" ]; then
+              EXTRACTED=$(sed -n "/## v$VERSION_NAME/,/## v/p" CHANGELOG.md | sed '$d' | sed '1d' | sed '/^[[:space:]]*$/d')
+            fi
+            if [ -z "$EXTRACTED" ]; then
+              EXTRACTED=$(sed -n "/## $VERSION_NAME/,/## /p" CHANGELOG.md | sed '$d' | sed '1d' | sed '/^[[:space:]]*$/d')
+            fi
+            if [ -n "$EXTRACTED" ]; then
+              echo "Extracted changelog from CHANGELOG.md for v$VERSION_NAME."
+              {
+                echo "body<<EOF"
+                echo "$EXTRACTED"
+                echo "EOF"
+              } >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          # 3. Fallback: Automatically extract clean commit history since previous release tag
+          echo "Extracting changelog from git commits..."
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log "$PREV_TAG..HEAD" --pretty=format:"• %s" --no-merges | grep -v "Merge branch" | grep -v "chore(release)" || true)
+          else
+            COMMITS=$(git log -n 15 --pretty=format:"• %s" --no-merges | grep -v "Merge branch" | grep -v "chore(release)" || true)
+          fi
+
+          if [ -z "$COMMITS" ]; then
+            COMMITS="• General stability improvements and bug fixes."
+          fi
+
+          {
+            echo "body<<EOF"
+            echo "### What's New in v${VERSION_NAME}"
+            echo ""
+            echo "$COMMITS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release_info.outputs.tag }}
           name: ${{ steps.release_info.outputs.name }}
+          body: ${{ steps.changelog.outputs.body }}
           draft: false
           prerelease: false
-          generate_release_notes: true
           files: |
             dist-release/*
         env:
